@@ -1,19 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import type { QuestionnaireDefinition } from '../../src/questionnaire-definition';
 
 const participantBaseUrl = 'http://127.0.0.1:4173/index.html';
 const completedResultsKey = 'accessible-questionnaire-v0.8-completed-results';
-const builtInDefinitionFiles: Record<string, string> = {
-  'nasa-tlx-weighted': 'nasa-tlx-weighted.questionnaire.json',
-  'nasa-tlx-raw': 'nasa-tlx-raw.questionnaire.json',
-  'system-usability-scale': 'system-usability-scale.questionnaire.json',
-  'user-experience-questionnaire-short': 'user-experience-questionnaire-short.questionnaire.json',
-};
-
 const wcagTags = [
   'wcag2a',
   'wcag2aa',
@@ -196,63 +187,27 @@ async function scan(page: Page, state: string) {
 function configuredParticipant(
   instrumentId: string,
   participantCode: string,
-  questionnaireDefinition?: QuestionnaireDefinition,
 ) {
-  const definition = questionnaireDefinition ?? readBuiltInDefinition(instrumentId);
-  const definitionHash = `sha256:${createHash('sha256').update(canonicalJson(definition)).digest('hex')}`;
-  const config = {
-    schemaVersion: 4,
-    configId: `browser-config-${instrumentId}`,
-    createdAt: '2026-08-08T00:00:00.000Z',
-    prototypeVersion: '0.8.0',
-    instrumentId,
-    definitionHash,
-    ...(questionnaireDefinition ? { questionnaireDefinition } : {}),
-    studyId: `BROWSER-${instrumentId}`.slice(0, 64),
-    studyTitle: 'Browser accessibility regression',
-    taskLabel: 'using the test interface',
-    showScoreToParticipant: true,
-    support: {
-      showSimpleLanguage: false,
-      answerMode: 'standard',
-      largeText: false,
-      audioGuidance: false,
-      recoveryEnabled: true,
-      participantAdjustmentPolicy: 'participant-choice',
-      voiceInputAvailable: true,
-      gazeInputAvailable: false,
-    },
-    collection: { mode: 'local' },
+  const fixture = JSON.parse(readFileSync(
+    resolve(process.cwd(), 'test-results/browser-study-configs.json'),
+    'utf8',
+  )) as {
+    configurations: Record<string, { encodedStudy: string; definitionHash: string }>;
   };
+  const config = fixture.configurations[instrumentId];
+  if (!config) throw new Error(`No production-generated browser configuration exists for ${instrumentId}.`);
   const hash = new URLSearchParams({
-    study: Buffer.from(JSON.stringify(config), 'utf8').toString('base64url'),
+    study: config.encodedStudy,
     participant: participantCode,
   });
   return {
     url: `${participantBaseUrl}#${hash.toString()}`,
-    definitionHash,
+    definitionHash: config.definitionHash,
   };
 }
 
-function readBuiltInDefinition(instrumentId: string) {
-  const fileName = builtInDefinitionFiles[instrumentId];
-  if (!fileName) throw new Error(`No browser fixture exists for ${instrumentId}.`);
-  return JSON.parse(
-    readFileSync(resolve(process.cwd(), 'instruments', fileName), 'utf8'),
-  ) as QuestionnaireDefinition;
-}
-
-function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([, entry]) => entry !== undefined)
-    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
-  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`).join(',')}}`;
-}
-
 async function choose(page: Page, value: number) {
-  await page.locator(`.rating-option input[value="${value}"]`).check();
+  await page.locator(`.rating-option:has(input[value="${value}"])`).click();
 }
 
 async function focusByKeyboard(page: Page, target: ReturnType<Page['locator']>) {
@@ -514,45 +469,9 @@ test('UEQ-S uses unnumbered semantic-differential positions', async ({ page }) =
 });
 
 test('imported German scale suppresses duplicate endpoints but keeps middle labels', async ({ page }) => {
-  const definition: QuestionnaireDefinition = {
-    schemaVersion: 1,
-    language: 'de',
-    id: 'custom-german-agreement-check',
-    version: '1.0.0',
-    name: 'German Agreement Check',
-    shortName: 'GAC',
-    description: 'A browser fixture for a fully labelled imported scale.',
-    introPrompt: 'Bitte beantworten Sie die Frage.',
-    officialContentNotice: 'Browser regression fixture.',
-    source: { label: 'AQP browser fixture' },
-    scale: { type: 'agreement', minimum: 1, maximum: 5, step: 1 },
-    items: [{
-      id: 'item-01',
-      name: 'Item 1',
-      prompt: 'Ich hatte das Gefühl, nur Bilder zu sehen.',
-      shortMeaning: 'Agreement with the item.',
-      lowAnchor: 'trifft gar nicht zu',
-      highAnchor: 'trifft völlig zu',
-      responseLabels: {
-        1: 'trifft gar nicht zu',
-        2: 'trifft eher nicht zu',
-        3: 'teils/teils',
-        4: 'trifft eher zu',
-        5: 'trifft völlig zu',
-      },
-    }],
-    scoring: {
-      strategy: 'mean-v1',
-      scoreName: 'Mean score',
-      minimum: 1,
-      maximum: 5,
-    },
-    supports: { simplerExplanations: false, smileyLandmarks: false },
-  };
   const { url } = configuredParticipant(
-    definition.id,
+    'custom-german-agreement-check',
     'E2E-LABELS-01',
-    definition,
   );
   await page.goto(url);
   await page.getByRole('button', { name: 'Start the 1 item' }).click();

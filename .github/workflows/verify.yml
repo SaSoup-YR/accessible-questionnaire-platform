@@ -59,6 +59,7 @@ jobs:
         run: npm run test:browser
 
       - name: Record the cross-browser capability matrix
+        if: always()
         run: npm run test:browser-support
 
       - name: Add the cross-browser matrix to the job summary
