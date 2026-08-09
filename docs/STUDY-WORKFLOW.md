@@ -79,7 +79,7 @@ may need locked measurement-adjacent presentation.
 Every permitted change records setting, before/after value, stage and timestamp.
 Final state and per-answer route are also saved. None enter scoring.
 
-## Questionnaire-independent record
+## Definition-aware record
 
 JSON is lossless; CSV is flattened for analysis.
 

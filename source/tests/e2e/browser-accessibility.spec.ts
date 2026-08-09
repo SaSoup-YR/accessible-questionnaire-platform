@@ -25,7 +25,7 @@ const requiredStateNames = [
   'SUS review screen',
   'SUS completion screen',
   'NASA-TLX pairwise comparison',
-  'UEQ-S semantic-differential item',
+  'Synthetic semantic-differential item',
   'Imported fully labelled agreement item',
 ];
 
@@ -451,21 +451,21 @@ test('NASA-TLX pairwise state', async ({ page }) => {
   await scan(page, 'NASA-TLX pairwise comparison');
 });
 
-test('UEQ-S uses unnumbered semantic-differential positions', async ({ page }) => {
+test('a synthetic semantic differential uses unnumbered response positions', async ({ page }) => {
   const { url } = configuredParticipant(
-    'user-experience-questionnaire-short',
-    'E2E-UEQS-01',
+    'custom-semantic-differential-check',
+    'E2E-SEMANTIC-01',
   );
   await page.goto(url);
-  await page.getByRole('button', { name: 'Start the 8 items' }).click();
+  await page.getByRole('button', { name: 'Start the 1 item' }).click();
 
   await expect(page.locator('.semantic-differential-grid .rating-option')).toHaveCount(7);
   await expect(page.locator('.semantic-differential-grid .rating-option-content strong')).toHaveCount(0);
   await expect(page.locator('.semantic-differential-grid input').first()).toHaveAttribute(
     'aria-label',
-    /Position 1 of 7, Obstructive/,
+    /Position 1 of 7, Rigid/,
   );
-  await scan(page, 'UEQ-S semantic-differential item');
+  await scan(page, 'Synthetic semantic-differential item');
 });
 
 test('imported German scale suppresses duplicate endpoints but keeps middle labels', async ({ page }) => {

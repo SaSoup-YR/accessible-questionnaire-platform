@@ -1,7 +1,8 @@
 # Third-party questionnaire content
 
 The software implementation and the questionnaire instruments are separate works.
-Do not assume that a future repository software licence grants permission to copy,
+The repository's MIT licence covers original AQP software and project documentation;
+it does not grant permission to copy,
 modify or redistribute an instrument.
 
 ## NASA Task Load Index
@@ -28,16 +29,23 @@ The official site makes materials available free of charge, but its legal notice
 that duplication, processing or distribution beyond copyright law requires prior
 written consent. No explicit public source-repository licence has been identified.
 
-**A new public release must not contain the UEQ-S item text unless written permission
-covers the repository and deployed application. Otherwise remove the built-in UEQ-S
-definition before release.**
+No written permission covering a public source repository and deployed application
+has been recorded. The current release candidate therefore removes the built-in
+UEQ-S item text and public catalogue entry. AQP's generic semantic-differential
+renderer is tested using original synthetic wording. The existing specialised
+scoring extension is exercised only with synthetic test items and is not advertised
+as a distributable built-in instrument.
+
+UEQ-S content may be restored only after written permission is archived and the
+release is rebuilt, re-evaluated and re-reviewed.
 
 - Materials: https://www.ueq-online.org/
 - Legal notice: https://www.ueq-online.org/Legal.html
 - Project release decision: [`docs/UEQS-RELEASE-GATE.md`](docs/UEQS-RELEASE-GATE.md)
 
-## Repository licence status
+## Repository licence scope
 
-No repository-wide software licence has yet been selected. The repository owner must
-choose the software licence only after deciding how third-party instrument files will
-be excluded from or covered by it.
+Original AQP code and original project documentation are offered under the MIT
+licence in `LICENSE`. Third-party questionnaire wording remains governed by its own
+terms and the applicable law. Adding a file to this repository does not relicense
+that content.

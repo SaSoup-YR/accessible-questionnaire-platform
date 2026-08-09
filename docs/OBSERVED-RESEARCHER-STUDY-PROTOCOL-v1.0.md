@@ -54,6 +54,24 @@ template version and browser before the first session. No system update is allow
 mid-study unless a safety-critical defect stops the study; if that occurs, freeze
 the affected data and document the protocol deviation.
 
+### Activation record — complete before recruitment
+
+The protocol is fully specified but must not be activated until this record is
+complete and attached to the preregistration:
+
+| Gate | Required frozen value |
+| --- | --- |
+| Ethics | Approval ID, approving route/committee, written amendment decision and approved document versions |
+| AQP | Immutable release tag, commit SHA, deployment URL and passing evidence-report links |
+| Qualtrics | Survey/template ID, `AQP-SUS-COMPARISON-v1` export checksum, account type and verified starting-state screenshot |
+| Preregistration | Public/approved record URL or DOI, timestamp, random seed and concealed AQ/QA allocation list |
+| Recruitment | Approved invitation location, eligibility route and recruitment start/end dates |
+| Recording/storage | Approved meeting/recording tool, exact RDSS project path, transfer check and deletion log location |
+| Coding | Named UCL second coder, role, confidentiality/access approval and two recordings selected before outcome review |
+
+An empty gate means the study remains planned work. Do not infer a value from the
+software repository or replace it with a placeholder during a live session.
+
 ### Condition A — AQP ready-made SUS route
 
 Starting state: the researcher opens the AQP researcher landing page with no
@@ -299,8 +317,10 @@ whether it was made before or after seeing outcomes.
 
 ## Recording, privacy and retention amendment text
 
-With explicit consent, the study window and session audio will be recorded solely
-to code task time, assists and errors. A recording on a researcher's own computer
+Active consent to study-window and session-audio recording is required to take part,
+because the recording is needed to code task time, assists and errors and to permit
+the independent coding check. A person may decline without penalty; they will not
+then take part in this recorded study. A recording on a researcher's own computer
 may incidentally capture identifying material such as account name, browser tabs,
 notifications, file paths or voices. Participants will be asked to close unrelated
 windows and mute notifications, but this risk cannot be eliminated.

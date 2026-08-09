@@ -13,7 +13,7 @@ means that you do not consent to that part. Ask any question before signing.
 | 1 | I have read and understood Participant Information Sheet v1.0 dated 9 August 2026. I have had time to consider it and ask questions. | |
 | 2 | I confirm that I am 18 or over, have not developed AQP and have set up no more than two online questionnaire studies before. | |
 | 3 | I understand that taking part is voluntary. I may take a break or stop without giving a reason or losing any benefit. | |
-| 4 | I agree to the study window and session audio being recorded to measure task time, assists and errors. I understand that I may pause or stop recording. | |
+| 4 | I understand that study-window and session-audio recording is required to take part. I agree to recording for task time, assists, errors and independent coding. I may ask to pause or stop; if I do not agree, I will not take part and there is no penalty. | |
 | 5 | I understand that a recording on my own computer might accidentally show identifying material such as an account name, browser tab, notification or file path. I will close unrelated windows and avoid opening private material or real participant data. | |
 | 6 | I understand that recordings will be stored in restricted UCL research storage and may be accessed only by Yurui Wang, Dr Mark Colley and one named UCL second coder. | |
 | 7 | I understand that one checking task may contain a small intentional difference whose location is not disclosed in advance, and that it will be explained immediately afterwards. | |

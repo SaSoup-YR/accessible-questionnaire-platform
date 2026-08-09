@@ -67,12 +67,15 @@ participant's mistake.
 
 ## Recording and incidental identifying material
 
-With separate active consent, the study window and session audio are recorded
-only to code task time, assists and errors. A recording made on a participant's
+Active consent to study-window and session-audio recording is required for this
+observed study because the recording is needed to code task time, assists and errors
+and for the planned independent check. A person may decline without penalty; they
+will then not take part in the recorded study. A recording made on a participant's
 own computer may accidentally capture identifying material such as an account
 name, browser tabs, notifications, file paths or voice. Before recording, the
 participant is asked to close unrelated windows and mute notifications. They may
-pause or stop recording at any time, but the risk cannot be eliminated entirely.
+ask to pause the task and recording or stop the session at any time, but the privacy
+risk cannot be eliminated entirely.
 
 The study does not intentionally record the participant's camera. The
 participant is asked not to open real participant data or unrelated private
@@ -116,16 +119,26 @@ ethics confirmation and updated participant materials.
 
 ## Documents submitted with the amendment
 
+- Official UCL Amendment Form/subform for the route named in the original approval.
+- Updated original ethics application with changes marked, if required by that route.
 - Observed Researcher Study Protocol v1.0.
 - Participant Information Sheet v1.0.
 - Consent Form v1.0.
+- Recruitment Invitation v1.0.
+- Eligibility Screener v1.0.
+- Researcher Task Sheet v1.0.
+- Observer Coding Sheet v1.0.
+- Debrief Sheet v1.0.
+- Second-Coder Agreement Sheet v1.0.
 - Project Risk Assessment v1.0.
 - GDPR-compliant subject receipt form v1.0, marked not in use because no payment
   is planned.
 
 ## Submission gate
 
-Before sending the amendment, enter the existing ethics approval ID and the name
-and UCL role of the independent second coder. Confirm that the supervisor has an
-active RDSS project folder for the recordings. No other bracketed study fields
-remain in the participant-facing documents.
+Before sending the amendment: identify the original approval route; enter the
+approval ID and approved project title; attach the approval letter and required
+official amendment form/subform; name the independent second coder and UCL role;
+record the recruitment route; and confirm the exact active RDSS project folder,
+access list and retention periods against the original approval. Obtain the
+required declarations/signatures. Do not replace these gates with guessed values.

@@ -398,8 +398,13 @@ describe('quantified technical evaluation', () => {
     for (const testCase of truth.cases) {
       expect(await runFidelityCase(testCase), testCase.caseId).toEqual([]);
     }
-    expect(fidelityResults).toHaveLength(9);
-    expect(fidelityResults.reduce((total, result) => total + result.itemsChecked, 0)).toBe(39);
+    expect(fidelityResults).toHaveLength(truth.cases.length);
+    expect(fidelityResults.reduce((total, result) => total + result.itemsChecked, 0)).toBe(
+      truth.cases.reduce(
+        (total, testCase) => total + (truth.itemSets[testCase.itemSet]?.length ?? 0),
+        0,
+      ),
+    );
   });
 
   it('refuses or documents every pre-specified adversarial input without silent alteration', () => {

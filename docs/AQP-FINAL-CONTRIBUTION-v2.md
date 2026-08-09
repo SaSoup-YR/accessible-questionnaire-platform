@@ -1,7 +1,7 @@
 # AQP final contribution statement v2
 
 Status: aligned with evaluation matrix v6 and the technical-evaluation route
-Date: 2026-08-09
+Date: 2026-08-10
 
 ## Locked contribution statement
 
@@ -31,7 +31,8 @@ Authenticated study authorship would require a signature or trusted registry and
 is outside the present contribution.
 
 The contribution is the checkable chain, not merely that the software stores a
-JSON object. It can be falsified by a hash mismatch that does not block, a missing
+JSON object. It can be falsified by a missing or mismatched Version 4 fingerprint
+that does not block loading/submission/restoration, a missing
 definition/scorer/response, or an export that cannot reproduce the result.
 
 ### 2. Quantified fail-closed fidelity boundary
@@ -77,17 +78,21 @@ not that disabled users benefit or that AQP is generally more accessible.
 
 ## Current quantified evidence
 
-Local pre-release results are:
+Current correction-candidate results are:
 
-- 9 built-in/import cases, 39 items and 288 independent-oracle field comparisons,
+- 8 distributable built-in/import cases, 31 items and 234 independent-oracle field comparisons,
   with 0 mismatches;
 - 12 adversarial inputs, with 0 silently altered;
-- 9/9 result exports and 39/39 item responses reconstructed, with 0 mismatches; and
-- 194 unit/component/technical tests passing.
+- 8/8 result exports and 31/31 item responses reconstructed, with 0 mismatches; and
+- missing-fingerprint and stale-fingerprint configuration tampering rejected.
 
-Only results reproduced by CI and tied to the deployed commit may appear as final
-release evidence. Rendered-browser CI and manual assistive-technology results must
-be reported separately with their own status.
+The previous PR revision also produced 60/60 rendered-browser state/profile scans
+with 0 reported axe violations, incomplete checks, overflow failures or critical
+target-size failures. Because this correction candidate changes the distributable
+instrument inventory and browser fixture, those browser and technical counts require
+a fresh CI run. Only results tied to final main and the deployed commit may appear as
+final release evidence. The manual assistive-technology audit remains NT and must be
+reported separately.
 
 ## Dissertation claim boundary
 

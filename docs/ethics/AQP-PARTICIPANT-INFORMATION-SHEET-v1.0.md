@@ -50,15 +50,18 @@ your mistake.
 
 ## Will the session be recorded?
 
-Yes, if you give separate consent. We will record the study window and session
-audio so we can measure time, assists and errors. We do not intend to record your
-camera.
+Yes. Screen and session-audio recording is required for this study because it is
+needed to measure time, assists and errors and to let a second researcher check the
+coding. You do not have to agree. If you do not agree to recording, you will not
+take part in this recorded study, and there is no penalty. We do not intend to
+record your camera.
 
 Because the session runs on your own computer, a recording could accidentally
 show an account name, browser tab, notification, file path or other identifying
 detail. Before recording, please close unrelated windows and mute notifications.
-Do not open private files or real participant data. You may pause or stop the
-recording at any time.
+Do not open private files or real participant data. You may ask to pause the task
+and recording, or stop the session, at any time. A paused section is not used as
+task-performance data.
 
 ## What data will be collected?
 

@@ -1,16 +1,16 @@
-# Questionnaire-independent platform architecture
+# Bounded definition-driven platform architecture
 
 Prototype: Accessible Questionnaire Platform Version 0.8
 
-Decision date: 27 July 2026
+Revised decision date: 10 August 2026
 
 ## Decision
 
-Version 0.8 is questionnaire-independent within an explicitly supported
-declarative profile. It is not described as supporting every questionnaire.
+Version 0.8 implements bounded definition-driven reuse within an explicitly
+supported declarative profile. It is **not questionnaire-independent**.
 
 The same conductor, participant runner, support controls, interruption recovery,
-input-route provenance, result schema and Qualtrics bridge run four built-in
+input-route provenance, result schema and Qualtrics bridge run three distributable built-in
 instruments and a bounded researcher-supplied definition profile:
 
 | Definition | Response structure | Scoring strategy | Pairwise stage |
@@ -18,21 +18,21 @@ instruments and a bounded researcher-supplied definition profile:
 | Weighted NASA-TLX | six integer ratings, 0–100 in steps of 5 | weighted pairwise NASA-TLX | all 15 pairs |
 | Raw TLX | six integer ratings, 0–100 in steps of 5 | unweighted arithmetic mean | none |
 | System Usability Scale | ten integer ratings, 1–5 | standard alternating SUS rule | none |
-| UEQ-S | eight 1–7 semantic differentials | centred overall, pragmatic and hedonic means | none |
 | Researcher supplied | 1–20 integer single-choice items sharing one scale | reviewed mean or sum with optional reverse scoring | none |
 
 This contrast is deliberate. Re-running the same six-item workflow under another
 title would not demonstrate separation. Raw TLX isolates a scoring/workflow change
 while preserving the six TLX items. SUS changes item count, agreement range,
-navigation length and scoring rule. UEQ-S adds semantic-differential anchors and
-two reported subscales. All three omit the pairwise stage.
+navigation length and scoring rule. An original synthetic fixture exercises the
+semantic-differential renderer without becoming a distributable questionnaire.
+Raw TLX and SUS omit the pairwise stage.
 
 ## Why the scope is constrained
 
 The phrase any questionnaire is not technically or methodologically defensible.
 Questionnaires may use free text, dates, multiple selection, ranking, matrices,
 branching, adaptive logic, semantic differentials, repeated groups, multimedia,
-clinical safety rules and proprietary scoring. A runner that supports four bounded
+clinical safety rules and proprietary scoring. A runner that supports these bounded
 rating profiles cannot claim those capabilities.
 
 Version 0.8 therefore supports:
@@ -129,13 +129,11 @@ Measurement-adjacent supports require a definition capability:
 - NASA-TLX currently permits optional simpler explanations and experimental
   smiley landmarks. Their use is logged separately and no psychometric-equivalence
   claim is made.
-- SUS and UEQ-S disable both. A facial-valence scale is not an agreement or semantic-
-  differential scale, and changing validated item wording would require separate
-  evidence.
-- SUS preserves its two official agreement endpoints and UEQ-S preserves each
-  official adjective pair. Intermediate positions remain numeric and deliberately
-  receive no invented verbal category. Screen-reader names and confirmed voice
-  proposals add the official endpoint only to the two endpoint values.
+- SUS disables both. A facial-valence scale is not an agreement scale, and changing
+  validated item wording would require separate evidence.
+- The runner preserves declared endpoint/response labels and does not invent labels
+  for intermediate positions. Screen-reader names and confirmed voice proposals use
+  only the value and complete visible label declared by the active definition.
 
 ### 4. Scoring layer
 
@@ -148,8 +146,10 @@ strategy but cannot provide code.
   comparisons;
 - `sus-standard-v1` requires the ordered `sus01`–`sus10` items, a 1–5 agreement scale and no
   pairs.
-- `ueqs-standard-v1` requires the ordered `ueqs01`–`ueqs08` semantic
-  differentials, a 1–7 scale and no pairs.
+- `ueqs-standard-v1` remains a reviewed executable extension requiring the ordered
+  `ueqs01`–`ueqs08` item identifiers, a 1–7 semantic-differential scale and no
+  pairs. It is tested with original synthetic item wording; no public built-in
+  UEQ-S definition is shipped in this candidate.
 - `mean-v1` averages original or explicitly reverse-scored values across 1–20
   items.
 - `sum-v1` sums the same adjusted values and derives its declared range from
@@ -206,15 +206,16 @@ the architectural separation, not a claim of feature parity.
 
 Automated evidence must show more than successful rendering:
 
-1. all four built-in JSON definitions pass structural and semantic validation;
+1. all three distributable built-in JSON definitions pass structural and semantic validation;
 2. executable fields and incompatible scorer/scale combinations are rejected;
 3. weighted NASA-TLX produces 21 rating values, 15 pairs and its weighted result;
 4. Raw TLX produces the same six ratings, no pair page and their unweighted mean;
 5. SUS produces five response values, no pair page and its alternating result;
-6. UEQ-S produces seven response positions, no pair page, centred item values and
-   pragmatic/hedonic means;
+6. an original synthetic fixture produces seven visually unnumbered response
+   positions, while a separate synthetic eight-item definition exercises the
+   retained centred scorer without third-party wording;
 7. the same conductor creates a participant configuration for every registered instrument;
-8. the same participant element completes all four workflows;
+8. the same participant element completes all registered workflows;
 9. the same Version 4 record and Qualtrics bridge preserve every result;
 10. accessibility checks run on representative workflows.
 11. a conductor can create a new questionnaire without editing source, and its
@@ -245,7 +246,8 @@ properties. Those are evaluation questions.
 
 ## Extension path
 
-Raw TLX and UEQ-S exercise the registered extension path. The no-code builder
+Raw TLX, SUS and the synthetic semantic-differential fixtures exercise the
+registered extension boundaries. The no-code builder
 adds a second path for questionnaires that fit the bounded rating profile.
 Qualtrics QSF and LimeSurvey LSS/LSG/LSQ adapters add a third path into that same
 profile; they do not broaden the runner or scorer by inference. A new response

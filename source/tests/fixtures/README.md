@@ -21,6 +21,9 @@ using short, synthetic questionnaire content.
   LimeSurvey's `Question` document type. It checks that one ordered rating item
   can be reviewed without pretending that its original survey or group context
   is present.
+- `custom-semantic-differential-check.questionnaire.json` is original synthetic
+  content used only to exercise seven visually unnumbered positions and accessible
+  endpoint context without redistributing a third-party questionnaire.
 
 The fixtures contain no participant responses, credentials, tokens or
 identifying information.

@@ -6,7 +6,6 @@
   "references": {
     "nasaTlx": "Hart, S. G. (1986), Task Load Index materials, NASA Technical Reports Server 20000021488.",
     "sus": "Brooke, J. (1996), SUS: A quick and dirty usability scale.",
-    "ueqs": "Schrepp, Hinderks and Thomaschewski (2017), Design and Evaluation of a Short Version of the User Experience Questionnaire; official UEQ-S materials at ueq-online.org.",
     "imports": "Expected values were transcribed independently from the sanitised native QSF/LSS/LSG/LSQ fixtures named in each case."
   },
   "responseSets": {
@@ -37,10 +36,6 @@
         "4": "4",
         "5": "Strongly agree"
       }
-    },
-    "ueqs-1-7": {
-      "storedValues": [1, 2, 3, 4, 5, 6, 7],
-      "labels": { "1": "$LOW", "7": "$HIGH" }
     }
   },
   "itemSets": {
@@ -100,16 +95,6 @@
       { "id": "sus09", "name": "Item 9", "text": "I felt very confident using the system.", "low": "Strongly disagree", "high": "Strongly agree" },
       { "id": "sus10", "name": "Item 10", "text": "I needed to learn a lot of things before I could get going with this system.", "low": "Strongly disagree", "high": "Strongly agree" }
     ],
-    "ueqs": [
-      { "id": "ueqs01", "name": "Obstructive or supportive", "text": "Choose the position that best describes the product.", "low": "Obstructive", "high": "Supportive" },
-      { "id": "ueqs02", "name": "Complicated or easy", "text": "Choose the position that best describes the product.", "low": "Complicated", "high": "Easy" },
-      { "id": "ueqs03", "name": "Inefficient or efficient", "text": "Choose the position that best describes the product.", "low": "Inefficient", "high": "Efficient" },
-      { "id": "ueqs04", "name": "Confusing or clear", "text": "Choose the position that best describes the product.", "low": "Confusing", "high": "Clear" },
-      { "id": "ueqs05", "name": "Boring or exciting", "text": "Choose the position that best describes the product.", "low": "Boring", "high": "Exciting" },
-      { "id": "ueqs06", "name": "Not interesting or interesting", "text": "Choose the position that best describes the product.", "low": "Not interesting", "high": "Interesting" },
-      { "id": "ueqs07", "name": "Conventional or inventive", "text": "Choose the position that best describes the product.", "low": "Conventional", "high": "Inventive" },
-      { "id": "ueqs08", "name": "Usual or leading edge", "text": "Choose the position that best describes the product.", "low": "Usual", "high": "Leading edge" }
-    ],
     "qsf": [
       { "id": "item-01", "name": "CLARITY", "text": "The instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" },
       { "id": "item-02", "name": "CONTROL", "text": "I felt in control.", "low": "Strongly disagree", "high": "Strongly agree" }
@@ -157,15 +142,6 @@
       "responseSet": "sus-1-5",
       "required": true,
       "scoring": { "rule": "sus-standard-v1", "scoreName": "SUS score", "ratings": [5, 1, 4, 2, 3, 5, 1, 4, 2, 3], "expectedScore": 50 }
-    },
-    {
-      "caseId": "built-in-ueqs",
-      "kind": "built-in",
-      "instrumentId": "user-experience-questionnaire-short",
-      "itemSet": "ueqs",
-      "responseSet": "ueqs-1-7",
-      "required": true,
-      "scoring": { "rule": "ueqs-standard-v1", "scoreName": "UEQ-S overall score", "ratings": [7, 7, 7, 7, 1, 1, 1, 1], "expectedScore": 0 }
     },
     {
       "caseId": "import-qsf",

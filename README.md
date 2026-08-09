@@ -41,12 +41,14 @@ with a small allowlist of meaning-preserving speech-service variants.
 Verification on the post-`rc.4` wizard candidate:
 
 - a clean lock-file installation completed;
-- 19 unit/component/technical-evaluation test files passed, containing 194 passing tests;
+- the current correction candidate passes 20 unit/component/technical-evaluation
+  and release-policy test files containing 198 tests locally; fresh CI
+  reproduction is pending;
 - 12 representative axe structural accessibility scans passed;
-- the independent-oracle round trip checked 9 built-in/import cases, 39 items and
-  288 fields with 0 mismatches;
-- the 12-row adversarial battery recorded 0 silently altered inputs, and 9/9
-  result exports reconstructed 39/39 item responses with 0 mismatches;
+- the current independent-oracle round trip checked 8 distributable built-in/import
+  cases, 31 items and 234 fields with 0 mismatches;
+- the 12-row adversarial battery recorded 0 silently altered inputs, and 8/8
+  result exports reconstructed 31/31 item responses with 0 mismatches;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
   safe conversion for every compatible group/scale selection, and completed the
@@ -188,8 +190,12 @@ review; the definition file alone is not sufficient.
 | Weighted NASA-TLX | 6 magnitude items, 0–100 in steps of 5 | ratings plus 15 pairs | weighted NASA-TLX |
 | Raw TLX | 6 magnitude items, 0–100 in steps of 5 | ratings only | unweighted arithmetic mean |
 | System Usability Scale | 10 agreement items, 1–5 | ratings only | standard alternating SUS |
-| UEQ-S | 8 semantic differentials, 1–7 | ratings only | centred overall, pragmatic and hedonic means; **blocked from a new public release until redistribution permission is confirmed** |
 | Researcher supplied or safely imported | 1–20 integer single-choice items on one shared 0–100-bounded scale | ratings only | researcher-confirmed mean or sum, with optional reverse-scored items |
+
+UEQ-S is deliberately absent from this release candidate: no explicit permission
+covering public repository redistribution and deployment was established. Generic
+semantic-differential rendering remains supported and is tested with original
+synthetic wording; see the [release decision](docs/UEQS-RELEASE-GATE.md).
 
 For both NASA-TLX definitions, the valid displayed and spoken values are
 `0, 5, 10, …, 100`. Values such as `1`, `2`, `3` or `92` are deliberately
@@ -201,8 +207,8 @@ Built-in questionnaire files are discovered from
 [`source/instruments/*.questionnaire.json`](source/instruments/). JSON Schema plus
 runtime semantic checks reject unsupported fields and incompatible scorers. Scoring
 functions are an executable allowlist; JSON cannot inject code.
-Questionnaire item text is not automatically covered by a future software licence;
-see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and the UEQ-S release gate.
+The MIT software licence does not relicense third-party questionnaire item text;
+see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and the UEQ-S release decision.
 
 On the conductor page, the researcher first chooses one of two setup routes:
 
@@ -376,7 +382,7 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Manual AT audit v1.0 | [`docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md`](docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md) |
 | Planned observed researcher study | [`docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md`](docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md) |
 | Ethics amendment submission summary | [`docs/ethics/AQP-ETHICS-AMENDMENT-SUMMARY-v1.0.md`](docs/ethics/AQP-ETHICS-AMENDMENT-SUMMARY-v1.0.md) |
-| Participant information, consent, risk and data-receipt templates | [`docs/ethics/`](docs/ethics/) |
+| Participant information, consent, recruitment, screening, task, observer, debrief, second-coder, risk and data-receipt templates | [`docs/ethics/`](docs/ethics/) |
 
 Historical Version 0.5 and 0.6 standalone files remain in Git history but were
 removed from the active tree to avoid ambiguous test candidates.
@@ -397,7 +403,8 @@ npm run build:release
 ```
 
 Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS,
-UEQ-S, researcher-supplied and QSF/LSS/LSG/LSQ-imported end-to-end workflows,
+researcher-supplied and QSF/LSS/LSG/LSQ-imported end-to-end workflows, an original
+synthetic semantic-differential rendering fixture,
 configuration and Version 0.7 saved-progress migration, imported-matrix row
 rendering, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result

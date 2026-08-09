@@ -860,14 +860,6 @@ describe('instrument-independent questionnaire workflow', () => {
       expectedStrategy: 'nasa-tlx-raw-v1',
       expectedTitle: 'Raw NASA Task Load Index',
     },
-    {
-      instrumentId: 'user-experience-questionnaire-short',
-      participantCode: 'P-UEQS-01',
-      values: [7, 7, 7, 7, 1, 1, 1, 1],
-      expectedScore: 0,
-      expectedStrategy: 'ueqs-standard-v1',
-      expectedTitle: 'User Experience Questionnaire Short',
-    },
   ])(
     'runs $instrumentId through the same rating-only participant workflow',
     async ({
@@ -915,13 +907,6 @@ describe('instrument-independent questionnaire workflow', () => {
         .find((button) => button.textContent?.includes(`Start the ${values.length} items`))!
         .click();
       await component.updateComplete;
-
-      if (instrumentId === 'user-experience-questionnaire-short') {
-        expect(component.querySelector('.semantic-differential-grid')).not.toBeNull();
-        expect(component.querySelector('.rating-option-content strong')).toBeNull();
-        expect(component.querySelector<HTMLInputElement>('.rating-option input[value="1"]')
-          ?.getAttribute('aria-label')).toContain('Position 1 of 7, Obstructive');
-      }
 
       for (let index = 0; index < values.length; index += 1) {
         component.querySelector<HTMLInputElement>(

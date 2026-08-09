@@ -346,23 +346,6 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
   );
 }
 
-function normaliseHashlessStudyConfigV4(value: unknown): StudyConfig | null {
-  if (!value || typeof value !== 'object') return null;
-  const config = value as Record<string, unknown>;
-  if (config.schemaVersion !== 4 || config.definitionHash !== undefined) return null;
-  if (typeof config.instrumentId !== 'string') return null;
-  const definition = resolveQuestionnaireDefinition(
-    config.instrumentId,
-    config.questionnaireDefinition,
-  );
-  if (!definition) return null;
-  const migrated = {
-    ...config,
-    definitionHash: questionnaireDefinitionHash(definition),
-  };
-  return isStudyConfig(migrated) ? migrated : null;
-}
-
 interface LegacyStudyConfigV3 {
   schemaVersion: 3;
   prototypeVersion: '0.7.0';
@@ -399,8 +382,6 @@ function isLegacyStudyConfigV3(value: unknown): value is LegacyStudyConfigV3 {
 
 export function normaliseStudyConfig(value: unknown): StudyConfig | null {
   if (isStudyConfig(value)) return value;
-  const currentMigration = normaliseHashlessStudyConfigV4(value);
-  if (currentMigration) return currentMigration;
   if (!isLegacyStudyConfigV3(value)) return null;
   const definition = getQuestionnaireDefinition(DEFAULT_QUESTIONNAIRE_ID)!;
   return {
@@ -787,39 +768,9 @@ export function loadCompletedResults(storage: StorageLike = localStorage): Study
     if (raw) {
       const parsed = JSON.parse(raw) as unknown;
       if (Array.isArray(parsed)) {
-        current = parsed.flatMap((candidate) => {
-          if (isStudyResultRecord(candidate)) return [candidate];
-          if (!candidate || typeof candidate !== 'object') return [];
-          const record = candidate as Record<string, unknown>;
-          const instrument = record.instrument as Record<string, unknown> | undefined;
-          if (!instrument || record.schemaVersion !== 4) return [];
-          const definition = instrument.definition
-            ? (() => {
-                try {
-                  return validateQuestionnaireDefinition(instrument.definition);
-                } catch {
-                  return null;
-                }
-              })()
-            : getQuestionnaireDefinition(typeof instrument.id === 'string' ? instrument.id : '');
-          if (!definition) return [];
-          const definitionHash = questionnaireDefinitionHash(definition);
-          if (
-            instrument.definitionHash !== undefined &&
-            instrument.definitionHash !== definitionHash
-          ) {
-            return [];
-          }
-          const migrated = {
-            ...record,
-            instrument: {
-              ...instrument,
-              definitionHash,
-              definition: structuredClone(definition),
-            },
-          };
-          return isStudyResultRecord(migrated) ? [migrated] : [];
-        });
+        current = parsed.filter(
+          (candidate): candidate is StudyResultRecord => isStudyResultRecord(candidate),
+        );
       }
     }
   } catch {

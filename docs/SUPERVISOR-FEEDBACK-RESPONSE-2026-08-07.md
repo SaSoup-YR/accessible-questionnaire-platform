@@ -20,10 +20,10 @@ analysis plans.
 | Review showed only item number and numeric value. | Every review card now shows the item statement, stored value with its visible answer label, and input route, with a direct **Change this answer** control. Saving or cancelling returns focus to that review item. | Component regression plus rendered-browser review/edit/focus test. |
 | Participant code caused an initial validation failure. | The conductor creates a pseudonymous code per link. The participant page prefills it from the URL and keeps the field editable as a fallback. A link code overrides stale tab-scoped data and becomes the recovery key for that run. | Prefill, edit, isolation and no-initial-error regression tests. |
 | Intro and repeated audio guidance obscured the task. | The intro now contains the task essentials only. Audio help is in one collapsed support disclosure and is not repeated above every item. | Rendered word-count and critical-state checks. |
-| The result could not reveal which exact definition was displayed. | A stable SHA-256 definition fingerprint is placed in the configuration, generated package, result record, CSV and Qualtrics fields. A stale fingerprint is rejected at link loading and again at submission; the latter remains on Review and focuses an explicit error. | Determinism, altered-definition rejection, submission-blocking UI regression and fresh Qualtrics row. |
+| The result could not reveal which exact definition was displayed. | A stable SHA-256 definition fingerprint is placed in the configuration, generated package, result record, CSV and Qualtrics fields. A missing or stale Version 4 fingerprint is rejected at link loading; the definition is recomputed again at submission, where a mismatch remains on Review and focuses an explicit error. | Determinism, stale-hash and missing-hash altered-definition rejection, submission-blocking UI regression and fresh Qualtrics row. |
 | jsdom axe tests were described too strongly. | Playwright plus `@axe-core/playwright` serves the production build and scans rendered Chromium states, uses actual Tab traversal, checks computed focus styling, target dimensions and 320-CSS-pixel overflow, and publishes axe JSON/HTML plus Playwright HTML evidence in CI. jsdom tests are retained only as structural regression tests. | CI must run the browser suite; zero axe findings are not a WCAG or usability claim. |
-| UEQ-S presentation used visible 1-7 numbers. | Semantic-differential positions are visually unnumbered; accessible names identify position and endpoints; stored values remain 1-7 and score contributions remain -3 to +3. | Rendered-browser test. Public redistribution remains blocked pending permission; see `UEQS-RELEASE-GATE.md`. |
-| A response endpoint was repeated in the instruction, anchor row and endpoint option. | The legend now gives only the action. A fully labelled imported scale shows each label once, inside its option, and suppresses the duplicate anchor row. Unlabelled scales show their endpoints once above numeric options. Complete option names remain available to assistive technology. | Component regression plus rendered-browser check at desktop and 320 CSS pixels. |
+| UEQ-S presentation used visible 1-7 numbers. | The generic semantic-differential renderer now uses visually unnumbered positions and complete accessible position/endpoint names. Because public redistribution permission was not established, the UEQ-S item text and built-in catalogue entry were removed from this release; the renderer and retained centred scorer are tested with original synthetic content. | Repository-content search, release inventory check and rendered-browser synthetic fixture. See `UEQS-RELEASE-GATE.md`. |
+| A response endpoint was repeated in the instruction, anchor row and endpoint option. | The endpoint remains in the fieldset legend as the announced scale context; the visual anchor row remains `aria-hidden`; an endpoint option suppresses only its duplicate visible label when it is identical to that anchor. Middle option labels remain visible and remain in complete accessible control names. | Five-point German component regression plus rendered-browser check at desktop and 320 CSS pixels. |
 | Plain-language support was inconsistent. | Built-in scored instruments now retain sourced item statements. Plain language is used for interface instructions and errors. A researcher may supply clearly separated supplemental help in a custom definition; that definition receives a distinct fingerprint and its use is logged. | Definition/support-gate tests and the documented boundary below. |
 
 The definition fingerprint is an integrity identifier, not a signature. It lets a
@@ -75,12 +75,12 @@ must be separately redesigned and preregistered.
 
 The candidate must not be tagged or deployed as a new evidence release until:
 
-1. rendered Chromium CI passes and publishes its report;
+1. rendered Chromium CI passes and publishes its report for the current correction candidate;
 2. a fresh synthetic UCL Qualtrics row contains the correct definition fingerprint,
    values, score and provenance for bridge `0.8.8-q8`;
-3. UEQ-S item-text redistribution permission is obtained in writing or UEQ-S is
-   removed from the public release; and
-4. a repository licence is chosen by the repository owner, `CITATION.cff` is checked,
+3. the release inventory confirms that UEQ-S item text and its public built-in entry
+   remain absent unless written permission is archived; and
+4. the repository owner confirms the proposed MIT licence scope, `CITATION.cff` is checked,
    and the exact release is archived.
 
 ## Evaluation literature used for this correction

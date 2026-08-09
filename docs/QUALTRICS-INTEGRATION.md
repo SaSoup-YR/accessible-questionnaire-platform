@@ -228,8 +228,9 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    - ten 1–5 ratings;
    - empty pair responses;
    - the expected alternating SUS score.
-5. Repeat with Raw TLX and UEQ-S. Confirm their instrument IDs, empty pair data and
-   the expected unweighted or subscale score details.
+5. Repeat with Raw TLX. Confirm its instrument ID, empty pair data and expected
+   unweighted score details. UEQ-S is not present in this public candidate because
+   redistribution permission has not been established.
 6. Open View Response and an individual PDF. Confirm that the blank interactive
    iframe is replaced by the saved instrument, score and response summary.
 
@@ -263,9 +264,9 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
     alternative and confirm that it remains an explicit proposal rather than an
     automatic answer. In SUS, confirm that the exact official endpoint labels
     `Strongly disagree` and `Strongly agree` propose 1 and 5, while `Agree` and
-    `Neutral` are not inferred. In UEQ-S, confirm both endpoints for at least one
-    item and confirm that the official endpoint `Not interesting` proposes 1 without
-    accepting a conflicting phrase such as `Not interesting or interesting`.
+    `Neutral` are not inferred. With the original synthetic semantic-differential
+    fixture, confirm that each complete visible endpoint is accepted, a phrase naming
+    both endpoints is rejected, and confirmation is still required.
 14. Delete synthetic rows and local backups if the approved plan requires a clean
     dataset.
 

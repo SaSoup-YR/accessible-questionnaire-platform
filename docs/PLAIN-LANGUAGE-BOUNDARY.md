@@ -24,8 +24,8 @@ preserves its measurement properties. The platform therefore separates interface
 language from instrument content and gives a researcher an explicit, traceable route
 for approved supplemental help.
 
-This replaces the earlier inconsistent position in which NASA-TLX included
-author-written simplifications while SUS and UEQ-S did not.
+This replaces the earlier inconsistent position in which one built-in instrument
+included author-written simplifications while other sourced instruments did not.
 
 ## Sources
 

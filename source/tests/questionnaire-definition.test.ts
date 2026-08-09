@@ -9,26 +9,21 @@ import {
 import { scoreQuestionnaire, type Ratings } from '../src/scoring';
 
 describe('declarative questionnaire definitions', () => {
-  it('validates four structurally different built-in instruments', () => {
+  it('validates the three distributable built-in instruments', () => {
     expect(builtInQuestionnaires.map(({ id }) => id)).toEqual([
       'nasa-tlx-raw',
       'nasa-tlx-weighted',
       'system-usability-scale',
-      'user-experience-questionnaire-short',
     ]);
     const weighted = getQuestionnaireDefinition('nasa-tlx-weighted')!;
     const raw = getQuestionnaireDefinition('nasa-tlx-raw')!;
     const sus = getQuestionnaireDefinition('system-usability-scale')!;
-    const ueqs = getQuestionnaireDefinition('user-experience-questionnaire-short')!;
     expect(buildRatingValues(weighted)).toHaveLength(21);
     expect(buildQuestionnairePairs(weighted)).toHaveLength(15);
     expect(buildRatingValues(raw)).toHaveLength(21);
     expect(buildQuestionnairePairs(raw)).toEqual([]);
     expect(buildRatingValues(sus)).toEqual([1, 2, 3, 4, 5]);
     expect(buildQuestionnairePairs(sus)).toEqual([]);
-    expect(buildRatingValues(ueqs)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(buildQuestionnairePairs(ueqs)).toEqual([]);
-    expect(ueqs.scale.type).toBe('semantic-differential');
   });
 
   it('rejects executable or scorer-incompatible definitions', () => {
@@ -73,8 +68,35 @@ describe('declarative questionnaire definitions', () => {
     expect(result.details.kind).toBe('raw-mean');
   });
 
-  it('calculates UEQ-S overall, pragmatic and hedonic scores on the centred scale', () => {
-    const ueqs = getQuestionnaireDefinition('user-experience-questionnaire-short')!;
+  it('keeps the centred eight-item scorer executable without redistributing third-party wording', () => {
+    const ueqs = validateQuestionnaireDefinition({
+      schemaVersion: 1,
+      language: 'en-GB',
+      id: 'synthetic-centred-eight-item-check',
+      version: '1.0.0',
+      name: 'Synthetic centred scorer check',
+      shortName: 'SCS',
+      description: 'Original synthetic content for exercising the registered centred scorer.',
+      introPrompt: 'Choose one position for each synthetic pair.',
+      officialContentNotice: 'Synthetic test content; no third-party item wording.',
+      source: { label: 'AQP test suite' },
+      scale: { type: 'semantic-differential', minimum: 1, maximum: 7, step: 1 },
+      items: Array.from({ length: 8 }, (_, index) => ({
+        id: `ueqs${String(index + 1).padStart(2, '0')}`,
+        name: `Synthetic pair ${index + 1}`,
+        prompt: 'Choose one position.',
+        shortMeaning: 'Synthetic semantic-differential item.',
+        lowAnchor: `Left ${index + 1}`,
+        highAnchor: `Right ${index + 1}`,
+      })),
+      scoring: {
+        strategy: 'ueqs-standard-v1',
+        scoreName: 'Synthetic centred score',
+        minimum: -3,
+        maximum: 3,
+      },
+      supports: { simplerExplanations: false, smileyLandmarks: false },
+    });
     const ratings = Object.fromEntries(
       ueqs.items.map((item, index) => [item.id, index < 4 ? 7 : 1]),
     ) as Ratings;

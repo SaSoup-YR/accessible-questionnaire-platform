@@ -26,19 +26,24 @@ content was transcribed against the named instrument sources; native import
 expectations were transcribed from the committed QSF/LSS/LSG/LSQ source fixtures
 before running the import and rendering pipeline.
 
-The frozen inventory contains all four built-in instruments and every supported
+The revised inventory contains all three distributable built-in instruments and every supported
 native import fixture in the repository:
 
 | Case class | Cases | Items |
 | --- | ---: | ---: |
 | NASA-TLX weighted and raw | 2 | 12 |
 | SUS | 1 | 10 |
-| UEQ-S | 1 | 8 |
 | QSF | 1 | 2 |
 | LSS (legacy and current) | 2 | 4 |
 | LSG | 1 | 2 |
 | LSQ | 1 | 1 |
-| **Total** | **9** | **39** |
+| **Total** | **8** | **31** |
+
+UEQ-S is not part of this release inventory because no explicit permission covering
+public source redistribution and deployment was established. Its item text and
+built-in catalogue entry were removed. Generic semantic-differential rendering is
+tested separately with original synthetic wording and is not counted as an
+instrument-fidelity case.
 
 ### Procedure
 
@@ -61,7 +66,7 @@ gate is **0 mismatches in every case**. One silent mismatch fails the release.
 
 ### Current local result
 
-The uncommitted local build produced 9 cases, 39 items, 288 field comparisons and
+The correction-candidate local build produced 8 cases, 31 items, 234 field comparisons and
 0 mismatches. These numbers become citable only when reproduced by CI and tied to
 the deployed commit.
 
@@ -112,7 +117,10 @@ The questionnaire definition is canonicalised by recursively sorting object keys
 while preserving array order, then hashed with SHA-256. The same `sha256:` value is
 stored in the study configuration and result record. The participant runner
 recomputes the hash when loading the configuration and again before submission.
-A mismatch blocks the route and must not create a success record.
+A missing or mismatched Version 4 fingerprint blocks configuration loading,
+submission and completed-result restoration and must not create or restore a
+success record. Legacy Version 3 migration remains explicit and instrument-bounded;
+there is no hashless Version 4 migration.
 
 The hash is an internal-consistency fingerprint, not a digital signature. The
 configuration fragment is unsigned, so this test detects a stale or altered
@@ -123,7 +131,7 @@ explicitly and is not counted as cryptographic authenticity.
 
 ### Reconstruction procedure
 
-For each of the nine fidelity cases, discard the original study configuration and
+For each of the eight fidelity cases, discard the original study configuration and
 source fixture after creating the export. From the result export alone:
 
 1. validate the result schema;
@@ -140,7 +148,7 @@ on a later repository lookup is not reconstruction from the export alone.
 
 ### Current local result
 
-The local run reconstructed 9/9 exports and 39/39 item responses with
+The local run reconstructed 8/8 exports and 31/31 item responses with
 0 mismatches. CI must reproduce the result for the release commit.
 
 ## E4. Rendered-browser WCAG regression in CI
@@ -162,7 +170,7 @@ Required states:
 8. review;
 9. completion;
 10. NASA-TLX pairwise comparison;
-11. UEQ-S semantic-differential item; and
+11. synthetic semantic-differential item; and
 12. imported fully labelled German item.
 
 Required profiles per state:

@@ -1,19 +1,24 @@
-# UEQ-S presentation and redistribution release gate
+# UEQ-S redistribution decision
+
+Status: **closed for this release by removing the item text and built-in entry**
+Decision date: 10 August 2026
 
 ## Presentation correction
 
-The official UEQ-S layout uses adjective pairs with seven unnumbered response
-positions. Its analysis centres raw positions to -3 through +3. The current candidate
-therefore:
+Before removal, the candidate corrected its semantic-differential renderer so that
+seven response positions were visually unnumbered and accessible names retained the
+endpoint context. That generic renderer remains in AQP and is now regression-tested
+with original synthetic endpoint wording.
 
 - shows seven visually unnumbered positions between the two adjectives;
 - gives each position an accessible name that includes its ordinal position and both
   endpoints;
 - stores raw positions 1 through 7 for provenance; and
-- records centred -3 through +3 contributions in the score details.
+- preserves declared stored values in the result details.
 
-This is a rendering correction. It is not evidence that one-item-per-screen UEQ-S is
-psychometrically equivalent to the published presentation.
+The specialised centred scorer remains executable code and is tested only against
+original synthetic content. It is not presented as a bundled UEQ-S instrument, and
+this test is not psychometric-equivalence evidence.
 
 ## Redistribution decision
 
@@ -21,12 +26,15 @@ The UEQ site says its materials are free of charge, but its legal notice says th
 duplication, processing or distribution beyond copyright law requires prior written
 consent. No explicit repository redistribution licence was found.
 
-**Release rule:** do not tag or deploy a new public release containing the UEQ-S item
-text until the UEQ Team supplies written permission that covers a public source-code
-repository and deployed web application. If permission is not received before the
-release deadline, remove UEQ-S item text and the built-in UEQ-S option from that
-release. The semantic-differential UI can still be tested with synthetic adjective
-pairs.
+**Implemented release rule:** the built-in UEQ-S definition, exact item wording,
+source-of-truth row and participant-catalogue option are absent from this candidate.
+Release synchronisation fails if the removed public-definition filename is
+reintroduced, preventing an accidental Pages build from silently restoring it. The
+semantic-differential UI is covered by an original synthetic fixture.
+
+Restoration requires all of the following: written permission covering the public
+repository and deployed application; an archived permission record; a reviewed
+definition; regenerated fidelity/browser evidence; and a new immutable release.
 
 Contact listed by the UEQ Team: `info@ueq-online.org`.
 

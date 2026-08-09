@@ -225,6 +225,23 @@ describe('study configuration', () => {
       .replace(/\//g, '_')
       .replace(/=+$/g, '');
     expect(decodeStudyConfig(tamperedEncoded)).toBeNull();
+
+    const hashlessTamperedJson = JSON.stringify({
+      ...customConfig,
+      questionnaireDefinition: alteredDefinition,
+      definitionHash: undefined,
+    });
+    const hashlessTamperedBytes = new TextEncoder().encode(hashlessTamperedJson);
+    let hashlessTamperedBinary = '';
+    hashlessTamperedBytes.forEach((byte) => {
+      hashlessTamperedBinary += String.fromCharCode(byte);
+    });
+    const hashlessTamperedEncoded = btoa(hashlessTamperedBinary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+    expect(decodeStudyConfig(hashlessTamperedEncoded)).toBeNull();
+
     expect(() => createStudyConfig({
       ...customConfig,
       questionnaireDefinition: {
@@ -232,6 +249,11 @@ describe('study configuration', () => {
         id: 'custom-different',
       },
     })).toThrow(/supported questionnaire/i);
+  });
+
+  it('rejects a Version 4 configuration when its required definition fingerprint is missing', () => {
+    const hashlessConfig = { ...config(), definitionHash: undefined };
+    expect(normaliseStudyConfig(hashlessConfig)).toBeNull();
   });
 });
 
@@ -345,6 +367,25 @@ describe('completed result records', () => {
   it('rejects a record whose definition fingerprint no longer matches the configured instrument', () => {
     const altered = record();
     altered.instrument.definitionHash = `sha256:${'0'.repeat(64)}`;
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('rejects a Version 4 record when its definition fingerprint is missing', () => {
+    const altered = record();
+    delete (altered.instrument as Partial<typeof altered.instrument>).definitionHash;
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('does not bless a changed Version 4 definition when its fingerprint is deleted', () => {
+    const altered = record();
+    altered.instrument.definition = {
+      ...altered.instrument.definition,
+      items: altered.instrument.definition.items.map((item, index) =>
+        index === 0 ? { ...item, prompt: `${item.prompt} Altered.` } : item),
+    };
+    delete (altered.instrument as Partial<typeof altered.instrument>).definitionHash;
     localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
     expect(loadCompletedResults()).toEqual([]);
   });

@@ -8,10 +8,17 @@ const customGermanDefinition = JSON.parse(readFileSync(
   resolve(process.cwd(), 'tests/fixtures/custom-german-agreement-check.questionnaire.json'),
   'utf8',
 )) as QuestionnaireDefinition;
+const customSemanticDefinition = JSON.parse(readFileSync(
+  resolve(process.cwd(), 'tests/fixtures/custom-semantic-differential-check.questionnaire.json'),
+  'utf8',
+)) as QuestionnaireDefinition;
 
 const definitions = [
   { instrumentId: 'system-usability-scale' },
-  { instrumentId: 'user-experience-questionnaire-short' },
+  {
+    instrumentId: customSemanticDefinition.id,
+    questionnaireDefinition: customSemanticDefinition,
+  },
   {
     instrumentId: customGermanDefinition.id,
     questionnaireDefinition: customGermanDefinition,
