@@ -763,7 +763,7 @@ export class AccessibleNasaTlx extends LitElement {
   private renderReadAloudControl() {
     const available = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     return html`
-      <div class="quick-support audio-guidance" aria-label="Built-in audio guidance">
+      <div class="quick-support audio-guidance" role="group" aria-label="Built-in audio guidance">
         <div>
           <strong>Built-in audio guidance (produces sound)</strong>
           <p>
@@ -795,7 +795,7 @@ export class AccessibleNasaTlx extends LitElement {
   private renderCompletionReadAloudControl() {
     const available = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     return html`
-      <div class="quick-support audio-guidance completion-audio" aria-label="Result audio guidance">
+      <div class="quick-support audio-guidance completion-audio" role="group" aria-label="Result audio guidance">
         <button
           class="secondary-button large-answer-button"
           type="button"

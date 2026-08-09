@@ -245,7 +245,7 @@ import{r as J,s as Y,a as h,t as Z,i as ae,g as B,D as $,v,b as re,c as oe,d as 
         </label>
       </fieldset>
     `}renderReadAloudControl(){const e="speechSynthesis"in window&&"SpeechSynthesisUtterance"in window;return r`
-      <div class="quick-support audio-guidance" aria-label="Built-in audio guidance">
+      <div class="quick-support audio-guidance" role="group" aria-label="Built-in audio guidance">
         <div>
           <strong>Built-in audio guidance (produces sound)</strong>
           <p>
@@ -268,7 +268,7 @@ import{r as J,s as Y,a as h,t as Z,i as ae,g as B,D as $,v,b as re,c as oe,d as 
         </small>
       </div>
     `}renderCompletionReadAloudControl(){const e="speechSynthesis"in window&&"SpeechSynthesisUtterance"in window;return r`
-      <div class="quick-support audio-guidance completion-audio" aria-label="Result audio guidance">
+      <div class="quick-support audio-guidance completion-audio" role="group" aria-label="Result audio guidance">
         <button
           class="secondary-button large-answer-button"
           type="button"
