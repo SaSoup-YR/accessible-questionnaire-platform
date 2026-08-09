@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://sasoup-yr.github.io/accessible-nasa-tlx-demo/questionnaires/questionnaire-definition.schema.json",
+  "$id": "https://sasoup-yr.github.io/accessible-questionnaire-platform/questionnaires/questionnaire-definition.schema.json",
   "title": "Accessible questionnaire platform definition",
   "type": "object",
   "additionalProperties": false,

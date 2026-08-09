@@ -836,6 +836,27 @@ figcaption {
   hyphens: auto;
 }
 
+.semantic-differential-grid {
+  grid-template-columns: repeat(7, minmax(2.75rem, 1fr));
+}
+
+.fully-labelled-rating-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.semantic-position-dot {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.rating-option:has(input:checked) .semantic-position-dot {
+  box-shadow: inset 0 0 0 0.28rem #fff;
+  background: var(--selected-border);
+}
+
 .rating-fieldset legend,
 .rating-anchors span {
   overflow-wrap: anywhere;
@@ -1006,20 +1027,35 @@ button:disabled {
 }
 
 .review-ratings div {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.45fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
   background: #f2f5f8;
 }
 
+.review-rating-card:focus {
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
+}
+
 .review-ratings dt {
-  font-weight: 700;
+  display: grid;
+  gap: 0.4rem;
 }
 
 .review-ratings dd {
   margin: 0;
   display: grid;
+  gap: 0.4rem;
   justify-items: end;
+  text-align: right;
+}
+
+.review-ratings dd .secondary-button {
+  margin-top: 0.35rem;
 }
 
 .score {
@@ -1603,6 +1639,24 @@ pre {
 
   .review-list {
     columns: 1;
+  }
+
+  .review-ratings div {
+    grid-template-columns: 1fr;
+  }
+
+  .review-ratings dd {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .semantic-differential-grid {
+    grid-template-columns: repeat(7, minmax(2rem, 1fr));
+    gap: 0.35rem;
+  }
+
+  .fully-labelled-rating-grid {
+    grid-template-columns: 1fr;
   }
 
   .button-row > * {

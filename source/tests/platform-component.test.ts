@@ -39,6 +39,69 @@ afterEach(() => {
 });
 
 describe('instrument-independent questionnaire workflow', () => {
+  it('suppresses only duplicated German endpoint labels and preserves middle labels', async () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'de';
+    draft.name = 'German agreement check';
+    draft.shortName = 'GAC';
+    draft.items = [createCustomItemDraft({
+      name: 'Item 1',
+      prompt: 'Ich hatte das Gefühl, nur Bilder zu sehen.',
+      lowAnchor: 'trifft gar nicht zu',
+      highAnchor: 'trifft völlig zu',
+      responseLabels: {
+        1: 'trifft gar nicht zu',
+        2: 'trifft eher nicht zu',
+        3: 'teils/teils',
+        4: 'trifft eher zu',
+        5: 'trifft völlig zu',
+      },
+    })];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'GERMAN-ENDPOINT-01',
+      studyTitle: 'German endpoint regression',
+      taskLabel: 'using the test interface',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: false,
+        participantAdjustmentPolicy: 'locked',
+        voiceInputAvailable: false,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config, 'P-DE-01'));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 1 item'))!
+      .click();
+    await component.updateComplete;
+
+    const fieldset = component.querySelector('.rating-fieldset')!;
+    const anchors = fieldset.querySelector('.rating-anchors')!;
+    expect(anchors.getAttribute('aria-hidden')).toBe('true');
+    expect(fieldset.querySelector('legend')?.textContent).toContain('trifft gar nicht zu');
+    expect(anchors.textContent).toContain('trifft gar nicht zu');
+    expect(
+      [...fieldset.querySelectorAll('.rating-option small')].map((label) => label.textContent?.trim()),
+    ).toEqual(['trifft eher nicht zu', 'teils/teils', 'trifft eher zu']);
+    expect(fieldset.querySelector<HTMLInputElement>('input[value="1"]')?.getAttribute('aria-label'))
+      .toContain('trifft gar nicht zu');
+    expect(fieldset.textContent?.match(/trifft gar nicht zu/g)).toHaveLength(2);
+    expect(fieldset.textContent?.match(/teils\/teils/g)).toHaveLength(1);
+  });
+
   it('runs a researcher-supplied definition through the same participant, result and recovery model', async () => {
     const draft = createCustomQuestionnaireDraft();
     draft.name = 'Work Assistance Inventory';
@@ -585,8 +648,18 @@ describe('instrument-independent questionnaire workflow', () => {
     );
     expect(component.querySelector('.rating-fieldset')).not.toBeNull();
     expect(component.querySelector('.rating-fieldset legend')?.textContent).toContain(
-      'Strongly disagree',
+      'Choose one answer',
     );
+    expect(component.querySelector('.rating-anchors')?.getAttribute('aria-hidden')).toBe('true');
+    expect(component.querySelector('.fully-labelled-rating-grid')).not.toBeNull();
+    expect(component.querySelector('.rating-fieldset')?.textContent?.match(/Strongly disagree/g))
+      .toHaveLength(2);
+    expect(component.querySelector('.rating-option input[value="1"]')
+      ?.closest('.rating-option')?.querySelector('small')).toBeNull();
+    expect(component.querySelector('.rating-option input[value="3"]')
+      ?.closest('.rating-option')?.querySelector('small')?.textContent).toBe(
+        'Neither agree nor disagree',
+      );
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input')).toHaveLength(5);
     expect(
       component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
@@ -678,6 +751,11 @@ describe('instrument-independent questionnaire workflow', () => {
       component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
         ?.getAttribute('aria-label'),
     ).toBe('5, Strongly agree, for Item 1');
+    expect(component.querySelector('.rating-fieldset legend')?.textContent).toContain(
+      'Choose one answer',
+    );
+    expect(component.querySelector('.rating-fieldset')?.textContent?.match(/Strongly disagree/g))
+      .toHaveLength(2);
     expect(component.textContent).toContain('exact visible endpoint label');
     expect(component.textContent).not.toContain('Neutral');
 
@@ -695,13 +773,43 @@ describe('instrument-independent questionnaire workflow', () => {
 
     expect(component.querySelector('.choice-fieldset')).toBeNull();
     expect(component.textContent).not.toContain('Pairwise comparisons');
+    const reviewCards = component.querySelectorAll<HTMLElement>('.review-rating-card');
+    expect(reviewCards).toHaveLength(10);
+    expect(reviewCards[0].getAttribute('role')).toBe('group');
+    expect(reviewCards[0].getAttribute('aria-labelledby')).toBe('review-item-label-1');
+    expect(reviewCards[0].getAttribute('aria-describedby')).toBe('review-item-answer-1');
+    expect(reviewCards[0].textContent).toContain(
+      'I think that I would like to use this system frequently.',
+    );
+    expect(reviewCards[0].textContent).toContain('Selected answer: 5 — Strongly agree');
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change answer for Item 2."]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('#rating-heading')?.textContent).toContain('Item 2');
+    component.querySelector<HTMLInputElement>('.rating-option input[value="2"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Save change and return to review'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Selected answer: 2');
+    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change answer for Item 2."]')!.click();
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Cancel change and return to review'))!
+      .click();
+    await component.updateComplete;
+    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit responses'))!
       .click();
     await component.updateComplete;
 
     expect(component.textContent).toContain('SUS score');
-    expect(component.textContent).toContain('100.00');
+    expect(component.textContent).toContain('97.50');
     expect(completed).not.toBeNull();
     expect((completed as unknown as StudyResultRecord).instrument.id).toBe('system-usability-scale');
     expect((completed as unknown as StudyResultRecord).result.strategy).toBe('sus-standard-v1');
@@ -728,6 +836,7 @@ describe('instrument-independent questionnaire workflow', () => {
       ['Study ID', 'SUS-PLATFORM-02'],
       ['Study title', 'System evaluation'],
       ['Task label', 'using the route-planning system'],
+      ['Pseudonymous participant code for this link', 'P-SUS-02'],
     ]) {
       const input = byLabel(label);
       input.value = value;
@@ -806,6 +915,13 @@ describe('instrument-independent questionnaire workflow', () => {
         .find((button) => button.textContent?.includes(`Start the ${values.length} items`))!
         .click();
       await component.updateComplete;
+
+      if (instrumentId === 'user-experience-questionnaire-short') {
+        expect(component.querySelector('.semantic-differential-grid')).not.toBeNull();
+        expect(component.querySelector('.rating-option-content strong')).toBeNull();
+        expect(component.querySelector<HTMLInputElement>('.rating-option input[value="1"]')
+          ?.getAttribute('aria-label')).toContain('Position 1 of 7, Obstructive');
+      }
 
       for (let index = 0; index < values.length; index += 1) {
         component.querySelector<HTMLInputElement>(

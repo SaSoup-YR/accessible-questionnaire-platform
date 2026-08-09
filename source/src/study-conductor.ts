@@ -39,6 +39,7 @@ import {
   normaliseStudyConfig,
   normaliseHttpsOrigin,
   resultsToCsv,
+  validParticipantCode,
   type AnswerMode,
   type ParticipantAdjustmentPolicy,
   type StudyCollectionConfig,
@@ -150,6 +151,7 @@ export class StudyConductorApp extends LitElement {
   @state() private studyId = '';
   @state() private studyTitle = '';
   @state() private taskLabel = '';
+  @state() private participantCode = '';
   @state() private showScoreToParticipant = false;
   @state() private showSimpleLanguage = false;
   @state() private answerMode: AnswerMode = 'standard';
@@ -273,6 +275,7 @@ export class StudyConductorApp extends LitElement {
         studyId: this.studyId,
         studyTitle: this.studyTitle,
         taskLabel: this.taskLabel,
+        participantCode: this.participantCode,
         showScoreToParticipant: this.showScoreToParticipant,
         showSimpleLanguage: this.showSimpleLanguage,
         answerMode: this.answerMode,
@@ -331,6 +334,9 @@ export class StudyConductorApp extends LitElement {
       if (typeof saved.studyId === 'string') this.studyId = saved.studyId;
       if (typeof saved.studyTitle === 'string') this.studyTitle = saved.studyTitle;
       if (typeof saved.taskLabel === 'string') this.taskLabel = saved.taskLabel;
+      if (typeof saved.participantCode === 'string' && validParticipantCode(saved.participantCode)) {
+        this.participantCode = saved.participantCode;
+      }
       this.showScoreToParticipant = saved.showScoreToParticipant === true;
       this.showSimpleLanguage = saved.showSimpleLanguage === true;
       this.answerMode = saved.answerMode === 'smiley' ? 'smiley' : 'standard';
@@ -566,12 +572,14 @@ export class StudyConductorApp extends LitElement {
                   : nothing}
                 <p class="support-boundary">
                   Participant identity is kept separate from study setup. Give each participant a
-                  pseudonymous code such as <strong>P-001</strong>; they enter that code on the participant page.
+                  pseudonymous code such as <strong>P-001</strong>. The generated participant-specific link fills it in;
+                  the participant may correct it if needed.
                 </p>
               `
             : html`<p class="support-boundary">
                 These fields identify the questionnaire configuration, not the participant. Give each participant a separate
-                pseudonymous code such as P-001; they enter that code on the participant page.
+                pseudonymous code such as P-001. The generated participant-specific link fills it in;
+                the participant may correct it if needed.
               </p>`}
           <div class="form-grid" ?hidden=${this.wizardStep.key !== 'source' || this.setupRoute !== 'ready-made'}>
             <label class="full-width">
@@ -692,9 +700,12 @@ export class StudyConductorApp extends LitElement {
             ${this.definition.supports.simplerExplanations
               ? this.booleanOption('Show simpler explanations from the start', this.showSimpleLanguage, (value) => { this.showSimpleLanguage = value; })
               : html`<aside class="boundary-note">
-                  <strong>Simpler item text is unavailable for ${this.definition.shortName}</strong>
+                  <strong>No alternate item wording is included for ${this.definition.shortName}</strong>
                   <p>
-                    This definition preserves the validated item statements without adding unvalidated rewording.
+                    Built-in instruments keep their sourced item text. Controls and instructions use plain language,
+                    but AQP does not present an author-written paraphrase as an equivalent standard item.
+                    If your protocol approves supplemental explanations, import a custom definition containing them;
+                    its distinct definition hash and any use of the support will be recorded.
                   </p>
                 </aside>`}
             ${this.booleanOption('Use large text from the start', this.largeText, (value) => { this.largeText = value; })}
@@ -840,6 +851,23 @@ export class StudyConductorApp extends LitElement {
         >
           <h2 id="link-heading">Review and generate the participant configuration</h2>
           ${this.renderConfigurationSummary()}
+          <label class="participant-code-field" for="conductor-participant-code">
+            <strong>Pseudonymous participant code for this link</strong>
+            <span>
+              Use the code from the approved participant list, not a name or email. The generated link fills it in;
+              the participant may correct it if needed.
+            </span>
+            <input
+              id="conductor-participant-code"
+              type="text"
+              maxlength="32"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="P-001"
+              .value=${this.participantCode}
+              @input=${this.updateParticipantCode}
+            />
+          </label>
           <div class="button-row compact">
             <button class="primary-button large-answer-button" type="button" @click=${this.generateParticipantLink}>Generate link</button>
             <label class="file-button secondary-button">
@@ -885,27 +913,43 @@ export class StudyConductorApp extends LitElement {
                   <div><dt>Questionnaire</dt><dd>${this.definition.name} · ${this.definition.version}</dd></div>
                   <div><dt>Study ID</dt><dd>${this.generatedConfig.studyId}</dd></div>
                   <div><dt>Configuration ID</dt><dd>${this.generatedConfig.configId}</dd></div>
+                  <div><dt>Definition SHA-256</dt><dd class="aqp-long-value">${this.generatedConfig.definitionHash}</dd></div>
+                  <div>
+                    <dt>Participant code in this link</dt>
+                    <dd>${validParticipantCode(this.participantCode) ? this.participantCode : 'Not set'}</dd>
+                  </div>
                   <div><dt>Created</dt><dd>${this.generatedConfig.createdAt}</dd></div>
                 </dl>
-                <label for="participant-link">
-                  <strong>${this.generatedConfig.collection.mode === 'qualtrics'
-                    ? 'Participant page URL for the Qualtrics iframe'
-                    : 'Participant link'}</strong>
-                </label>
-                <textarea id="participant-link" readonly rows="5" .value=${this.participantUrl}></textarea>
-                <div class="button-row compact">
-                  <button class="secondary-button" type="button" @click=${this.copyParticipantLink}>Copy link</button>
-                  ${this.generatedConfig.collection.mode === 'local'
-                    ? html`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`
-                    : nothing}
-                  <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
-                </div>
-                ${this.generatedConfig.collection.mode === 'qualtrics'
-                  ? this.renderQualtricsSetup()
-                  : nothing}
+                ${validParticipantCode(this.participantCode) && this.participantUrl
+                  ? html`
+                      <label for="participant-link">
+                        <strong>${this.generatedConfig.collection.mode === 'qualtrics'
+                          ? 'Participant page URL for the Qualtrics iframe'
+                          : 'Participant link'}</strong>
+                      </label>
+                      <textarea id="participant-link" readonly rows="5" .value=${this.participantUrl}></textarea>
+                      <div class="button-row compact">
+                        <button class="secondary-button" type="button" @click=${this.copyParticipantLink}>Copy link</button>
+                        ${this.generatedConfig.collection.mode === 'local'
+                          ? html`<a class="secondary-button link-button" href=${this.participantUrl} target="_blank" rel="noopener">Open participant page</a>`
+                          : nothing}
+                        <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
+                      </div>
+                      ${this.generatedConfig.collection.mode === 'qualtrics'
+                        ? this.renderQualtricsSetup()
+                        : nothing}
+                    `
+                  : html`
+                      <p class="field-error" role="status">
+                        Enter the approved pseudonymous participant code above. No participant link is available until the code is valid.
+                      </p>
+                      <div class="button-row compact">
+                        <button class="secondary-button" type="button" @click=${this.downloadConfiguration}>Download configuration JSON</button>
+                      </div>
+                    `}
                 <p class="support-boundary">
-                  Save the JSON with the study protocol. Importing it later regenerates the same configuration ID and participant link.
-                  The link contains settings only; it contains no participant name, email or answer.
+                  Save the JSON with the study protocol. It preserves the configuration ID and definition hash. After importing it,
+                  enter the approved pseudonymous code to regenerate a participant-specific link. The link contains no name, email or answer.
                 </p>
               </div>`
             : nothing}
@@ -2364,8 +2408,30 @@ export class StudyConductorApp extends LitElement {
     this.gazeInputAvailable = config.support.gazeInputAvailable;
     this.collectionMode = config.collection.mode;
     this.qualtricsSurveyUrl = config.collection.mode === 'qualtrics' ? config.collection.parentOrigin : '';
-    this.participantUrl = buildParticipantUrl(new URL('index.html', window.location.href).toString(), config);
+    this.participantUrl = validParticipantCode(this.participantCode)
+      ? buildParticipantUrl(
+          new URL('index.html', window.location.href).toString(),
+          config,
+          this.participantCode,
+        )
+      : '';
   }
+
+  private updateParticipantCode = (event: Event) => {
+    this.participantCode = (event.currentTarget as HTMLInputElement).value.trim();
+    if (!this.generatedConfig) return;
+    const codeIsValid = validParticipantCode(this.participantCode);
+    this.participantUrl = codeIsValid
+      ? buildParticipantUrl(
+          new URL('index.html', window.location.href).toString(),
+          this.generatedConfig,
+          this.participantCode,
+        )
+      : '';
+    this.configurationConfirmation = codeIsValid
+      ? `Participant-specific link ready for code ${this.participantCode}.`
+      : '';
+  };
 
   private qualtricsIframeHtml() {
     if (!this.generatedConfig || this.generatedConfig.collection.mode !== 'qualtrics') return '';
@@ -2561,6 +2627,9 @@ export class StudyConductorApp extends LitElement {
     this.errorMessage = '';
     this.configurationConfirmation = '';
     try {
+      if (!validParticipantCode(this.participantCode)) {
+        throw new Error('Enter a pseudonymous participant code using 1–32 letters, numbers, hyphens or underscores.');
+      }
       const config = createStudyConfig({
         instrumentId: this.instrumentId,
         ...(this.customDefinition?.id === this.instrumentId
@@ -2625,8 +2694,9 @@ export class StudyConductorApp extends LitElement {
         throw new Error('This is not a valid Version 0.8 study configuration or supported Version 0.7 configuration.');
       }
       this.useConfiguration(config);
-      this.configurationConfirmation =
-        'Configuration imported and participant link reproduced. The configuration ID and files are shown below.';
+      this.configurationConfirmation = validParticipantCode(this.participantCode)
+        ? 'Configuration imported and participant-specific link reproduced. The configuration ID and files are shown below.'
+        : 'Configuration imported. Enter the approved pseudonymous participant code to create a participant-specific link.';
       this.message = '';
       this.revealConductorResult('#configuration-ready-panel');
     } catch (error) {

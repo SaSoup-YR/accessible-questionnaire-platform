@@ -104,6 +104,6 @@ npm test
 npm run build:release
 ```
 
-Current local result: 18 test files and 181 tests passed, including 12 axe
+Current local result: 18 test files and 189 tests passed, including 12 axe
 structural scans; TypeScript, production, standalone and release synchronisation
 builds passed.

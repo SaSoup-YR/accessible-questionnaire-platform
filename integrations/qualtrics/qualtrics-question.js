@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.7-q7';
+  var bridgeBuild = '0.8.8-q8';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -304,6 +304,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setField('AQP_INSTRUMENT_ID', record.instrument.id);
     setField('AQP_INSTRUMENT_NAME', record.instrument.name);
     setField('AQP_INSTRUMENT_VERSION', record.instrument.version);
+    setField('AQP_DEFINITION_HASH', record.instrument.definitionHash);
     setField('AQP_SCORING_STRATEGY', record.instrument.scoringStrategy);
     setField('AQP_SCORE_NAME', record.result.scoreName);
     setField('AQP_PRIMARY_SCORE', Number(record.result.primaryScore).toFixed(2));

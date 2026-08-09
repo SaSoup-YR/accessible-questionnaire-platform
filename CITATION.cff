@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, please cite the archived release and exact Git commit."
+title: "Accessible Questionnaire Platform"
+type: software
+authors:
+  - family-names: "Wang"
+    given-names: "Yurui"
+version: 0.8.0
+repository-code: "https://github.com/SaSoup-YR/accessible-questionnaire-platform"
+url: "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
+abstract: >-
+  A bounded research prototype for reviewed questionnaire definitions,
+  sequential administration, accessibility-oriented interaction, auditable
+  result provenance and UCL Qualtrics collection.
+keywords:
+  - accessibility
+  - questionnaires
+  - human-computer interaction
+  - provenance

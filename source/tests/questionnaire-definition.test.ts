@@ -53,6 +53,15 @@ describe('declarative questionnaire definitions', () => {
     expect(result.details.kind).toBe('sus-contributions');
   });
 
+  it('reproduces the supervisor-checked SUS score of 50', () => {
+    const sus = getQuestionnaireDefinition('system-usability-scale')!;
+    const vector = [5, 1, 4, 2, 3, 5, 1, 4, 2, 3];
+    const ratings = Object.fromEntries(
+      sus.items.map((item, index) => [item.id, vector[index]]),
+    ) as Ratings;
+    expect(scoreQuestionnaire(sus, ratings).primaryScore).toBe(50);
+  });
+
   it('calculates Raw TLX as the unweighted mean of the six ratings', () => {
     const raw = getQuestionnaireDefinition('nasa-tlx-raw')!;
     const ratings = Object.fromEntries(

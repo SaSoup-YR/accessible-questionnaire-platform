@@ -360,7 +360,7 @@ describe('approved host result sink', () => {
     )
       .trim()
       .split(/\r?\n/);
-    expect(embeddedDataFields).toHaveLength(62);
+    expect(embeddedDataFields).toHaveLength(63);
     expect(embeddedDataFields.every((field) => field.startsWith('__js_AQP_'))).toBe(true);
     const bridgeFieldNames = new Set(
       [...bridge.matchAll(/setField\('([A-Z0-9_]+)'/g)].map((match) => `__js_${match[1]}`),
@@ -601,6 +601,7 @@ describe('approved host result sink', () => {
         name: 'System Usability Scale',
         version: 'brooke-1996',
         definitionSchemaVersion: 1,
+        definitionHash: `sha256:${'a'.repeat(64)}`,
         scoringStrategy: 'sus-standard-v1',
       },
       collection: { mode: 'qualtrics' },
@@ -722,9 +723,13 @@ describe('approved host result sink', () => {
 
     expect(onlineRuntime.hideNextButton).toHaveBeenCalledOnce();
     expect(onlineRuntime.showNextButton).not.toHaveBeenCalled();
-    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledTimes(64);
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledTimes(65);
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '1');
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_INSTRUMENT_ID', 'system-usability-scale');
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith(
+      'AQP_DEFINITION_HASH',
+      expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
+    );
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_PRIMARY_SCORE', '100.00');
     expect(onlineRuntime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({

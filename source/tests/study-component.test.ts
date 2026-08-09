@@ -17,6 +17,7 @@ import {
 
 async function renderConfiguredComponent(
   participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked',
+  prefilledParticipantCode?: string,
 ) {
   const config = createStudyConfig(
     {
@@ -25,7 +26,7 @@ async function renderConfiguredComponent(
       taskLabel: 'the route-planning task',
       showScoreToParticipant: false,
       support: {
-        showSimpleLanguage: true,
+        showSimpleLanguage: false,
         answerMode: 'standard',
         largeText: true,
         audioGuidance: false,
@@ -38,7 +39,7 @@ async function renderConfiguredComponent(
     },
     { configId: 'config-study-01', createdAt: '2026-07-20T12:00:00.000Z' },
   );
-  const url = buildParticipantUrl(window.location.href, config);
+  const url = buildParticipantUrl(window.location.href, config, prefilledParticipantCode);
   window.history.replaceState({}, '', new URL(url).pathname + new URL(url).hash);
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
   document.body.append(component);
@@ -61,6 +62,8 @@ async function completeQuestionnaire(component: AccessibleNasaTlx) {
     )!.click();
     await component.updateComplete;
   }
+  expect(component.querySelector('.choice-fieldset')).not.toBeNull();
+  expect(component.querySelectorAll('.audio-guidance')).toHaveLength(0);
   for (let index = 0; index < 15; index += 1) {
     component.querySelector<HTMLInputElement>('.choice-card input')!.click();
     await component.updateComplete;
@@ -69,6 +72,8 @@ async function completeQuestionnaire(component: AccessibleNasaTlx) {
     )!.click();
     await component.updateComplete;
   }
+  expect(component.querySelector('#review-heading')).not.toBeNull();
+  expect(component.querySelectorAll('.audio-guidance')).toHaveLength(0);
 }
 
 beforeEach(() => {
@@ -241,6 +246,71 @@ describe('study-conductor and participant separation', () => {
     expect(component.querySelector('.step-label')).toBeNull();
   });
 
+  it('prefills an editable pseudonymous code from the participant-specific link', async () => {
+    const component = await renderConfiguredComponent('locked', 'P-PREFILLED-01');
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    expect(code.value).toBe('P-PREFILLED-01');
+    expect(code.readOnly).toBe(false);
+    expect(component.querySelector<HTMLDetailsElement>('.participant-support-setup')?.open).toBe(false);
+    expect(component.querySelectorAll('.audio-guidance')).toHaveLength(1);
+    expect(component.querySelector('.process-overview')).toBeNull();
+    expect(component.querySelector('.factor-reference')).toBeNull();
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('#error-summary')).toBeNull();
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 1 of 6');
+    expect(component.querySelectorAll('.audio-guidance')).toHaveLength(0);
+  });
+
+  it('treats the participant-specific link code as authoritative over stale tab data', async () => {
+    sessionStorage.setItem(
+      'accessible-questionnaire-v0.8-tab-participant:config-study-01',
+      'P-OLD-TAB-01',
+    );
+
+    const component = await renderConfiguredComponent('locked', 'P-NEW-LINK-02');
+    expect(component.querySelector<HTMLInputElement>('#participant-code')?.value)
+      .toBe('P-NEW-LINK-02');
+    expect(component.querySelector('.restored-code-note')).toBeNull();
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('#error-summary')).toBeNull();
+    expect(sessionStorage.getItem(
+      'accessible-questionnaire-v0.8-tab-participant:config-study-01',
+    )).toBe('P-NEW-LINK-02');
+  });
+
+  it('blocks submission and exposes an actionable error when the definition hash is stale', async () => {
+    const component = await renderConfiguredComponent('locked', 'P-HASH-01');
+    await completeQuestionnaire(component);
+    const currentConfig = (component as any).studyConfig;
+    (component as any).studyConfig = {
+      ...currentConfig,
+      definitionHash: `sha256:${'0'.repeat(64)}`,
+    };
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit responses'))!
+      .click();
+    await component.updateComplete;
+
+    const error = component.querySelector<HTMLElement>('#error-summary');
+    expect(error?.textContent).toContain(
+      'questionnaire definition does not match the saved study configuration',
+    );
+    expect(document.activeElement).toBe(error);
+    expect(component.querySelector('#complete-heading')).toBeNull();
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
   it('allows only presentation preferences when the conductor permits participant personalisation', async () => {
     const component = await renderConfiguredComponent('presentation-only');
     const settings = component.querySelector('.participant-support-setup .support-settings')!;
@@ -250,18 +320,16 @@ describe('study-conductor and participant separation', () => {
     expect(settings.textContent).not.toContain('Show simpler explanations');
     expect(settings.textContent).not.toContain('Smiley landmarks');
     expect(component.textContent).toContain('answer presentation and simpler-explanation setting remain fixed');
-    expect(component.querySelector('.audio-guidance-toggle')).not.toBeNull();
+    expect(settings.textContent).toContain('Read new questions and feedback aloud');
   });
 
   it('starts from prepared defaults, allows optional support choice and exports every participant change', async () => {
     const component = await renderConfiguredComponent('participant-choice');
     const settings = component.querySelector('.participant-support-setup .support-settings')!;
-    expect(settings.textContent).toContain('Show simpler explanations');
+    expect(settings.textContent).not.toContain('Show simpler explanations');
     expect(settings.textContent).toContain('Smiley landmarks');
-    expect(component.textContent).toContain('You do not need to change anything before starting');
+    expect(component.textContent).toContain('starting settings are already applied');
 
-    const simpler = settings.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
-    simpler.click();
     const smiley = [...settings.querySelectorAll<HTMLInputElement>('input[type="radio"]')]
       .find((input) => input.value === 'smiley')!;
     smiley.click();
@@ -274,11 +342,10 @@ describe('study-conductor and participant separation', () => {
     await component.updateComplete;
 
     const [stored] = loadCompletedResults();
-    expect(stored.configuration.showSimpleLanguage).toBe(true);
+    expect(stored.configuration.showSimpleLanguage).toBe(false);
     expect(stored.supportMetadata.simplerExplanationsShownAtSubmission).toBe(false);
     expect(stored.supportMetadata.answerModeAtSubmission).toBe('smiley');
     expect(stored.supportMetadata.supportChanges.map(({ setting }) => setting)).toEqual([
-      'simpler-explanations',
       'answer-mode',
     ]);
     expect(stored.supportMetadata.supportChanges.every(({ stage }) => stage === 'intro')).toBe(true);

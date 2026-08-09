@@ -1,6 +1,7 @@
 name: Verify source and generated release
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -31,6 +32,57 @@ jobs:
 
       - name: Run automated tests
         run: npm test -- --run
+
+      - name: Add quantified technical evaluation to the job summary
+        if: always()
+        run: npm run report:technical
+
+      - name: Publish quantified technical evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantified-technical-evaluation
+          path: |
+            docs/evidence/fidelity-source-of-truth.json
+            docs/evidence/technical-evaluation-report.json
+            docs/evidence/technical-evaluation-report.html
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build the production site for rendered-browser checks
+        run: npm run build
+
+      - name: Install browser engines for rendered checks
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run real-browser accessibility regression
+        run: npm run test:browser
+
+      - name: Record the cross-browser capability matrix
+        run: npm run test:browser-support
+
+      - name: Add the cross-browser matrix to the job summary
+        if: always()
+        run: npm run report:browser-support
+
+      - name: Add rendered accessibility evidence to the job summary
+        if: always()
+        run: npm run report:browser
+
+      - name: Publish rendered accessibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-accessibility-evidence
+          path: |
+            docs/evidence/axe-browser-report.json
+            docs/evidence/axe-browser-report.html
+            docs/evidence/cross-browser-support-report.json
+            docs/evidence/cross-browser-support-report.html
+            source/playwright-report
+            source/test-results
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Build production, standalone and release outputs
         run: npm run build:release
