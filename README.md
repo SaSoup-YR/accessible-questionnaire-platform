@@ -42,9 +42,12 @@ Verification on the post-`rc.4` wizard candidate:
 
 - a clean lock-file installation completed;
 - the current correction candidate passes 20 unit/component/technical-evaluation
-  and release-policy test files containing 198 tests locally; fresh CI
-  reproduction is pending;
+  and release-policy test files containing 198 tests locally and in
+  [PR CI run 31339674025](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025);
 - 12 representative axe structural accessibility scans passed;
+- the same PR run published all 60/60 required real-browser state/profile scans,
+  with 0 axe violations, incomplete results, overflow failures, target-size
+  failures or missing states;
 - the current independent-oracle round trip checked 8 distributable built-in/import
   cases, 31 items and 234 fields with 0 mismatches;
 - the 12-row adversarial battery recorded 0 silently altered inputs, and 8/8

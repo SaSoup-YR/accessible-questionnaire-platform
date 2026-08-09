@@ -86,13 +86,12 @@ Current correction-candidate results are:
 - 8/8 result exports and 31/31 item responses reconstructed, with 0 mismatches; and
 - missing-fingerprint and stale-fingerprint configuration tampering rejected.
 
-The previous PR revision also produced 60/60 rendered-browser state/profile scans
-with 0 reported axe violations, incomplete checks, overflow failures or critical
-target-size failures. Because this correction candidate changes the distributable
-instrument inventory and browser fixture, those browser and technical counts require
-a fresh CI run. Only results tied to final main and the deployed commit may appear as
-final release evidence. The manual assistive-technology audit remains NT and must be
-reported separately.
+PR CI run `31339674025` reproduced these technical counts and produced 60/60
+rendered-browser state/profile scans for the correction candidate, with 0 reported
+axe violations, incomplete checks, overflow failures, target-size failures or
+missing states. These are pull-request results, not final-main or deployed-release
+evidence. The manual assistive-technology audit remains NT and must be reported
+separately.
 
 ## Dissertation claim boundary
 
