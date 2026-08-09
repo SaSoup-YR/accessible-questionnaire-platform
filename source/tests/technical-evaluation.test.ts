@@ -260,7 +260,7 @@ async function runFidelityCase(testCase: FidelityCase) {
     await component.updateComplete;
   }
 
-  const reviewTexts = [...component.querySelectorAll('.review-rating-card dt span')]
+  const reviewTexts = [...component.querySelectorAll('.review-rating-card .review-item-prompt')]
     .map((element) => compactText(element.textContent));
   fieldComparisons += 1;
   pushComparison(mismatches, 'review.itemText', expectedItems.map(({ text }) => text), reviewTexts);

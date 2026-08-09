@@ -1026,7 +1026,7 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.review-ratings div {
+.review-rating-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.45fr);
   gap: 1rem;
@@ -1041,20 +1041,25 @@ button:disabled {
   box-shadow: 0 0 0 6px var(--focus-halo);
 }
 
-.review-ratings dt {
+.review-rating-label {
   display: grid;
   gap: 0.4rem;
+  margin: 0;
+  font-size: 1rem;
 }
 
-.review-ratings dd {
-  margin: 0;
+.review-rating-answer {
   display: grid;
   gap: 0.4rem;
   justify-items: end;
   text-align: right;
 }
 
-.review-ratings dd .secondary-button {
+.review-rating-answer p {
+  margin: 0;
+}
+
+.review-rating-answer .secondary-button {
   margin-top: 0.35rem;
 }
 
@@ -1641,18 +1646,18 @@ pre {
     columns: 1;
   }
 
-  .review-ratings div {
+  .review-rating-card {
     grid-template-columns: 1fr;
   }
 
-  .review-ratings dd {
+  .review-rating-answer {
     justify-items: start;
     text-align: left;
   }
 
   .semantic-differential-grid {
-    grid-template-columns: repeat(7, minmax(2rem, 1fr));
-    gap: 0.35rem;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25rem;
   }
 
   .fully-labelled-rating-grid {

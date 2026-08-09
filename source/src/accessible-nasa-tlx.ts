@@ -1352,10 +1352,10 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
 
         <h3>Item responses</h3>
-        <dl class="review-ratings">
+        <div class="review-ratings">
           ${this.dimensions.map(
             (dimension, index) => html`
-              <div
+              <section
                 class="review-rating-card"
                 id=${`review-item-${index + 1}`}
                 role="group"
@@ -1363,12 +1363,16 @@ export class AccessibleNasaTlx extends LitElement {
                 aria-labelledby=${`review-item-label-${index + 1}`}
                 aria-describedby=${`review-item-answer-${index + 1}`}
               >
-                <dt id=${`review-item-label-${index + 1}`}>
+                <h4 class="review-rating-label" id=${`review-item-label-${index + 1}`}>
                   <strong>${dimension.name}</strong>
-                  <span lang=${this.definition.language} dir="auto">${dimension.prompt}</span>
-                </dt>
-                <dd id=${`review-item-answer-${index + 1}`}>
-                  <strong>Selected answer: ${this.reviewRatingLabel(dimension)}</strong>
+                  <span class="review-item-prompt" lang=${this.definition.language} dir="auto">
+                    ${dimension.prompt}
+                  </span>
+                </h4>
+                <div class="review-rating-answer">
+                  <p id=${`review-item-answer-${index + 1}`}>
+                    <strong>Selected answer: ${this.reviewRatingLabel(dimension)}</strong>
+                  </p>
                   <small>Input route: ${this.ratingRouteLabel(dimension.id)}</small>
                   <button
                     class="secondary-button"
@@ -1378,11 +1382,11 @@ export class AccessibleNasaTlx extends LitElement {
                   >
                     Change this answer
                   </button>
-                </dd>
-              </div>
+                </div>
+              </section>
             `,
           )}
-        </dl>
+        </div>
 
         ${this.pairOrder.length
           ? html`<h3>Pairwise comparisons</h3>
