@@ -90,12 +90,18 @@ Current correction-candidate results are:
 - 8/8 result exports and 31/31 item responses reconstructed, with 0 mismatches; and
 - missing-fingerprint and stale-fingerprint configuration tampering rejected.
 
-The earlier passing PR revision reproduced the fidelity, refusal and
-reconstruction counts, but its 60-scan browser inventory is superseded. The
-expanded every-screen protocol requires 27 states × 5 profiles = 135 scans and
-is awaiting PR CI. Pull-request results are not final-main or deployed-release
-evidence. The manual assistive-technology audit remains NT and must be reported
-separately.
+Draft PR candidate `816e1c4` reproduced the fidelity, refusal and reconstruction
+counts in CI run
+[31377511113](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31377511113).
+The expanded every-screen protocol produced all 27 states × 5 profiles = 135
+rows, with 0 automatically detected violations, 0 overflow failures, 0 critical
+target-size failures and no missing rows. Axe returned 13 incomplete
+`color-contrast` rule results across 20 gaze-state nodes because it could not
+determine backgrounds where elements overlap. The report retains every target
+and failure summary for inspection; these are not counted as passes.
+Pull-request results are not final-main or deployed-release evidence. The manual
+assistive-technology audit and the 20 contrast determinations remain NT and must
+be reported separately.
 
 Only three built-ins are distributable in the correction candidate. UEQ-S was
 removed because written permission covering public repository redistribution and
