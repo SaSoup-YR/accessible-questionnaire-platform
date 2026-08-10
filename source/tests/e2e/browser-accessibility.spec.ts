@@ -552,7 +552,11 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   expect(storedInstrument?.definition?.items).toHaveLength(10);
   await scan(page, 'SUS completion screen');
 
-  await page.goto(url);
+  // Reload the document rather than navigating to the already-current URL.
+  // A same-URL navigation may remain on the live completion component and
+  // therefore does not exercise startup reconstruction from localStorage.
+  await page.reload();
+  await expect(page.locator('#complete-heading')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'A completed backup was found on this device' })).toBeVisible();
   await scan(page, 'SUS recovered-completion backup offer');
 });
@@ -597,7 +601,8 @@ test('Qualtrics bridge and recording recovery states are rendered explicitly', a
     remoteRecordingUnconfirmed: false,
     hostBridgeState: 'connected',
   });
-  await expect(page.getByRole('heading', { name: 'Submitting response', exact: true })).toBeVisible();
+  await expect(page.locator('#complete-heading')).toHaveText('Submitting response');
+  await expect(page.getByRole('heading', { name: 'Waiting for Qualtrics', exact: true })).toBeVisible();
   await scan(page, 'Qualtrics submission transition');
 
   await setRenderedState(page, { remoteRecordingUnconfirmed: true });

@@ -418,7 +418,7 @@ describe('study-conductor and participant separation', () => {
 
     expect(submitted).toHaveLength(1);
     expect(loadCompletedResults()).toHaveLength(1);
-    expect(component.querySelector('.save-status')?.textContent).toContain('Submitting response');
+    expect(component.querySelector('.save-status')?.textContent).toContain('Waiting for Qualtrics');
     expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');
     expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');
     expect(component.querySelector('.save-status')?.hasAttribute('role')).toBe(false);

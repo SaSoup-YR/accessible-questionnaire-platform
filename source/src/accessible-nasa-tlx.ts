@@ -1487,7 +1487,7 @@ export class AccessibleNasaTlx extends LitElement {
               </div>`
             : this.completionSavedByHost
             ? html`<div class="save-status">
-                <h3>Submitting response</h3>
+                <h3>Waiting for Qualtrics</h3>
                 <p>This page will continue automatically. No action is needed.</p>
                 ${this.completionSavedLocally
                   ? nothing
