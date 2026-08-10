@@ -74,6 +74,7 @@ if (!existsSync(reportPath)) {
 
     const rows = scans.map((scan) => `| ${[
       tableCell(scan.state ?? 'Unnamed state'),
+      tableCell(scan.stateSetup ?? 'not recorded'),
       tableCell(scan.profile ?? 'Unspecified profile'),
       tableCell(scan.zoomPercent ?? 100),
       tableCell(scan.path ?? ''),
@@ -88,6 +89,7 @@ if (!existsSync(reportPath)) {
 
     const htmlRows = scans.map((scan) => `<tr>${[
       scan.state ?? 'Unnamed state',
+      scan.stateSetup ?? 'not recorded',
       scan.profile ?? 'Unspecified profile',
       scan.zoomPercent ?? 100,
       scan.path ?? '',
@@ -137,7 +139,7 @@ if (!existsSync(reportPath)) {
       <dt>Missing state-profile combinations</dt><dd>${htmlCell(missingRequiredStateProfiles.join(', ') || 'None')}</dd>
     </dl>
     <table>
-      <thead><tr><th>State</th><th>Profile</th><th>Zoom %</th><th>Path</th><th>Observed scale</th><th>Violations</th><th>Incomplete</th><th>Overflow px</th><th>Targets tested</th><th>Min width</th><th>Min height</th><th>Undersized</th></tr></thead>
+      <thead><tr><th>State</th><th>State setup</th><th>Profile</th><th>Zoom %</th><th>Path</th><th>Observed scale</th><th>Violations</th><th>Incomplete</th><th>Overflow px</th><th>Targets tested</th><th>Min width</th><th>Min height</th><th>Undersized</th></tr></thead>
       <tbody>${htmlRows}</tbody>
     </table>
     <p class="boundary"><strong>Interpretation boundary:</strong> ${htmlCell(report.interpretation ?? 'Automated results are bounded technical evidence, not a complete accessibility claim.')}</p>
@@ -160,8 +162,8 @@ if (!existsSync(reportPath)) {
       `- Missing required states: **${missingRequiredStates.length}**`,
       `- Missing state-profile combinations: **${missingRequiredStateProfiles.length}**`,
       '',
-      '| State | Profile | Zoom % | Path | Observed scale | Violations | Incomplete | Overflow (px) | Min target width | Min target height | Undersized |',
-      '| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+      '| State | State setup | Profile | Zoom % | Path | Observed scale | Violations | Incomplete | Overflow (px) | Min target width | Min target height | Undersized |',
+      '| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
       ...rows,
       '',
       `> ${tableCell(report.interpretation ?? 'Automated results are bounded technical evidence, not a complete accessibility claim.')}`,

@@ -76,6 +76,15 @@ interface PendingVoiceAnswer {
   label: string;
 }
 
+interface ReviewRatingEdit {
+  itemIndex: number;
+  itemId: DimensionId;
+  originalValue: number;
+  originalInputRoute: RatingInputRoute | undefined;
+  pendingValue: number;
+  pendingInputRoute: RatingInputRoute | undefined;
+}
+
 interface SavedSession {
   version: 4;
   instrumentId: string;
@@ -225,6 +234,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private participantCodeError = '';
   @state() private participantCodeRestoredForTab = false;
   @state() private editingRatingFromReview = false;
+  @state() private reviewRatingEdit: ReviewRatingEdit | null = null;
   @state() private startedAt = '';
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
@@ -968,7 +978,9 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderRating() {
     const dimension = this.dimensions[this.ratingIndex];
-    const selected = this.ratings[dimension.id];
+    const selected = this.editingRatingFromReview && this.reviewRatingEdit?.itemId === dimension.id
+      ? this.reviewRatingEdit.pendingValue
+      : this.ratings[dimension.id];
     return html`
       <section class="panel" id="question-panel" aria-labelledby="rating-heading">
         <p class="step-label">Rating ${this.ratingIndex + 1} of ${this.dimensions.length}</p>
@@ -1375,12 +1387,14 @@ export class AccessibleNasaTlx extends LitElement {
                   </p>
                   <small>Input route: ${this.ratingRouteLabel(dimension.id)}</small>
                   <button
-                    class="secondary-button"
+                    class="secondary-button large-answer-button"
                     type="button"
-                    aria-label=${`Change answer for ${dimension.name}. Current answer: ${this.reviewRatingLabel(dimension)}`}
+                    data-gaze-target
+                    data-gaze-label=${`Change item ${index + 1} answer`}
+                    aria-label=${`Change item ${index + 1} answer. ${dimension.name}. Current answer: ${this.reviewRatingLabel(dimension)}`}
                     @click=${() => this.editRatingFromReview(index)}
                   >
-                    Change this answer
+                    Change item ${index + 1} answer
                   </button>
                 </div>
               </section>
@@ -1917,14 +1931,30 @@ export class AccessibleNasaTlx extends LitElement {
 
   private selectRating(dimension: DimensionId, value: number, route: RatingInputRoute) {
     if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
-    this.invalidatePendingSubmission();
     const effectiveRoute = this.gazeActivationInProgress
       ? route === 'smiley-landmark'
         ? 'gaze-smiley-landmark'
         : 'gaze-standard-scale'
       : route;
-    this.ratings = { ...this.ratings, [dimension]: value };
-    this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
+    if (this.editingRatingFromReview) {
+      const edit = this.reviewRatingEdit;
+      if (!edit || edit.itemId !== dimension || edit.itemIndex !== this.ratingIndex) {
+        this.showError('This review edit is no longer valid. Return to the review and open the answer again.');
+        return;
+      }
+      // A review edit is transactional. Keep the proposed value and route out of
+      // the canonical response, saved progress and score until the participant
+      // explicitly chooses Save.
+      this.reviewRatingEdit = {
+        ...edit,
+        pendingValue: value,
+        pendingInputRoute: effectiveRoute,
+      };
+    } else {
+      this.invalidatePendingSubmission();
+      this.ratings = { ...this.ratings, [dimension]: value };
+      this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
+    }
     this.clearError();
     const currentDimension = this.dimensionById.get(dimension)!;
     const visibleAsLandmark =
@@ -1937,7 +1967,7 @@ export class AccessibleNasaTlx extends LitElement {
       ? `${currentDimension.name}, ${endpoint}, value ${value}, selected.`
       : `${currentDimension.name}, ${value}, selected.`;
     this.announceAutomatic(this.statusMessage);
-    this.persistProgress();
+    if (!this.editingRatingFromReview) this.persistProgress();
   }
 
   private selectPair(pairId: string, dimension: DimensionId, route: PairInputRoute) {
@@ -1982,6 +2012,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.stage = 'ratings';
     this.ratingIndex = 0;
     this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
     this.reviewReturnFocusIndex = null;
     this.clearError();
     this.persistProgress();
@@ -1993,17 +2024,42 @@ export class AccessibleNasaTlx extends LitElement {
     this.clearVoiceAnswer();
     if (context === 'rating') {
       const dimension = this.dimensions[this.ratingIndex];
-      if (this.ratings[dimension.id] === undefined) {
+      const reviewEdit = this.editingRatingFromReview ? this.reviewRatingEdit : null;
+      const selectedValue = reviewEdit?.itemId === dimension.id
+        ? reviewEdit.pendingValue
+        : this.ratings[dimension.id];
+      if (selectedValue === undefined) {
         this.showError(`Choose a rating for ${dimension.name} before continuing.`);
         return;
       }
       if (this.editingRatingFromReview) {
+        if (!reviewEdit || reviewEdit.itemId !== dimension.id || reviewEdit.itemIndex !== this.ratingIndex) {
+          this.showError('This review edit is no longer valid. Return to the review and open the answer again.');
+          return;
+        }
         const returnIndex = this.reviewReturnFocusIndex ?? this.ratingIndex;
+        const changed =
+          reviewEdit.pendingValue !== reviewEdit.originalValue ||
+          reviewEdit.pendingInputRoute !== reviewEdit.originalInputRoute;
+        if (changed) {
+          this.invalidatePendingSubmission();
+          this.ratings = { ...this.ratings, [dimension.id]: reviewEdit.pendingValue };
+          const routes = { ...this.ratingInputRoutes };
+          if (reviewEdit.pendingInputRoute === undefined) delete routes[dimension.id];
+          else routes[dimension.id] = reviewEdit.pendingInputRoute;
+          this.ratingInputRoutes = routes;
+        }
         this.editingRatingFromReview = false;
+        this.reviewRatingEdit = null;
         this.stage = 'review';
         this.clearError();
         this.persistProgress();
-        this.focusReviewItem(returnIndex, `${this.dimensions[returnIndex].name} answer updated.`);
+        this.focusReviewItem(
+          returnIndex,
+          changed
+            ? `${this.dimensions[returnIndex].name} answer updated.`
+            : `${this.dimensions[returnIndex].name} answer unchanged.`,
+        );
         return;
       }
       if (this.ratingIndex < this.dimensions.length - 1) this.ratingIndex += 1;
@@ -2035,10 +2091,14 @@ export class AccessibleNasaTlx extends LitElement {
     if (this.stage === 'ratings' && this.editingRatingFromReview) {
       const returnIndex = this.reviewReturnFocusIndex ?? this.ratingIndex;
       this.editingRatingFromReview = false;
+      this.reviewRatingEdit = null;
       this.stage = 'review';
       this.clearError();
       this.persistProgress();
-      this.focusReviewItem(returnIndex, `${this.dimensions[returnIndex].name} edit cancelled.`);
+      this.focusReviewItem(
+        returnIndex,
+        `${this.dimensions[returnIndex].name} edit cancelled. Original answer kept.`,
+      );
       return;
     }
     else if (this.stage === 'ratings' && this.ratingIndex > 0) this.ratingIndex -= 1;
@@ -2056,6 +2116,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private returnToRatings = () => {
     this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
     this.reviewReturnFocusIndex = null;
     this.stage = 'ratings';
     this.ratingIndex = this.dimensions.length - 1;
@@ -2065,6 +2126,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private returnToPairs = () => {
     this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
     this.reviewReturnFocusIndex = null;
     this.stage = 'pairs';
     this.pairIndex = this.pairOrder.length - 1;
@@ -2073,11 +2135,27 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private editRatingFromReview(index: number) {
+    const dimension = this.dimensions[index];
+    const originalValue = this.ratings[dimension.id];
+    if (originalValue === undefined) {
+      this.showError(`${dimension.name} has no saved answer to edit.`);
+      return;
+    }
     this.editingRatingFromReview = true;
+    this.reviewRatingEdit = {
+      itemIndex: index,
+      itemId: dimension.id,
+      originalValue,
+      originalInputRoute: this.ratingInputRoutes[dimension.id],
+      pendingValue: originalValue,
+      pendingInputRoute: this.ratingInputRoutes[dimension.id],
+    };
     this.reviewReturnFocusIndex = index;
     this.stage = 'ratings';
     this.ratingIndex = index;
-    this.persistProgress();
+    // Do not persist the temporary edit screen. If the tab reloads before Save,
+    // recovery must reopen the last committed review rather than turning this
+    // one-item edit into the normal sequential rating route.
     this.focusHeading();
   }
 
@@ -2254,6 +2332,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.stage = 'intro';
     this.ratingIndex = 0;
     this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
     this.reviewReturnFocusIndex = null;
     this.pairIndex = 0;
     this.pairOrder = shuffledPairs(this.definition);
@@ -3202,6 +3281,7 @@ export class AccessibleNasaTlx extends LitElement {
     if (!session) return;
     this.stage = session.stage;
     this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
     this.reviewReturnFocusIndex = null;
     this.ratingIndex = session.ratingIndex;
     this.pairIndex = session.pairIndex;

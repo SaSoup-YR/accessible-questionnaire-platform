@@ -15,11 +15,14 @@ import {
   buildParticipantUrl,
   createStudyConfig,
   loadCompletedResults,
+  progressStorageKey,
   readStudyConfigFromHash,
   resultsToCsv,
   type StudyResultRecord,
 } from '../src/study';
 import { reviewQuestionnaireExport } from '../src/platform-questionnaire-import';
+import { getQuestionnaireDefinition } from '../src/questionnaire-definition';
+import { scoreQuestionnaire } from '../src/scoring';
 
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
@@ -783,7 +786,70 @@ describe('instrument-independent questionnaire workflow', () => {
     );
     expect(reviewCards[0].textContent).toContain('Selected answer: 5 — Strongly agree');
 
-    component.querySelector<HTMLButtonElement>('button[aria-label^="Change answer for Item 2."]')!.click();
+    const changeButtons = [...component.querySelectorAll<HTMLButtonElement>(
+      '.review-rating-card button[data-gaze-target]',
+    )];
+    expect(changeButtons).toHaveLength(10);
+    changeButtons.forEach((button, index) => {
+      const visibleLabel = `Change item ${index + 1} answer`;
+      expect(button.textContent?.trim()).toBe(visibleLabel);
+      expect(button.getAttribute('aria-label')).toMatch(new RegExp(`^${visibleLabel}\\.`));
+      expect(button.getAttribute('data-gaze-label')).toBe(visibleLabel);
+    });
+
+    const progressKey = progressStorageKey(config.configId, 'P-SUS-01');
+    const savedBeforeEdit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedBeforeEdit.stage).toBe('review');
+    expect(savedBeforeEdit.ratings.sus02).toBe(1);
+    expect(savedBeforeEdit.ratingInputRoutes.sus02).toBe('standard-scale');
+    const susDefinition = getQuestionnaireDefinition('system-usability-scale')!;
+    const scoreBeforeEdit = scoreQuestionnaire(susDefinition, savedBeforeEdit.ratings).primaryScore;
+    expect(scoreBeforeEdit).toBe(100);
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change item 2 answer."]')!.click();
+    await component.updateComplete;
+    // Exercise a different pending input route as well as a different value.
+    // Neither may enter the canonical response or progress record before Save.
+    (component as any).selectRating('sus02', 5, 'voice');
+    await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')?.checked).toBe(true);
+    const savedDuringEdit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedDuringEdit.stage).toBe('review');
+    expect(savedDuringEdit.ratings.sus02).toBe(1);
+    expect(savedDuringEdit.ratingInputRoutes.sus02).toBe('standard-scale');
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Cancel change and return to review'))!
+      .click();
+    await component.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Selected answer: 1 — Strongly disagree');
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Input route: full scale');
+    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+    expect(component.querySelector('.sr-only[aria-live="polite"]')?.textContent)
+      .toContain('edit cancelled. Original answer kept. 1 — Strongly disagree');
+    const savedAfterCancel = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedAfterCancel.stage).toBe('review');
+    expect(savedAfterCancel.ratings.sus02).toBe(1);
+    expect(savedAfterCancel.ratingInputRoutes.sus02).toBe('standard-scale');
+    expect(scoreQuestionnaire(susDefinition, savedAfterCancel.ratings).primaryScore)
+      .toBe(scoreBeforeEdit);
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change item 2 answer."]')!.click();
     await component.updateComplete;
     expect(component.querySelector('#rating-heading')?.textContent).toContain('Item 2');
     component.querySelector<HTMLInputElement>('.rating-option input[value="2"]')!.click();
@@ -794,14 +860,12 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
       .toContain('Selected answer: 2');
     expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
-
-    component.querySelector<HTMLButtonElement>('button[aria-label^="Change answer for Item 2."]')!.click();
-    await component.updateComplete;
-    [...component.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent?.includes('Cancel change and return to review'))!
-      .click();
-    await component.updateComplete;
-    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+    const savedAfterCommit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedAfterCommit.ratings.sus02).toBe(2);
+    expect(savedAfterCommit.ratingInputRoutes.sus02).toBe('standard-scale');
 
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit responses'))!
@@ -813,6 +877,9 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(completed).not.toBeNull();
     expect((completed as unknown as StudyResultRecord).instrument.id).toBe('system-usability-scale');
     expect((completed as unknown as StudyResultRecord).result.strategy).toBe('sus-standard-v1');
+    expect((completed as unknown as StudyResultRecord).result.ratings.sus02).toBe(2);
+    expect((completed as unknown as StudyResultRecord).supportMetadata.ratingInputRoutes.sus02)
+      .toBe('standard-scale');
     expect((completed as unknown as StudyResultRecord).responses.pairPresentationOrder).toEqual([]);
   });
 

@@ -100,6 +100,32 @@ const reconstructionResults: Array<{
   responseValuesReconstructed: number;
   mismatches: Mismatch[];
 }> = [];
+const commonContractIds = [
+  'item.id',
+  'item.name',
+  'item.text',
+  'item.storedValues',
+  'item.responseLabels',
+  'item.required',
+  'itemOrder',
+  'review.itemText',
+  'scoring.rule',
+  'scoring.reportedScoreName',
+  'scoring.reportedScoreNameVisible',
+  'scoring.expectedScore',
+] as const;
+type CommonContractId = typeof commonContractIds[number];
+const sharedContractExecutions: Array<{
+  caseId: string;
+  contractId: CommonContractId;
+}> = [];
+const allowlistResults: Array<{
+  caseId: string;
+  support: 'simplerExplanations' | 'smileyLandmarks';
+  declared: boolean;
+  renderedControl: boolean;
+  configurationGateMatched: boolean;
+}> = [];
 
 function compactText(value: string | null | undefined) {
   return (value ?? '').replace(/\s+/g, ' ').trim();
@@ -207,6 +233,7 @@ async function runFidelityCase(testCase: FidelityCase) {
   await component.updateComplete;
 
   const mismatches: Mismatch[] = [];
+  const executedContracts = new Set<CommonContractId>();
   let fieldComparisons = 0;
   const renderedOrder: string[] = [];
   for (let index = 0; index < expectedItems.length; index += 1) {
@@ -222,19 +249,21 @@ async function runFidelityCase(testCase: FidelityCase) {
     const actualRequired = inputs.some((input) => input.required);
     renderedOrder.push(actualId);
 
-    const comparisons: Array<[string, unknown, unknown]> = [
-      [`items[${index}].id`, expectedItem.id, actualId],
-      [`items[${index}].name`, expectedItem.name, actualName],
-      [`items[${index}].text`, expectedItem.text, actualText],
-      [`items[${index}].storedValues`, responseSet.storedValues, actualValues],
+    const comparisons: Array<[CommonContractId, string, unknown, unknown]> = [
+      ['item.id', `items[${index}].id`, expectedItem.id, actualId],
+      ['item.name', `items[${index}].name`, expectedItem.name, actualName],
+      ['item.text', `items[${index}].text`, expectedItem.text, actualText],
+      ['item.storedValues', `items[${index}].storedValues`, responseSet.storedValues, actualValues],
       [
+        'item.responseLabels',
         `items[${index}].responseLabels`,
         expectedAccessibleLabels(definition, expectedItem, responseSet),
         actualLabels,
       ],
-      [`items[${index}].required`, testCase.required, actualRequired],
+      ['item.required', `items[${index}].required`, testCase.required, actualRequired],
     ];
-    comparisons.forEach(([field, expected, actual]) => {
+    comparisons.forEach(([contractId, field, expected, actual]) => {
+      executedContracts.add(contractId);
       fieldComparisons += 1;
       pushComparison(mismatches, field, expected, actual);
     });
@@ -250,6 +279,7 @@ async function runFidelityCase(testCase: FidelityCase) {
   }
 
   fieldComparisons += 1;
+  executedContracts.add('itemOrder');
   pushComparison(mismatches, 'itemOrder', expectedItems.map(({ id }) => id), renderedOrder);
 
   const pairCount = buildQuestionnairePairs(definition).length;
@@ -263,22 +293,32 @@ async function runFidelityCase(testCase: FidelityCase) {
   const reviewTexts = [...component.querySelectorAll('.review-rating-card .review-item-prompt')]
     .map((element) => compactText(element.textContent));
   fieldComparisons += 1;
+  executedContracts.add('review.itemText');
   pushComparison(mismatches, 'review.itemText', expectedItems.map(({ text }) => text), reviewTexts);
   primaryButton(component, 'Calculate and submit responses').click();
   await component.updateComplete;
   if (!completed) throw new Error(`${testCase.caseId} did not create a result record.`);
   const record = completed as StudyResultRecord;
 
-  const scoreComparisons: Array<[string, unknown, unknown]> = [
-    ['scoring.rule', testCase.scoring.rule, record.instrument.scoringStrategy],
-    ['scoring.reportedScoreName', testCase.scoring.scoreName, record.result.scoreName],
-    ['scoring.reportedScoreNameVisible', true, compactText(component.textContent).includes(testCase.scoring.scoreName)],
-    ['scoring.expectedScore', testCase.scoring.expectedScore, record.result.primaryScore],
+  const scoreComparisons: Array<[CommonContractId, string, unknown, unknown]> = [
+    ['scoring.rule', 'scoring.rule', testCase.scoring.rule, record.instrument.scoringStrategy],
+    ['scoring.reportedScoreName', 'scoring.reportedScoreName', testCase.scoring.scoreName, record.result.scoreName],
+    ['scoring.reportedScoreNameVisible', 'scoring.reportedScoreNameVisible', true, compactText(component.textContent).includes(testCase.scoring.scoreName)],
+    ['scoring.expectedScore', 'scoring.expectedScore', testCase.scoring.expectedScore, record.result.primaryScore],
   ];
-  scoreComparisons.forEach(([field, expected, actual]) => {
+  scoreComparisons.forEach(([contractId, field, expected, actual]) => {
+    executedContracts.add(contractId);
     fieldComparisons += 1;
     pushComparison(mismatches, field, expected, actual);
   });
+
+  const missingContracts = commonContractIds.filter((contractId) => !executedContracts.has(contractId));
+  if (missingContracts.length) {
+    throw new Error(`${testCase.caseId} did not execute shared contracts: ${missingContracts.join(', ')}`);
+  }
+  for (const contractId of executedContracts) {
+    sharedContractExecutions.push({ caseId: testCase.caseId, contractId });
+  }
 
   fidelityResults.push({
     caseId: testCase.caseId,
@@ -387,6 +427,29 @@ afterAll(() => {
       ),
       mismatches: reconstructionMismatches,
       results: reconstructionResults,
+    },
+    boundedReuse: {
+      compatibleImportedDefinitionsAdmittedAsData: fidelityResults.filter(({ source }) =>
+        source.startsWith('tests/fixtures/')).length,
+      instrumentSpecificProductionFilesRequiredForThoseImports: 0,
+      sharedContractReuse: {
+        contractIds: commonContractIds,
+        cases: fidelityResults.length,
+        requiredCaseContractExecutions: commonContractIds.length * fidelityResults.length,
+        completedCaseContractExecutions: sharedContractExecutions.length,
+        instrumentSpecificContractCopies: 0,
+        executions: sharedContractExecutions,
+      },
+      allowlistGate: {
+        combinationsChecked: allowlistResults.length,
+        matching: allowlistResults.filter(({ declared, renderedControl, configurationGateMatched }) =>
+          declared === renderedControl && configurationGateMatched).length,
+        mismatching: allowlistResults.filter(({ declared, renderedControl, configurationGateMatched }) =>
+          declared !== renderedControl || !configurationGateMatched).length,
+        results: allowlistResults,
+      },
+      interpretation:
+        'This is evidence of shared execution within the declared integer-scale and executable-scorer boundary. It is not evidence that an arbitrary response structure or scoring rule can be added as data.',
     },
     interpretation:
       'This report tests fidelity, refusal safety and provenance. It does not provide evidence of benefit for disabled users or questionnaire score equivalence across presentation modes.',
@@ -509,6 +572,96 @@ describe('quantified technical evaluation', () => {
         mismatches,
       });
       expect(mismatches, testCase.caseId).toEqual([]);
+    }
+  });
+
+  it('reuses the same contracts and enforces declared support gates across every fidelity case', async () => {
+    for (const testCase of truth.cases) {
+      document.body.replaceChildren();
+      localStorage.clear();
+      sessionStorage.clear();
+      const { definition, embedded } = definitionFor(testCase);
+      const makeConfig = (overrides: { showSimpleLanguage?: boolean; answerMode?: 'standard' | 'smiley' }) =>
+        createStudyConfig({
+          instrumentId: definition.id,
+          ...(embedded ? { questionnaireDefinition: definition } : {}),
+          studyId: `ALLOW-${testCase.caseId}`.slice(0, 64),
+          studyTitle: 'Allowlist gate check',
+          taskLabel: 'using the technical test interface',
+          showScoreToParticipant: true,
+          support: {
+            showSimpleLanguage: overrides.showSimpleLanguage ?? false,
+            answerMode: overrides.answerMode ?? 'standard',
+            largeText: false,
+            audioGuidance: false,
+            recoveryEnabled: false,
+            participantAdjustmentPolicy: 'participant-choice',
+            voiceInputAvailable: false,
+            gazeInputAvailable: false,
+          },
+          collection: { mode: 'local' },
+        }, {
+          configId: `allow-${testCase.caseId}`,
+          createdAt: '2026-08-10T00:00:00.000Z',
+        });
+
+      const baseConfig = makeConfig({});
+      const participantUrl = new URL(buildParticipantUrl(
+        'https://example.test/index.html',
+        baseConfig,
+        `A-${testCase.caseId}`.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32),
+      ));
+      window.history.replaceState({}, '', `${participantUrl.pathname}${participantUrl.hash}`);
+      const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+      document.body.append(component);
+      await component.updateComplete;
+
+      const checks = [
+        {
+          support: 'simplerExplanations' as const,
+          declared: definition.supports.simplerExplanations,
+          renderedControl: Boolean(component.querySelector('#support-intro-simple')),
+          activate: () => makeConfig({ showSimpleLanguage: true }),
+        },
+        {
+          support: 'smileyLandmarks' as const,
+          declared: definition.supports.smileyLandmarks,
+          renderedControl: Boolean(component.querySelector('#support-intro-smiley-answer')),
+          activate: () => makeConfig({ answerMode: 'smiley' }),
+        },
+      ];
+      for (const check of checks) {
+        let accepted = false;
+        try {
+          check.activate();
+          accepted = true;
+        } catch {
+          accepted = false;
+        }
+        allowlistResults.push({
+          caseId: testCase.caseId,
+          support: check.support,
+          declared: check.declared,
+          renderedControl: check.renderedControl,
+          configurationGateMatched: accepted === check.declared,
+        });
+        expect(check.renderedControl, `${testCase.caseId} ${check.support} control`).toBe(check.declared);
+        expect(accepted, `${testCase.caseId} ${check.support} configuration gate`).toBe(check.declared);
+      }
+      component.remove();
+    }
+
+    expect(allowlistResults).toHaveLength(truth.cases.length * 2);
+    expect(allowlistResults.filter(({ declared, renderedControl, configurationGateMatched }) =>
+      declared !== renderedControl || !configurationGateMatched)).toEqual([]);
+    expect(sharedContractExecutions).toHaveLength(truth.cases.length * commonContractIds.length);
+    for (const testCase of truth.cases) {
+      expect(
+        sharedContractExecutions
+          .filter(({ caseId }) => caseId === testCase.caseId)
+          .map(({ contractId }) => contractId),
+        `${testCase.caseId} shared contract executions`,
+      ).toEqual(commonContractIds);
     }
   });
 });

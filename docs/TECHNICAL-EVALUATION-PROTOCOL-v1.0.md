@@ -16,6 +16,29 @@ administration, benefit for disabled users, general usability, universal
 questionnaire independence or complete WCAG conformance. Those claims require
 different evidence.
 
+## E0. Bounded reuse and allowlist gates
+
+The platform claim is made falsifiable before fidelity is interpreted. The same
+12 contract identifiers (item ID, name, text, stored values, response labels,
+required status, order, review text, scoring rule, score name, visible score name
+and fixed-vector score) are executed by one unchanged function for every case.
+The report counts completed case × contract executions and instrument-specific
+copies. It also loads every compatible native import as data and records how many
+instrument-specific production files were required.
+
+For each fidelity case and each declared support (`simplerExplanations` and
+`smileyLandmarks`), the evaluation compares three facts: the definition
+declaration, whether the participant control is rendered, and whether a study
+configuration requesting the support is accepted. Any disagreement fails the
+gate. This tests the measurement-protection boundary rather than assuming that a
+feature flag works.
+
+Current local result: 5 compatible imported definitions admitted through the
+shared data path with 0 instrument-specific production files; 96/96 common
+case-contract executions with 0 instrument-specific copies; and 16/16 allowlist
+combinations matching. These are bounded reuse results, not evidence that a new
+scorer or mixed response structure can be added as data.
+
 ## E1. Fidelity round trip
 
 ### Independent oracle
@@ -158,20 +181,21 @@ participant state, the suite runs axe with WCAG 2.0, 2.1 and 2.2 A/AA tags, chec
 horizontal overflow and measures critical interactive targets. It also uses real
 Tab navigation and computed styles for representative focus checks.
 
-Required states:
+The frozen inventory is
+`docs/PARTICIPANT-RUNNER-STATE-INVENTORY-v1.md`. Its 27 structurally distinct
+states cover invalid link, introduction and expanded options; standard item and
+validation error; voice unavailable, listening, proposal and error; saved offer
+and resumed summary; review, local failure/retry, local completion and recovered
+completion; Qualtrics connecting, bridge failure, submission transition and
+recording-unconfirmed recovery; pairwise and smiley input; gaze setup,
+positioning, calibration and proposal; and the synthetic semantic-differential
+and imported German-label screens.
 
-1. introduction;
-2. missing-answer error;
-3. voice listening;
-4. voice proposal pending confirmation;
-5. voice-recognition error;
-6. ordinary item;
-7. saved-progress offer;
-8. review;
-9. completion;
-10. NASA-TLX pairwise comparison;
-11. synthetic semantic-differential item; and
-12. imported fully labelled German item.
+Production workflows are used where deterministic and safe. External host,
+camera and callback states that cannot be produced reliably in CI use the
+production renderer with a deterministic UI-state fixture and are labelled as
+such in every report row. This checks rendered UI only, not the external service
+or hardware. The manual audit must exercise the real route.
 
 Required profiles per state:
 
@@ -182,11 +206,11 @@ Required profiles per state:
 - 640 × 450 CSS pixels as the deterministic reflow companion for a 1280 × 900
   physical window at 200% zoom.
 
-This produces **60 state-profile scans**. The report records exact Chromium
+This produces **135 state-profile scans**. The report records exact Chromium
 version, commit SHA, state, viewport, requested and observed scale, axe violations,
 incomplete checks, overflow and target measurements. Release gates are:
 
-- all 12 × 5 state/profile combinations present;
+- all 27 × 5 state/profile combinations present;
 - zero automatically detected violations;
 - zero horizontal-overflow failures above 1 CSS pixel;
 - zero measured critical targets below 24 × 24 CSS pixels; and

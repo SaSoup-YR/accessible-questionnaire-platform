@@ -1,6 +1,7 @@
 # Observer Coding Sheet
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Protocol draft only; use only after written amendment approval.
 **Version:** 1.0, 10 August 2026
 
 ## Session record
@@ -21,8 +22,8 @@
 
 ## Condition log — complete once for AQP and once for Qualtrics
 
-**Condition:** AQP / Qualtrics  
-**Started at first system action:** ____  **Ended:** ____  
+**Condition:** AQP / Qualtrics
+**Started at first system action:** ____  **Ended:** ____
 **Researcher-owned outage/break seconds:** ____  **Active seconds:** ____
 
 | Time | Event | Category | Self-corrected? | Assist? | Final effect / note |
@@ -46,18 +47,18 @@
 | Working participant link | | |
 | Export contains 10 answers and score | | |
 
-**Outcome:** success without assist / success with assist / failure  
+**Outcome:** success without assist / success with assist / failure
 **Assist count:** ____  **Error count:** ____  **SEQ (1–7):** ____
 
 ## Planted-discrepancy log
 
-Start: ____  End/detection: ____  Detected before assist/debrief: Yes / No  
-Exact reported difference: ________________________________________________  
+Start: ____  End/detection: ____  Detected before assist/debrief: Yes / No
+Exact reported difference: ________________________________________________
 False positives: ____  Assists and exact words: ____________________________
 
 ## Session close
 
-SUS-AQP: ____ /100  SUS-Qualtrics: ____ /100  
-Debrief delivered: Yes / No  Withdrawal route repeated: Yes / No  
-Recording transferred and verified in approved RDSS location: Yes / No  
+SUS-AQP: ____ /100  SUS-Qualtrics: ____ /100
+Debrief delivered: Yes / No  Withdrawal route repeated: Yes / No
+Recording transferred and verified in approved RDSS location: Yes / No
 Temporary copy removed: Yes / No / Pending  Evidence/log ID: __________

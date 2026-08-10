@@ -1,7 +1,8 @@
 # Recruitment Invitation
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
-**Version:** 1.0, 10 August 2026  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Protocol draft only; do not circulate before written amendment approval.
+**Version:** 1.0, 10 August 2026
 **Do not circulate until the amendment is approved and the ethics approval ID is inserted.**
 
 ## Help us test two questionnaire-setup tools

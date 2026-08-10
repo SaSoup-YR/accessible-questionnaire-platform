@@ -1,7 +1,7 @@
-# AQP manual assistive-technology audit v1.0
+# AQP manual assistive-technology audit v1.1
 
 Status: **protocol ready; audit not yet executed**
-Protocol frozen: 2026-08-09
+Protocol revised: 2026-08-10
 Release under test: **record the immutable release tag and commit SHA before testing**
 Deployed URL: **record after the verified build is deployed**
 
@@ -115,8 +115,13 @@ Complete every route column with `P/F/NA — exact observation (evidence ID)`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A14 | 2.4.3, 4.1.3 | After three SUS answers, reload and wait on the saved-progress offer. | Focus reaches Resume; the exact saved count `3 of 10`, Resume and Erase choices are available and announced. Record exact speech. | NT | NT | NT | NT |
 | A15 | 2.4.3, 3.2.2 | Resume the saved session. | The three answers remain; the logical next item and heading receive focus; no answer changes automatically. | NT | NT | NT | NT |
-| A16 | 1.3.1, 2.4.6, 3.3.4, 4.1.2 | Reach the SUS review screen and navigate each record. | Every record exposes the full item statement, selected value and visible answer label, plus a uniquely named Change control. | NT | NT | NT | NT |
-| A17 | 2.4.3, 3.3.4 | Change item 2 to 5 and save. | Change opens item 2 directly; saving returns to review; focus returns to item 2; its updated label is announced and other answers remain unchanged. | NT | NT | NT | NT |
+| A16 | 1.3.1, 2.4.6, 2.5.3, 3.3.4, 4.1.2 | Reach the SUS review screen and navigate each record. | Every record exposes the full item statement, selected value and visible answer label. Its visible **Change item N answer** control is unique, begins its accessible name with the same words and is available to the declared gaze route. | NT | NT | NT | NT |
+| A17 | 2.4.3, 3.3.4, 4.1.3 | Note item 2's value and input route. Open item 2, select 5 and Cancel. Reopen item 2, select 5 and Save. | Cancel returns focus to review, truthfully announces that the original answer was kept, and leaves the original value, route, recovery record and calculated score unchanged. Save alone commits 5, returns focus to item 2, announces the updated label and leaves every other answer unchanged. Record exact speech for both paths. | NT | NT | NT | NT |
+
+#### Submission (A18)
+
+| ID | WCAG 2.2 success criterion | Screen/state and fixed action | Required observable result | R1 NVDA/Firefox | R2 NVDA/Chrome | R3 VoiceOver/Safari | R4 OS voice control |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | A18 | 3.3.4, 4.1.3 | Submit the reviewed answers. | Completion and storage status are truthful and announced; a failure must not be presented as success. | NT | NT | NT | NT |
 
 ### Route-wide and imported-scale checks (A19–A23)
@@ -125,9 +130,36 @@ Complete every route column with `P/F/NA — exact observation (evidence ID)`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A19 | 2.1.1, 2.1.2 | Repeat the complete route using keyboard commands only. | All functions are reachable and escapable; no keyboard trap occurs in details, voice, recovery, review or completion states. | NT | NT | NT | NT |
 | A20 | 2.4.7, 2.4.11 | Inspect visible focus on every interactive control at 100% and 200% zoom. | Focus is visible and not fully obscured. Screen-reader routes still record the visual result separately. | NT | NT | NT | NT |
-| A21 | 2.5.3 | In R4, use the visible wording to activate Start, an answer, Next, Change, Save and Submit. | Each command reaches the intended single control; visible label text occurs in the accessible name. Record commands verbatim. | NA | NA | NA | NT |
+| A21 | 2.5.3 | In R4, use the visible wording to activate Start, an answer, Next, **Change item 2 answer**, Save and Submit. | Each command reaches the intended single control; visible label text occurs at the start of the accessible name. Record commands verbatim and record any disambiguation menu as a failure of the one-command target check. | NA | NA | NA | NT |
 | A22 | 1.4.10 | At 320 CSS pixels and at 200% zoom, inspect introduction, item, pairwise, error, voice, recovery, review and completion. | Content reflows without two-dimensional scrolling for ordinary content; controls and announcements remain usable. | NT | NT | NT | NT |
 | A23 | 1.3.1, 4.1.2 | Open the imported five-point German item. | Endpoint labels are announced through the legend and are not repeated visually inside endpoint options; the three distinct middle labels remain visible and exposed with their options. | NT | NT | NT | NT |
+
+### Remaining reachable runner and recovery states (A24–A33)
+
+These rows close the state inventory in
+`docs/PARTICIPANT-RUNNER-STATE-INVENTORY-v1.md`. Qualtrics rows require the
+approved frozen bridge test survey. Gaze rows require explicit webcam consent
+from the auditor and use no participant/research data. If a route is technically
+incapable of the mechanism, record NA with the observed limitation; do not turn
+NA into a pass for that mechanism.
+
+| ID | WCAG 2.2 success criterion | Screen/state and fixed action | Required observable result | R1 NVDA/Firefox | R2 NVDA/Chrome | R3 VoiceOver/Safari | R4 OS voice control |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A24 | 3.3.1, 3.3.3, 4.1.3 | Open the frozen invalid-link fixture. | The problem and safe next action are exposed; Start is disabled; no questionnaire content is presented as valid. Record exact speech. | NT | NT | NT | NT |
+| A25 | 2.4.3, 3.3.4, 4.1.3 | Complete the local SUS route, reopen the same participant link and inspect the recovered-completion offer. | The page distinguishes a local backup from confirmed collection, advises against repeating, and exposes both recovery downloads. | NT | NT | NT | NT |
+| A26 | 3.3.1, 3.3.3, 4.1.3 | In the approved Qualtrics fixture, inspect the bridge connecting state and then the frozen bridge-failure route. | Connecting is exposed as status; failure is exposed as an alert with Start unavailable and no false connection claim. Record exact speech. | NT | NT | NT | NT |
+| A27 | 2.4.3, 3.3.4, 4.1.3 | Submit through the approved Qualtrics fixture, then run its frozen advance-failure callback. | The short transition does not demand action; an unconfirmed recording produces a focused actionable alert and never says the result was recorded. | NT | NT | NT | NT |
+| A28 | 3.3.1, 3.3.3, 3.3.4, 4.1.3 | Run the frozen sink-refusal and browser-storage-failure fixtures. | Answers remain reviewable; Retry, Change and backup actions are exposed; storage/host failure is not hidden as success. | NT | NT | NT | NT |
+
+#### Support and alternative-input states (A29–A33)
+
+| ID | WCAG 2.2 success criterion | Screen/state and fixed action | Required observable result | R1 NVDA/Firefox | R2 NVDA/Chrome | R3 VoiceOver/Safari | R4 OS voice control |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A29 | 1.3.1, 3.3.2, 4.1.2 | Select the NASA-TLX smiley-landmark view and inspect one item. | Every visible landmark has one useful name/value, the official precise scale remains available through the declared route, and the experimental view is not silently applied to unsupported definitions. | NT | NT | NT | NT |
+| A30 | 1.3.1, 2.1.2, 2.4.3, 4.1.2 | Expand gaze setup, start it, inspect positioning, then enter calibration. | Purpose, camera/privacy warning, dialog name, Cancel route and focus containment/escape are usable; no webcam starts before activation. | NT | NT | NT | NT |
+| A31 | 3.3.4, 4.1.3 | Produce one gaze proposal without confirming it. | Looking proposes but does not commit; proposed target and separate Confirm/Cancel actions are exposed; Cancel leaves the response unchanged. | NT | NT | NT | NT |
+| A32 | 1.3.1, 3.3.2, 4.1.2 | Open the synthetic seven-position semantic-differential fixture. | Positions are visually unnumbered, programmatic names include ordinal position and endpoints, and no unsupported score-equivalence statement appears. | NT | NT | NT | NT |
+| A33 | 3.2.2, 4.1.3 | Change text size, recovery and audio settings one at a time. | Each change produces one timely, accurate status message and does not move focus or change an answer. Record exact speech and harmful duplication. | NT | NT | NT | NT |
 
 ## Issue log
 

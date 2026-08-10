@@ -31,10 +31,19 @@ CELL_MARGINS = {"top": 80, "bottom": 80, "start": 120, "end": 120}
 
 DOCUMENTS = [
     {
+        "source": ROOT / "docs/CLAIM-NAMING-DECISION-v1.md",
+        "output": OUT / "AQP_Claim_and_Naming_Decision_v1.docx",
+        "running": "AQP claim and naming decision",
+        "version": "Version 1.0 | 10 August 2026",
+        "landscape": False,
+        "table_font": 9.25,
+        "kind": "protocol",
+    },
+    {
         "source": ROOT / "docs/AQP-FINAL-CONTRIBUTION-v2.md",
         "output": OUT / "AQP_Final_Contribution_Statement_v2.docx",
         "running": "AQP final contribution statement",
-        "version": "Version 2.1 | 10 August 2026",
+        "version": "Version 2.2 | 10 August 2026",
         "landscape": False,
         "table_font": 9.25,
         "kind": "protocol",
@@ -43,7 +52,7 @@ DOCUMENTS = [
         "source": ROOT / "docs/AQP-EVALUATION-MATRIX-v6.md",
         "output": OUT / "AQP_Evaluation_Matrix_v6.docx",
         "running": "AQP evaluation matrix",
-        "version": "Version 6.1 | 10 August 2026",
+        "version": "Version 6.2 | 10 August 2026",
         "landscape": True,
         "table_font": 8.0,
         "kind": "matrix",
@@ -61,7 +70,7 @@ DOCUMENTS = [
         "source": ROOT / "docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md",
         "output": OUT / "AQP_Observed_Researcher_Study_Protocol_v1.docx",
         "running": "AQP observed researcher study",
-        "version": "Protocol v1.0 | ethics amendment required",
+        "version": "Protocol v1.1 | ethics amendment required",
         "landscape": False,
         "table_font": 9.25,
         "kind": "protocol",
@@ -70,109 +79,19 @@ DOCUMENTS = [
         "source": ROOT / "docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md",
         "output": OUT / "AQP_Manual_AT_Audit_v1.docx",
         "running": "AQP manual assistive-technology audit",
-        "version": "Protocol v1.0 | not yet executed",
+        "version": "Audit v1.1 | not yet executed",
         "landscape": True,
         "table_font": 7.5,
         "kind": "audit",
     },
     {
-        "source": ROOT / "docs/ethics/AQP-ETHICS-AMENDMENT-SUMMARY-v1.0.md",
-        "output": OUT / "ethics/AQP_Ethics_Amendment_Summary_v1.docx",
-        "running": "AQP ethics amendment summary",
-        "version": "Version 1.0 | amendment submission",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-PARTICIPANT-INFORMATION-SHEET-v1.0.md",
-        "output": OUT / "ethics/AQP_Participant_Information_Sheet_v1.docx",
-        "running": "AQP participant information sheet",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-CONSENT-FORM-v1.0.md",
-        "output": OUT / "ethics/AQP_Consent_Form_v1.docx",
-        "running": "AQP consent form",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-RISK-ASSESSMENT-v1.0.md",
-        "output": OUT / "ethics/AQP_Risk_Assessment_v1.docx",
-        "running": "AQP project risk assessment",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": True,
-        "table_font": 8.0,
-        "kind": "risk",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-GDPR-SUBJECT-RECEIPT-FORM-v1.0.md",
-        "output": OUT / "ethics/AQP_GDPR_Subject_Receipt_Form_v1.docx",
-        "running": "AQP GDPR-compliant subject receipt",
-        "version": "Version 1.0 | not in use — no payment",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "receipt",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-RECRUITMENT-INVITATION-v1.0.md",
-        "output": OUT / "ethics/AQP_Recruitment_Invitation_v1.docx",
-        "running": "AQP recruitment invitation",
-        "version": "Version 1.0 | do not circulate before approval",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-ELIGIBILITY-SCREENER-v1.0.md",
-        "output": OUT / "ethics/AQP_Eligibility_Screener_v1.docx",
-        "running": "AQP eligibility screener",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-RESEARCHER-TASK-SHEET-v1.0.md",
-        "output": OUT / "ethics/AQP_Researcher_Task_Sheet_v1.docx",
-        "running": "AQP researcher task sheet",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-OBSERVER-CODING-SHEET-v1.0.md",
-        "output": OUT / "ethics/AQP_Observer_Coding_Sheet_v1.docx",
-        "running": "AQP observer coding sheet",
-        "version": "Version 1.0 | observed researcher study",
+        "source": ROOT / "docs/SUPERVISOR-FEEDBACK-CLOSURE-MATRIX-v2.md",
+        "output": OUT / "AQP_Supervisor_Feedback_Closure_Matrix_v2.docx",
+        "running": "AQP supervisor feedback closure matrix",
+        "version": "Version 2.1 | 10 August 2026",
         "landscape": True,
         "table_font": 7.5,
-        "kind": "audit",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-DEBRIEF-SHEET-v1.0.md",
-        "output": OUT / "ethics/AQP_Debrief_Sheet_v1.docx",
-        "running": "AQP debrief sheet",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": False,
-        "table_font": 9.25,
-        "kind": "protocol",
-    },
-    {
-        "source": ROOT / "docs/ethics/AQP-SECOND-CODER-AGREEMENT-SHEET-v1.0.md",
-        "output": OUT / "ethics/AQP_Second_Coder_Agreement_Sheet_v1.docx",
-        "running": "AQP second-coder agreement sheet",
-        "version": "Version 1.0 | observed researcher study",
-        "landscape": True,
-        "table_font": 8.0,
-        "kind": "audit",
+        "kind": "matrix",
     },
 ]
 
@@ -377,6 +296,7 @@ def format_document(path: Path, *, running: str, version: str,
             "Voice listening and safety (A10–A13)",
             "Recovery, review and submission (A14–A18)",
             "Route-wide and imported-scale checks (A19–A23)",
+            "Remaining reachable runner and recovery states (A24–A33)",
             "WCAG result summary",
             "Input, error and status criteria",
             "Quantified audit summary",
@@ -411,12 +331,11 @@ def format_document(path: Path, *, running: str, version: str,
     content_width = section_content_width_dxa(section)
     for table in document.tables:
         table.style = "Table"
-        # Audit tables are deliberately split into one-page blocks. Marking
-        # their first row as a repeating header makes LibreOffice occasionally
-        # detach that row when a later block starts after a forced page break.
-        # Keep it as a normal, visibly styled first row instead.
-        if kind != "audit":
-            repeat_header(table.rows[0])
+        # Keep column meaning visible when a dense audit or matrix table flows
+        # onto a second page. The forced section starts prevent a header from
+        # being stranded under unrelated content, while the repeat flag keeps
+        # continuation rows independently understandable.
+        repeat_header(table.rows[0])
         for row_idx, row in enumerate(table.rows):
             prevent_row_split(row)
             for cell in row.cells:

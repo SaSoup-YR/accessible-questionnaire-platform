@@ -1,6 +1,7 @@
 # Researcher Task Sheet
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Protocol draft only; use only after written amendment approval.
 **Version:** 1.0, 10 August 2026
 
 We are testing the setup tools, not you. Work as you normally would. You may speak

@@ -1,7 +1,8 @@
 # Eligibility Screener
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
-**Version:** 1.0, 10 August 2026  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Protocol draft only; do not recruit before written amendment approval.
+**Version:** 1.0, 10 August 2026
 **Complete only through the approved recruitment route.**
 
 Use Yes or No unless another answer is requested. These questions decide whether

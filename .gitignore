@@ -8,3 +8,4 @@ docs/evidence/cross-browser-support-report.json
 docs/evidence/cross-browser-support-report.html
 deliverables/rendered/
 .qa/
+__pycache__/

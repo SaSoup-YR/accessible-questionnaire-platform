@@ -1,7 +1,7 @@
-# AQP observed researcher study protocol v1.0
+# Observed researcher study protocol v1.1
 
 Status: **planned additional formative study; do not run without approved amendment**
-Protocol date: 2026-08-09
+Protocol revised: 2026-08-10
 Target sample: 6–8 adults acting as novice questionnaire researchers
 Analysis: descriptive and per-participant only; no significance testing
 
@@ -217,10 +217,17 @@ performance.
 
 ## Planted-discrepancy task
 
-After both setup conditions, give the participant an AQP source sheet and imported
-definition that differ in exactly one place: source label for stored value 3 is
-`Neither agree nor disagree`; imported definition shows `Neutral`. Everything else
-matches.
+After both setup conditions, give the participant a **sealed source sheet** and a
+**sealed imported definition** that differ in exactly one response label.
+Everything else must match. The location, source wording and altered wording are
+frozen in the private ethics/preregistration appendix and are not published in
+the repository before data collection.
+
+The discrepancy previously described in public repository history must not be
+used. A participant could have seen its answer, so it cannot yield interpretable
+detection evidence. Before recruitment, the researcher must use a different
+single discrepancy, record both file hashes in the private appendix, and give the
+second coder the sealed answer only after their independent coding is frozen.
 
 Task wording:
 
@@ -243,10 +250,14 @@ Information sheet line:
 
 Debrief line:
 
-> The difference was intentionally inserted by the research team: stored value 3
-> was labelled “Neither agree nor disagree” in the source and “Neutral” in the
-> imported definition. It was not your mistake. We used it only to test whether
-> the review workflow supports detection. Your right to withdraw is unchanged.
+> The difference was intentionally inserted by the research team. The source
+> wording was [read the sealed source wording] and the imported file showed [read
+> the sealed altered wording]. It was not your mistake. We used it only to test
+> whether the review workflow supports detection. Your right to withdraw is
+> unchanged.
+
+The bracketed wording is filled from the ethics-approved sealed appendix during
+the debrief; it is not improvised by the observer.
 
 ## Measures
 
@@ -336,6 +347,6 @@ consent/contact data separately from coded task data. The participant may pause
 recording or request removal of identifiable and coded data until seven calendar
 days after their session.
 
-No payment is planned under protocol version 1.0. Any change to payment,
+No payment is planned under protocol version 1.1. Any change to payment,
 recording, storage, participant group or task requires prior ethics confirmation
 and updated participant materials.

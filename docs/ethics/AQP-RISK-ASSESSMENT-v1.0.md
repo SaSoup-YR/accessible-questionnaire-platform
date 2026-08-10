@@ -1,6 +1,7 @@
 # Project Risk Assessment
 
-**Project:** Accessible Questionnaire Platform — observed researcher study
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Public protocol summary only; the private submission uses the original UCL risk-assessment template.
 **Version:** 1.0, 9 August 2026
 **Student researcher:** Yurui Wang
 **Principal investigator/supervisor:** Dr Mark Colley

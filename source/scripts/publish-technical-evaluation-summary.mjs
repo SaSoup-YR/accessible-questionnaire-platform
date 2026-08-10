@@ -46,6 +46,7 @@ if (!existsSync(reportPath)) {
       result.responseValuesReconstructed,
       result.mismatches?.length ?? 0,
     ].join(' | ')} |`);
+    const reuse = report.boundedReuse ?? {};
     const markdown = [
       '# Quantified technical evaluation',
       '',
@@ -58,6 +59,10 @@ if (!existsSync(reportPath)) {
       `- Silently altered inputs: **${report.negativeBattery?.silentlyAltered ?? 0}**`,
       `- Result exports reconstructed: **${report.exportReconstruction?.exportsChecked ?? 0}**`,
       `- Reconstruction mismatches: **${report.exportReconstruction?.mismatches ?? 0}**`,
+      `- Compatible imported definitions admitted as data: **${reuse.compatibleImportedDefinitionsAdmittedAsData ?? 0}**`,
+      `- Instrument-specific production files required for those imports: **${reuse.instrumentSpecificProductionFilesRequiredForThoseImports ?? 'not recorded'}**`,
+      `- Shared case-contract executions: **${reuse.sharedContractReuse?.completedCaseContractExecutions ?? 0}/${reuse.sharedContractReuse?.requiredCaseContractExecutions ?? 0}**`,
+      `- Allowlist combinations matching: **${reuse.allowlistGate?.matching ?? 0}/${reuse.allowlistGate?.combinationsChecked ?? 0}**`,
       '',
       '## Fidelity round trip',
       '',
@@ -95,7 +100,10 @@ table{width:100%;border-collapse:collapse;margin:1rem 0 2rem}th,td{padding:.6rem
 <p>Revision: <code>${escapeHtml(report.revision ?? 'not recorded')}</code></p>
 <ul><li>${report.fidelity?.itemsChecked ?? 0} items; ${report.fidelity?.fieldComparisons ?? 0} fidelity comparisons; ${report.fidelity?.mismatches ?? 0} mismatches.</li>
 <li>${report.negativeBattery?.adversarialInputs ?? 0} adversarial inputs; ${report.negativeBattery?.silentlyAltered ?? 0} silently altered.</li>
-<li>${report.exportReconstruction?.exportsChecked ?? 0} exports reconstructed; ${report.exportReconstruction?.mismatches ?? 0} mismatches.</li></ul>
+<li>${report.exportReconstruction?.exportsChecked ?? 0} exports reconstructed; ${report.exportReconstruction?.mismatches ?? 0} mismatches.</li>
+<li>${reuse.compatibleImportedDefinitionsAdmittedAsData ?? 0} compatible imports admitted as data; ${reuse.instrumentSpecificProductionFilesRequiredForThoseImports ?? 'not recorded'} instrument-specific production files.</li>
+<li>${reuse.sharedContractReuse?.completedCaseContractExecutions ?? 0}/${reuse.sharedContractReuse?.requiredCaseContractExecutions ?? 0} shared case-contract executions; ${reuse.sharedContractReuse?.instrumentSpecificContractCopies ?? 0} copies.</li>
+<li>${reuse.allowlistGate?.matching ?? 0}/${reuse.allowlistGate?.combinationsChecked ?? 0} allowlist combinations matched.</li></ul>
 <h2>Fidelity round trip</h2><table><thead><tr><th>Case</th><th>Source</th><th>Items</th><th>Comparisons</th><th>Mismatches</th></tr></thead><tbody>${htmlRows(report.fidelity?.results ?? [], [
       (row) => row.caseId,
       (row) => row.source,

@@ -15,19 +15,45 @@ const wcagTags = [
 ];
 
 const requiredStateNames = [
+  'Invalid participant link',
   'SUS introduction',
+  'SUS accessibility options expanded',
   'SUS missing-answer error',
+  'SUS built-in voice unavailable',
   'SUS voice listening',
   'SUS confirmed-voice proposal',
   'SUS voice-recognition error',
   'SUS item screen',
   'SUS saved-session recovery offer',
+  'SUS resumed-progress summary',
   'SUS review screen',
+  'SUS local submission failure and retry',
   'SUS completion screen',
+  'SUS recovered-completion backup offer',
+  'Qualtrics bridge connecting',
+  'Qualtrics bridge failure',
+  'Qualtrics submission transition',
+  'Qualtrics recording-unconfirmed recovery',
   'NASA-TLX pairwise comparison',
+  'NASA-TLX smiley-landmark item',
+  'NASA-TLX gaze setup expanded',
+  'NASA-TLX gaze positioning dialog',
+  'NASA-TLX gaze calibration dialog',
+  'NASA-TLX gaze proposal confirmation',
   'Synthetic semantic-differential item',
   'Imported fully labelled agreement item',
 ];
+
+const fixtureInducedStates = new Set([
+  'SUS local submission failure and retry',
+  'Qualtrics bridge connecting',
+  'Qualtrics bridge failure',
+  'Qualtrics submission transition',
+  'Qualtrics recording-unconfirmed recovery',
+  'NASA-TLX gaze positioning dialog',
+  'NASA-TLX gaze calibration dialog',
+  'NASA-TLX gaze proposal confirmation',
+]);
 
 const scanProfiles = [
   {
@@ -68,6 +94,7 @@ const scanProfiles = [
 
 interface ScanRecord {
   state: string;
+  stateSetup: 'production workflow' | 'deterministic UI-state fixture';
   profile: string;
   zoomPercent: number;
   emulationMethod: string;
@@ -132,6 +159,9 @@ async function scanProfile(page: Page, state: string, profile: typeof scanProfil
   const undersized = renderedTargets.filter(({ width, height }) => width < 24 || height < 24);
   scans.push({
     state,
+    stateSetup: fixtureInducedStates.has(state)
+      ? 'deterministic UI-state fixture'
+      : 'production workflow',
     profile: profile.id,
     zoomPercent: profile.zoomPercent,
     emulationMethod: profile.method,
@@ -182,6 +212,18 @@ async function scan(page: Page, state: string) {
     await scanProfile(page, state, profile);
   }
   await page.setViewportSize(scanProfiles[0].viewport);
+}
+
+async function setRenderedState(page: Page, state: Record<string, unknown>) {
+  await page.locator('accessible-questionnaire').evaluate(async (element, nextState) => {
+    Object.assign(element, nextState);
+    const component = element as HTMLElement & {
+      requestUpdate(): void;
+      updateComplete: Promise<boolean>;
+    };
+    component.requestUpdate();
+    await component.updateComplete;
+  }, state);
 }
 
 function configuredParticipant(
@@ -324,6 +366,13 @@ test.afterAll(async ({ browser }) => {
   ).toEqual([]);
 });
 
+test('invalid participant link is rendered as a blocked, actionable state', async ({ page }) => {
+  await page.goto(`${participantBaseUrl}#study=not-a-valid-configuration&participant=E2E-BAD-01`);
+  await expect(page.getByRole('heading', { name: 'Study link problem' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start/ })).toBeDisabled();
+  await scan(page, 'Invalid participant link');
+});
+
 test('SUS rendered states, recovery, review editing and completion', async ({ page }) => {
   const { url, definitionHash } = configuredParticipant(
     'system-usability-scale',
@@ -340,6 +389,10 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
     (element as HTMLElement).innerText.trim().split(/\s+/).length);
   expect(introWords).toBeLessThan(160);
   await scan(page, 'SUS introduction');
+
+  await page.getByText('Accessibility and audio options (optional)').click();
+  await expect(page.locator('.participant-support-setup')).toHaveAttribute('open', '');
+  await scan(page, 'SUS accessibility options expanded');
 
   await page.getByRole('button', { name: 'Start the 10 items' }).click();
   await expect(page.locator('.audio-guidance')).toHaveCount(0);
@@ -375,6 +428,14 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   await page.getByRole('button', { name: 'Start voice input' }).click();
   await expect(page.locator('.voice-input')).toContainText('No speech was detected');
   await scan(page, 'SUS voice-recognition error');
+
+  await page.evaluate(() => {
+    delete (window as Window & { SpeechRecognition?: unknown }).SpeechRecognition;
+    delete (window as Window & { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+  });
+  await setRenderedState(page, { voiceState: 'idle', voiceMessage: '', pendingVoiceAnswer: null });
+  await expect(page.locator('.voice-input')).toContainText('unavailable in this browser');
+  await scan(page, 'SUS built-in voice unavailable');
   await choose(page, 3);
   await page.getByRole('button', { name: 'Next question' }).click();
   await choose(page, 2);
@@ -385,6 +446,8 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   await expect(page.locator('.saved-session')).toContainText('3 of 10');
   await scan(page, 'SUS saved-session recovery offer');
   await page.getByRole('button', { name: /Resume saved questionnaire/ }).click();
+  await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible();
+  await scan(page, 'SUS resumed-progress summary');
   await page.getByRole('button', { name: 'Continue from here' }).click();
 
   for (let item = 4; item <= 10; item += 1) {
@@ -400,14 +463,66 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   );
   await expect(page.locator('.review-rating-card').first()).toContainText('Selected answer');
   await expect(page.locator('.audio-guidance')).toHaveCount(0);
+  const reviewChangeButtons = page.locator('.review-rating-card button[data-gaze-target]');
+  await expect(reviewChangeButtons).toHaveCount(10);
+  for (let item = 1; item <= 10; item += 1) {
+    const button = reviewChangeButtons.nth(item - 1);
+    const visibleLabel = `Change item ${item} answer`;
+    await expect(button).toHaveText(visibleLabel);
+    await expect(button).toHaveAttribute('aria-label', new RegExp(`^${visibleLabel}\\.`));
+    await expect(button).toHaveAttribute('data-gaze-label', visibleLabel);
+  }
   await scan(page, 'SUS review screen');
 
-  await page.getByRole('button', { name: /^Change answer for Item 2\./ }).click();
+  await setRenderedState(page, {
+    hostSubmissionFailed: true,
+    completionSavedLocally: false,
+    submittedRecord: { submissionId: 'fixture-submission-not-sent' },
+  });
+  await expect(page.getByRole('heading', { name: /has not confirmed this response/ })).toBeVisible();
+  await scan(page, 'SUS local submission failure and retry');
+  await setRenderedState(page, {
+    hostSubmissionFailed: false,
+    submittedRecord: null,
+  });
+
+  const readSavedItemTwo = () => page.evaluate(() => {
+    const key = Object.keys(localStorage).find((candidate) =>
+      candidate.startsWith('accessible-questionnaire-v0.8-progress:') &&
+      candidate.endsWith(':E2E-SUS-01'));
+    if (!key) return null;
+    const saved = JSON.parse(localStorage.getItem(key) ?? 'null') as {
+      stage?: string;
+      ratings?: Record<string, number>;
+      ratingInputRoutes?: Record<string, string>;
+    } | null;
+    return saved
+      ? {
+          stage: saved.stage,
+          value: saved.ratings?.sus02,
+          route: saved.ratingInputRoutes?.sus02,
+        }
+      : null;
+  });
+  expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 3, route: 'standard-scale' });
+
+  await page.getByRole('button', { name: /^Change item 2 answer\./ }).click();
+  await choose(page, 1);
+  // A proposed review edit is not committed to recovery storage until Save.
+  expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 3, route: 'standard-scale' });
+  await page.getByRole('button', { name: 'Cancel change and return to review' }).click();
+  await expect(page.locator('#review-item-2')).toContainText('3');
+  await expect(page.locator('#review-item-2')).not.toContainText('1 — Strongly disagree');
+  await expect(page.locator('#review-item-2')).toBeFocused();
+  expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 3, route: 'standard-scale' });
+
+  await page.getByRole('button', { name: /^Change item 2 answer\./ }).click();
   await choose(page, 5);
   await page.getByRole('button', { name: 'Save change and return to review' }).click();
   const editedReviewItem = page.locator('#review-item-2');
   await expect(editedReviewItem).toContainText('5 — Strongly agree');
   await expect(editedReviewItem).toBeFocused();
+  expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 5, route: 'standard-scale' });
   const reviewFocusStyle = await editedReviewItem.evaluate((element) => {
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
@@ -436,6 +551,58 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   expect(storedInstrument?.definition?.id).toBe('system-usability-scale');
   expect(storedInstrument?.definition?.items).toHaveLength(10);
   await scan(page, 'SUS completion screen');
+
+  await page.goto(url);
+  await expect(page.getByRole('heading', { name: 'A completed backup was found on this device' })).toBeVisible();
+  await scan(page, 'SUS recovered-completion backup offer');
+});
+
+test('Qualtrics bridge and recording recovery states are rendered explicitly', async ({ page }) => {
+  const { url } = configuredParticipant('system-usability-scale', 'E2E-Q-01');
+  await page.goto(url);
+  const qualtricsCollection = {
+    mode: 'qualtrics',
+    parentOrigin: 'https://ucl-example.eu.qualtrics.com',
+  };
+  await page.locator('accessible-questionnaire').evaluate(async (element, collection) => {
+    const component = element as any;
+    component.studyConfig = { ...component.studyConfig, collection };
+    component.hostBridgeState = 'connecting';
+    component.hostBridgeMessage = 'Checking the pinned Qualtrics bridge.';
+    component.requestUpdate();
+    await component.updateComplete;
+  }, qualtricsCollection);
+  await expect(page.getByRole('heading', { name: 'Checking secure result collection' })).toBeVisible();
+  await scan(page, 'Qualtrics bridge connecting');
+
+  await setRenderedState(page, {
+    hostBridgeState: 'failed',
+    hostBridgeMessage: 'The required Qualtrics bridge did not connect. Do not start this questionnaire.',
+  });
+  await expect(page.getByRole('heading', { name: 'Qualtrics connection problem' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start/ })).toBeDisabled();
+  await scan(page, 'Qualtrics bridge failure');
+
+  const result = {
+    scoreName: 'SUS score',
+    primaryScore: 50,
+    scoreMaximum: 100,
+  };
+  await setRenderedState(page, {
+    stage: 'complete',
+    result,
+    submittedRecord: { submissionId: 'fixture-qualtrics-complete' },
+    completionSavedLocally: true,
+    completionSavedByHost: true,
+    remoteRecordingUnconfirmed: false,
+    hostBridgeState: 'connected',
+  });
+  await expect(page.getByRole('heading', { name: 'Submitting response', exact: true })).toBeVisible();
+  await scan(page, 'Qualtrics submission transition');
+
+  await setRenderedState(page, { remoteRecordingUnconfirmed: true });
+  await expect(page.getByRole('heading', { name: 'Qualtrics has not confirmed a recorded response' })).toBeVisible();
+  await scan(page, 'Qualtrics recording-unconfirmed recovery');
 });
 
 test('NASA-TLX pairwise state', async ({ page }) => {
@@ -449,6 +616,43 @@ test('NASA-TLX pairwise state', async ({ page }) => {
   }
   await expect(page.locator('.choice-fieldset')).toBeVisible();
   await scan(page, 'NASA-TLX pairwise comparison');
+});
+
+test('NASA-TLX optional smiley and experimental gaze UI states', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.getByText('Accessibility and audio options (optional)').click();
+  await page.locator('.gaze-setup').first().getByText('Gaze-assisted answering with WebGazer (experimental)').click();
+  await expect(page.locator('.gaze-setup').first()).toHaveAttribute('open', '');
+  await scan(page, 'NASA-TLX gaze setup expanded');
+
+  await page.locator('#support-intro-smiley-answer').check();
+  await page.getByRole('button', { name: 'Start the six ratings' }).click();
+  await expect(page.locator('.smiley-response')).toBeVisible();
+  await scan(page, 'NASA-TLX smiley-landmark item');
+
+  await setRenderedState(page, { gazeState: 'positioning' });
+  await expect(page.getByRole('dialog', { name: 'Position your camera' })).toBeVisible();
+  await scan(page, 'NASA-TLX gaze positioning dialog');
+
+  await setRenderedState(page, {
+    gazeState: 'calibrating',
+    gazeCalibrationIndex: 0,
+    gazeCalibrationRepetition: 0,
+  });
+  await expect(page.getByRole('dialog', { name: 'Gaze calibration' })).toBeVisible();
+  await scan(page, 'NASA-TLX gaze calibration dialog');
+
+  await page.locator('accessible-questionnaire').evaluate(async (element) => {
+    const component = element as any;
+    component.gazeState = 'ready';
+    component.gazePendingLabel = '50 for Mental Demand';
+    component.gazePendingElement = component.querySelector('.smiley-option');
+    component.gazeDwellProgress = 0.5;
+    component.requestUpdate();
+    await component.updateComplete;
+  });
+  await expect(page.getByRole('heading', { name: 'Gaze proposal' })).toBeVisible();
+  await scan(page, 'NASA-TLX gaze proposal confirmation');
 });
 
 test('a synthetic semantic differential uses unnumbered response positions', async ({ page }) => {

@@ -1,6 +1,7 @@
 # Consent Form
 
-**Study:** Accessible Questionnaire Platform — observed researcher study
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Public protocol draft only; use the private UCL-template version for submission.
 **Version:** 1.0, 9 August 2026
 **Student researcher:** Yurui Wang
 **Supervisor and study contact:** Dr Mark Colley, m.colley@ucl.ac.uk

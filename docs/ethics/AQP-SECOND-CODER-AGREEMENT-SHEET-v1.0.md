@@ -1,10 +1,11 @@
 # Second-Coder Agreement Sheet
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Protocol draft only; use only after written amendment approval.
 **Version:** 1.0, 10 August 2026
 
 Complete independently before seeing the primary observer's codes. Use the fixed
-success, assist and error definitions in Protocol v1.0. Access only the recordings
+success, assist and error definitions in Protocol v1.1. Access only the recordings
 listed in the approved amendment and record the approved RDSS evidence IDs, not a
 copy of the file path or participant identity.
 

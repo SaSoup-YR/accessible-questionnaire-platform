@@ -1,12 +1,16 @@
 # Debrief Sheet
 
-**Study:** Accessible Questionnaire Platform — observed researcher study  
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
 **Version:** 1.0, 10 August 2026
 
-Thank you for taking part. One checking task contained a small intentional
-difference. The source labelled stored value 3 `Neither agree nor disagree`; the
-imported definition labelled the same value `Neutral`. The research team inserted
-this difference. It was not your mistake.
+Thank you for taking part. One checking task contained a small intentional label
+difference. The observer will now read the exact source wording and altered
+wording from the ethics-approved sealed discrepancy appendix. The research team
+inserted this difference. It was not your mistake.
+
+The exact answer is deliberately absent from this public copy. The live debrief
+must use the private approved copy and must not improvise or omit the two
+wordings.
 
 We did not reveal the location in advance because the study asks whether the review
 workflow helps a researcher notice a measurement difference before release. The

@@ -80,18 +80,28 @@ not that disabled users benefit or that AQP is generally more accessible.
 
 Current correction-candidate results are:
 
+- 5 compatible imported definitions admitted through the shared data path with
+  0 instrument-specific production files, 96/96 shared case-contract executions
+  with 0 instrument-specific copies, and 16/16 support-allowlist combinations
+  matching;
 - 8 distributable built-in/import cases, 31 items and 234 independent-oracle field comparisons,
   with 0 mismatches;
 - 12 adversarial inputs, with 0 silently altered;
 - 8/8 result exports and 31/31 item responses reconstructed, with 0 mismatches; and
 - missing-fingerprint and stale-fingerprint configuration tampering rejected.
 
-PR CI run `31339674025` reproduced these technical counts and produced 60/60
-rendered-browser state/profile scans for the correction candidate, with 0 reported
-axe violations, incomplete checks, overflow failures, target-size failures or
-missing states. These are pull-request results, not final-main or deployed-release
+The earlier passing PR revision reproduced the fidelity, refusal and
+reconstruction counts, but its 60-scan browser inventory is superseded. The
+expanded every-screen protocol requires 27 states × 5 profiles = 135 scans and
+is awaiting PR CI. Pull-request results are not final-main or deployed-release
 evidence. The manual assistive-technology audit remains NT and must be reported
 separately.
+
+Only three built-ins are distributable in the correction candidate. UEQ-S was
+removed because written permission covering public repository redistribution and
+deployment was not established. This is a disclosed scope reduction from the
+supervisor's four-built-in request and requires explicit acceptance; it is not
+counted as a successful fourth case.
 
 ## Dissertation claim boundary
 

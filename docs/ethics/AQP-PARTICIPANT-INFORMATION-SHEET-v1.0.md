@@ -1,6 +1,7 @@
 # Participant Information Sheet
 
-**Study:** Accessible Questionnaire Platform — observed researcher study
+**Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
+**Status:** Public protocol draft only; use the private UCL-template version for submission.
 **Version:** 1.0, 9 August 2026
 **Student researcher:** Yurui Wang
 **Supervisor and study contact:** Dr Mark Colley, m.colley@ucl.ac.uk
@@ -34,7 +35,7 @@ The remote session will take up to 75 minutes.
 3. Set up the same short SUS questionnaire in AQP and in a prepared UCL
    Qualtrics template. Some people use AQP first and some use Qualtrics first.
 4. After each setup, give a 1–7 ease rating. At the end, answer a short standard
-   usability questionnaire and three short feedback questions.
+   usability questionnaire for each system and three short feedback questions.
 5. Check two setup materials for any difference you would resolve before
    releasing a participant link.
 

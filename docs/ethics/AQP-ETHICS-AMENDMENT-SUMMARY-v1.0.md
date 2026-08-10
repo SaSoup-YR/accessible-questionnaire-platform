@@ -1,10 +1,14 @@
-# AQP ethics amendment summary
+# Observed researcher study — public amendment summary
 
 Version: **1.0 — 9 August 2026**
-Project: **Accessible Questionnaire Platform (AQP)**
+Proposed activity: **Observed Evaluation of Questionnaire Study-Setup Workflows**
 Student researcher: **Yurui Wang**
 Supervisor and study contact: **Dr Mark Colley, m.colley@ucl.ac.uk**
 Existing approval ID: **copy from the current approval letter before submission**
+
+Status: **public method summary only. Submit the separately prepared documents
+that retain the original UCL templates and the official amendment form for the
+existing approval route.**
 
 ## Decision requested
 
@@ -122,17 +126,18 @@ ethics confirmation and updated participant materials.
 - Official UCL Amendment Form/subform for the route named in the original approval.
 - Updated original ethics application with changes marked, if required by that route.
 - Observed Researcher Study Protocol v1.0.
-- Participant Information Sheet v1.0.
-- Consent Form v1.0.
+- Participant Information Sheet v1.0 in the original UCL template.
+- Consent Form v1.0 in the original UCL template.
 - Recruitment Invitation v1.0.
 - Eligibility Screener v1.0.
 - Researcher Task Sheet v1.0.
 - Observer Coding Sheet v1.0.
 - Debrief Sheet v1.0.
 - Second-Coder Agreement Sheet v1.0.
-- Project Risk Assessment v1.0.
-- GDPR-compliant subject receipt form v1.0, marked not in use because no payment
-  is planned.
+- Project Risk Assessment v1.0 in the original UCL template.
+
+No payment or reimbursement is planned, so the subject payment-receipt form is
+not applicable and is not submitted.
 
 ## Submission gate
 
