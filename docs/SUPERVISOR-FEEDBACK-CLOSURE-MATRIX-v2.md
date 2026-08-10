@@ -1,6 +1,6 @@
 # Supervisor feedback closure matrix v2
 
-Version: 2.4\
+Version: 2.5\
 Frozen: 2026-08-10\
 Candidate branch: `feat/researcher-wizard`\
 Release rule: implementation is not marked release-complete until the named
@@ -24,7 +24,7 @@ commit is deployed, and the deployment is re-tested.
 | F1 | Review shows the item statement, selected answer meaning and one direct Change control per item. | `source/src/accessible-nasa-tlx.ts`: review records; a declared label for the selected value or, when no such label exists, the declared scale endpoints without invented wording; unique visible **Change item N answer** labels; gaze targets; direct edit and focus return; transactional pending value/input route. | Component and rendered-browser routes use Brooke's `5, 1, 4, 2, 3, 5, 1, 4, 2, 3` vector and directly assert Mark's Item 3 = 4 case. They also test direct Save and real Cancel-after-selection. Before Save, recovery storage remains on Review with the original value, input route and score; Cancel retains them; Save alone commits. A failure includes a missing prompt, missing declared selected label/endpoint context, invented label, non-unique or non-targetable Change control, opening the wrong item, false cancellation, premature storage, changing another answer or failing to return focus. | CI-pass on candidate `9a8c849` in run `31392425368`. Manual A16/A17/A21 and final deployment acceptance remain pending. | Execute A16/A17/A21; then merge only with authority, deploy and smoke-test Item 3 = 4 plus both Save and Cancel on the public build. |
 | F2 | Participant code is prefilled from the generated link and remains editable as fallback. | `source/src/study.ts` and `study-conductor.ts`: per-link pseudonymous code, validation, hash-navigation reload and committed-session precedence; the Skip link preserves the application hash. | Component and rendered-browser routes cover distinct generated links, same-tab P001 → P002 replacement without a test-only reload, missing/manual/invalid codes, committed correction recovery, Skip focus/hash preservation and final-record identity. | CI-pass on candidate `9a8c849` in run `31392425368`. Manual A02 and final deployment acceptance remain pending. | Execute A02; after an authorised deployment, open two distinct generated links, confirm distinct editable codes and no first-screen validation error, exercise Skip, reload and confirm the same identity/session. |
 | F3 | Participant introduction is minimal; full audio guidance appears once, not before every item. | Intro/support disclosure and compact in-question controls in `accessible-nasa-tlx.ts`; the full audio-guidance panel is confined to **Accessibility and audio options (optional)** on the introduction. | Real-browser regression requires the optional disclosure to start collapsed, one intro `.audio-guidance`, fewer than 160 visible intro words, and no `.process-overview`, `.factor-reference` or `.study-details`; `.audio-guidance` must be absent after Start and on Review. Component coverage also checks the NASA-TLX rating, pairwise and review route. | CI-pass on candidate `9a8c849` in run `31392425368`. This proves bounded removal of AQP-owned boilerplate and repetition, not reduced cognitive burden or short researcher-supplied `introPrompt` content. Manual A01/A03/A04 and final deployment acceptance remain pending. | Execute A01/A03/A04; after an authorised deployment, inspect intro/item/pairwise/review. Treat the word limit as a regression threshold, not evidence of cognitive accessibility. |
-| F4 | Canonical definition hash is in configuration and result and is verified at load and submission. | Version 4 configuration/result schemas, canonical SHA-256, CSV/Qualtrics fields and fail-closed checks. | Missing/stale hash link, submission and stored-result tamper tests; export reconstruction test. | Local-pass. | CI and deployed tampered-link/submission checks. The hash proves consistency, not authenticated authorship. |
+| F4 | Canonical definition hash is in configuration and result and is verified at load and submission. | Version 4 configuration/result schemas, canonical SHA-256, immutable result definition snapshot, CSV/Qualtrics fields and fail-closed checks. The Qualtrics parent requires a valid fingerprint plus matching snapshot metadata and writes `AQP_ACCEPTED = 1` only after every staged field succeeds. | Missing/stale hash link, submission and stored-result tamper tests; export reconstruction; missing/malformed runtime fingerprint and missing snapshot rejection; injected `AQP_RAW_05` staging failure with no acceptance marker. | CI-pass on candidate `4fe422c` in run `31399712181`: 208/208 deterministic tests, 9/9 rendered-browser tests, 3/3 browser-support routes and release synchronisation passed. | Re-test tampered link/submission and one fresh synthetic Qualtrics row after an authorised deployment. Confirm `AQP_ACCEPTED = 1`, a valid definition hash and reconstructable raw record. The fingerprint proves internal consistency and identifiability, not authenticated authorship or resistance to replacement of both unsigned definition and hash. |
 | F5 | Real-browser axe scans run in CI and publish a report. | Playwright specification, `verify.yml`, JSON/HTML publisher and uploaded Playwright traces/results. | Frozen S01–S27 inventory × five profiles = 135 required rows; missing rows, violations, incomplete checks, overflow and target-size failures are reported. | CI-pass on candidate `816e1c4`: 135/135 rows, 0 violations, 0 overflow failures, 0 critical target-size failures and 0 missing combinations. Thirteen incomplete `color-contrast` scan results involving 20 gaze-state node occurrences are listed with targets/failure summaries and remain inspection items; a target may recur across state/profile rows. | Manually determine and record every overlap-dependent contrast occurrence; repeat the automated run on final main/release SHA. |
 
 ## B. Latest feedback, section 1 — manual technical accessibility audit
@@ -54,7 +54,7 @@ commit is deployed, and the deployment is re-tested.
 | Remove C6 rather than leave it unevidenced. | C6 is in a Removed row, not an active claim. | Complete. |
 | Give C2 a decision rule for the new audit design. | C2 requires 135 browser rows plus complete manual P/F/NA observations and no S3 failure on a supported route. | Rule complete; evidence Not evidenced. |
 | Give C5 a decision rule for the optional observed researcher study. | C5 freezes success, time, assist/error, discrepancy, SEQ/SUS and second-coder evidence and prohibits significance tests. | Rule complete; study Not evidenced. |
-| Make C7's definition hash checkable. | C7 requires canonical hash agreement, rejection of missing/stale Version 4 hashes and export-only reconstruction. | Local-pass; release verification pending. |
+| Make C7's definition hash checkable. | C7 requires canonical hash agreement, rejection of missing/stale Version 4 hashes and export-only reconstruction. Qualtrics host acceptance additionally requires a schema-complete definition snapshot and a last-write acceptance marker. | CI-pass on candidate `4fe422c` in run `31399712181`; deployment and fresh synthetic Qualtrics-row verification remain pending. |
 | Fill every evidence status, including Not evidenced. | `docs/AQP-EVALUATION-MATRIX-v6.md` v6.2 has a status for every active row. | Complete for the candidate state; update only after new evidence. |
 
 ## E. Latest feedback, section 4 — optional observed researcher protocol
@@ -103,9 +103,9 @@ npm run report:browser-support
 npm run build:release
 ```
 
-Candidate `816e1c4` result in CI run
-[31377511113](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31377511113):
-20/20 files and 199/199 tests passed; 8
+Candidate `4fe422c` result in CI run
+[31399712181](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31399712181):
+20/20 files and 208/208 tests passed; 8
 fidelity cases, 31 items and 234 comparisons with 0 mismatch; 12 adversarial
 inputs with 0 silent alteration; 8/8 exports and 31/31 responses reconstructed;
 5 data-only compatible imports, 96/96 shared contract executions and 16/16
@@ -115,9 +115,9 @@ failures, 0 critical target-size failures and no missing row.
 
 ## Release-complete checklist
 
-- [x] Push candidate `816e1c4` to Draft PR #68.
+- [x] Push candidate `4fe422c` to Draft PR #68.
 - [x] Obtain current-candidate CI with 135/135 rendered state/profile rows.
-- [x] Retain quantified technical, rendered accessibility and cross-browser artefacts tied to the commit SHA (run `31377511113`, artifact IDs `9058573437` and `9058513218`).
+- [x] Retain quantified technical, rendered accessibility and cross-browser artefacts tied to the commit SHA (run `31399712181`; rendered artifact `9067181758`, SHA-256 `52b4631a98d03857d10356632bf09a3c7ac3627a1f7dca822b9052f2a02a8adb`; quantified artifact `9067100601`, SHA-256 `10bc877be89e9ed32c397e4d15a36aae324389a871386280661e3b74f4cd8686`).
 - [ ] Inspect and record all 20 reported overlap-dependent axe contrast occurrences; do not count them as 20 unique defects or as automatic passes.
 - [ ] Obtain review/merge authority and deploy that verified commit to Pages.
 - [ ] Re-test F1–F4 and the German endpoint case on the deployment. F1 includes changing item 2 and cancelling before a separate Save run; verify answer, route, score, recovery record, focus and visible label command.

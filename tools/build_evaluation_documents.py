@@ -88,7 +88,7 @@ DOCUMENTS = [
         "source": ROOT / "docs/SUPERVISOR-FEEDBACK-CLOSURE-MATRIX-v2.md",
         "output": OUT / "AQP_Supervisor_Feedback_Closure_Matrix_v2.docx",
         "running": "AQP supervisor feedback closure matrix",
-        "version": "Version 2.4 | 10 August 2026",
+        "version": "Version 2.5 | 10 August 2026",
         "landscape": True,
         "table_font": 7.5,
         "kind": "matrix",
