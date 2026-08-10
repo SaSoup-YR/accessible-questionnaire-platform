@@ -96,12 +96,13 @@ counts in CI run
 The expanded every-screen protocol produced all 27 states × 5 profiles = 135
 rows, with 0 automatically detected violations, 0 overflow failures, 0 critical
 target-size failures and no missing rows. Axe returned 13 incomplete
-`color-contrast` rule results across 20 gaze-state nodes because it could not
-determine backgrounds where elements overlap. The report retains every target
-and failure summary for inspection; these are not counted as passes.
+`color-contrast` scan results involving 20 gaze-state node occurrences because
+it could not determine backgrounds where elements overlap. A target may recur
+across state/profile rows. The report retains every occurrence and failure
+summary for inspection; these are not counted as passes.
 Pull-request results are not final-main or deployed-release evidence. The manual
-assistive-technology audit and the 20 contrast determinations remain NT and must
-be reported separately.
+assistive-technology audit and the overlap-dependent contrast determinations
+remain NT and must be reported separately.
 
 Only three built-ins are distributable in the correction candidate. UEQ-S was
 removed because written permission covering public repository redistribution and
