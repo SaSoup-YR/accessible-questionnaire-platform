@@ -1,8 +1,8 @@
-# AQP manual assistive-technology audit v1.2
+# AQP manual assistive-technology audit v1.3
 
-Status: **protocol ready; audit not yet executed**
-Protocol revised: 2026-08-10
-Release under test: **record the immutable release tag and commit SHA before testing**
+Status: **protocol ready; audit not yet executed**\
+Protocol revised: 2026-08-10\
+Release under test: **record the immutable release tag and commit SHA before testing**\
 Deployed URL: **record after the verified build is deployed**
 
 ## Evidence boundary
@@ -87,7 +87,7 @@ Complete every route column with `P/F/NA — exact observation (evidence ID)`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A01 | 1.3.1, 1.3.2, 2.4.6 | Open the participant introduction from its generated link. | One useful page heading, short task purpose, logical reading order and one Start action are exposed before optional detail. | NT | NT | NT | NT |
 | A02 | 3.3.2, 4.1.2 | Inspect the participant-code field. | The link-supplied pseudonymous code is present, editable, labelled and not announced as invalid before Start. | NT | NT | NT | NT |
-| A03 | 1.3.1, 4.1.2 | Expand and collapse “Adjust accessibility support (optional)”. | Name, role and expanded state are exposed; the full audio-guidance panel occurs here once and is not repeated on item screens. | NT | NT | NT | NT |
+| A03 | 1.3.1, 4.1.2 | Expand and collapse “Accessibility and audio options (optional)”. | Name, role and expanded state are exposed; the full audio-guidance panel occurs here once and is not repeated on item screens. | NT | NT | NT | NT |
 | A04 | 1.3.1, 2.4.3, 2.4.6 | Start SUS and arrive at item 1. | Focus moves to the item heading; item number/progress and complete item statement are announced once in a useful order. | NT | NT | NT | NT |
 
 ### Item operation and voice availability (A05–A09)
