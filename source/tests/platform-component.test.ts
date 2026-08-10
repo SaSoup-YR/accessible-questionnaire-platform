@@ -15,11 +15,14 @@ import {
   buildParticipantUrl,
   createStudyConfig,
   loadCompletedResults,
+  progressStorageKey,
   readStudyConfigFromHash,
   resultsToCsv,
   type StudyResultRecord,
 } from '../src/study';
 import { reviewQuestionnaireExport } from '../src/platform-questionnaire-import';
+import { getQuestionnaireDefinition } from '../src/questionnaire-definition';
+import { scoreQuestionnaire } from '../src/scoring';
 
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
@@ -39,6 +42,69 @@ afterEach(() => {
 });
 
 describe('instrument-independent questionnaire workflow', () => {
+  it('suppresses only duplicated German endpoint labels and preserves middle labels', async () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.language = 'de';
+    draft.name = 'German agreement check';
+    draft.shortName = 'GAC';
+    draft.items = [createCustomItemDraft({
+      name: 'Item 1',
+      prompt: 'Ich hatte das Gefühl, nur Bilder zu sehen.',
+      lowAnchor: 'trifft gar nicht zu',
+      highAnchor: 'trifft völlig zu',
+      responseLabels: {
+        1: 'trifft gar nicht zu',
+        2: 'trifft eher nicht zu',
+        3: 'teils/teils',
+        4: 'trifft eher zu',
+        5: 'trifft völlig zu',
+      },
+    })];
+    const definition = createCustomQuestionnaireDefinition(draft);
+    const config = createStudyConfig({
+      instrumentId: definition.id,
+      questionnaireDefinition: definition,
+      studyId: 'GERMAN-ENDPOINT-01',
+      studyTitle: 'German endpoint regression',
+      taskLabel: 'using the test interface',
+      showScoreToParticipant: false,
+      support: {
+        showSimpleLanguage: false,
+        answerMode: 'standard',
+        largeText: false,
+        audioGuidance: false,
+        recoveryEnabled: false,
+        participantAdjustmentPolicy: 'locked',
+        voiceInputAvailable: false,
+        gazeInputAvailable: false,
+      },
+      collection: { mode: 'local' },
+    });
+    const configuredUrl = new URL(buildParticipantUrl(window.location.href, config, 'P-DE-01'));
+    window.history.replaceState({}, '', configuredUrl.pathname + configuredUrl.hash);
+
+    const component = document.createElement('accessible-questionnaire') as AccessibleNasaTlx;
+    document.body.append(component);
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the 1 item'))!
+      .click();
+    await component.updateComplete;
+
+    const fieldset = component.querySelector('.rating-fieldset')!;
+    const anchors = fieldset.querySelector('.rating-anchors')!;
+    expect(anchors.getAttribute('aria-hidden')).toBe('true');
+    expect(fieldset.querySelector('legend')?.textContent).toContain('trifft gar nicht zu');
+    expect(anchors.textContent).toContain('trifft gar nicht zu');
+    expect(
+      [...fieldset.querySelectorAll('.rating-option small')].map((label) => label.textContent?.trim()),
+    ).toEqual(['trifft eher nicht zu', 'teils/teils', 'trifft eher zu']);
+    expect(fieldset.querySelector<HTMLInputElement>('input[value="1"]')?.getAttribute('aria-label'))
+      .toContain('trifft gar nicht zu');
+    expect(fieldset.textContent?.match(/trifft gar nicht zu/g)).toHaveLength(2);
+    expect(fieldset.textContent?.match(/teils\/teils/g)).toHaveLength(1);
+  });
+
   it('runs a researcher-supplied definition through the same participant, result and recovery model', async () => {
     const draft = createCustomQuestionnaireDraft();
     draft.name = 'Work Assistance Inventory';
@@ -585,8 +651,18 @@ describe('instrument-independent questionnaire workflow', () => {
     );
     expect(component.querySelector('.rating-fieldset')).not.toBeNull();
     expect(component.querySelector('.rating-fieldset legend')?.textContent).toContain(
-      'Strongly disagree',
+      'Choose one answer',
     );
+    expect(component.querySelector('.rating-anchors')?.getAttribute('aria-hidden')).toBe('true');
+    expect(component.querySelector('.fully-labelled-rating-grid')).not.toBeNull();
+    expect(component.querySelector('.rating-fieldset')?.textContent?.match(/Strongly disagree/g))
+      .toHaveLength(2);
+    expect(component.querySelector('.rating-option input[value="1"]')
+      ?.closest('.rating-option')?.querySelector('small')).toBeNull();
+    expect(component.querySelector('.rating-option input[value="3"]')
+      ?.closest('.rating-option')?.querySelector('small')?.textContent).toBe(
+        'Neither agree nor disagree',
+      );
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input')).toHaveLength(5);
     expect(
       component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
@@ -609,6 +685,10 @@ describe('instrument-independent questionnaire workflow', () => {
         expect(component.querySelector('#rating-heading')?.textContent).toBe('I felt in control.');
       }
     }
+
+    const labelledReviewCards = component.querySelectorAll<HTMLElement>('.review-rating-card');
+    expect(labelledReviewCards[1].textContent).toContain('Selected answer: 4 — Agree');
+    expect(labelledReviewCards[1].querySelector('.review-scale-context')).toBeNull();
 
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit responses'))!
@@ -678,11 +758,19 @@ describe('instrument-independent questionnaire workflow', () => {
       component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')
         ?.getAttribute('aria-label'),
     ).toBe('5, Strongly agree, for Item 1');
+    expect(component.querySelector('.rating-fieldset legend')?.textContent).toContain(
+      'Choose one answer',
+    );
+    expect(component.querySelector('.rating-fieldset')?.textContent?.match(/Strongly disagree/g))
+      .toHaveLength(2);
     expect(component.textContent).toContain('exact visible endpoint label');
     expect(component.textContent).not.toContain('Neutral');
 
-    for (let index = 0; index < 10; index += 1) {
-      const expectedValue = index % 2 === 0 ? '5' : '1';
+    // Brooke's worked vector also reproduces the supervisor's concrete review
+    // concern: Item 3 has the unlabelled interior value 4.
+    const answerVector = [5, 1, 4, 2, 3, 5, 1, 4, 2, 3];
+    for (let index = 0; index < answerVector.length; index += 1) {
+      const expectedValue = String(answerVector[index]);
       const options = component.querySelectorAll<HTMLInputElement>('.rating-option input');
       expect(options).toHaveLength(5);
       component.querySelector<HTMLInputElement>(`.rating-option input[value="${expectedValue}"]`)!.click();
@@ -695,16 +783,119 @@ describe('instrument-independent questionnaire workflow', () => {
 
     expect(component.querySelector('.choice-fieldset')).toBeNull();
     expect(component.textContent).not.toContain('Pairwise comparisons');
+    const reviewCards = component.querySelectorAll<HTMLElement>('.review-rating-card');
+    expect(reviewCards).toHaveLength(10);
+    expect(reviewCards[0].getAttribute('role')).toBe('group');
+    expect(reviewCards[0].getAttribute('aria-labelledby')).toBe('review-item-label-1');
+    expect(reviewCards[0].getAttribute('aria-describedby')).toBe('review-item-answer-1');
+    expect(reviewCards[0].textContent).toContain(
+      'I think that I would like to use this system frequently.',
+    );
+    expect(reviewCards[0].textContent).toContain('Selected answer: 5 — Strongly agree');
+    expect(reviewCards[0].querySelector('.review-scale-context')).toBeNull();
+    expect(reviewCards[2].textContent).toContain('I thought the system was easy to use.');
+    expect(reviewCards[2].textContent).toContain('Selected answer: 4');
+    expect(reviewCards[2].querySelector('.review-scale-context')?.textContent
+      ?.replace(/\s+/g, ' ').trim())
+      .toBe('Scale: 1 — Strongly disagree to 5 — Strongly agree');
+
+    const changeButtons = [...component.querySelectorAll<HTMLButtonElement>(
+      '.review-rating-card button[data-gaze-target]',
+    )];
+    expect(changeButtons).toHaveLength(10);
+    changeButtons.forEach((button, index) => {
+      const visibleLabel = `Change item ${index + 1} answer`;
+      expect(button.textContent?.trim()).toBe(visibleLabel);
+      expect(button.getAttribute('aria-label')).toMatch(new RegExp(`^${visibleLabel}\\.`));
+      expect(button.getAttribute('data-gaze-label')).toBe(visibleLabel);
+    });
+
+    const progressKey = progressStorageKey(config.configId, 'P-SUS-01');
+    const savedBeforeEdit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedBeforeEdit.stage).toBe('review');
+    expect(savedBeforeEdit.ratings.sus02).toBe(1);
+    expect(savedBeforeEdit.ratingInputRoutes.sus02).toBe('standard-scale');
+    const susDefinition = getQuestionnaireDefinition('system-usability-scale')!;
+    const scoreBeforeEdit = scoreQuestionnaire(susDefinition, savedBeforeEdit.ratings).primaryScore;
+    expect(scoreBeforeEdit).toBe(50);
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change item 2 answer."]')!.click();
+    await component.updateComplete;
+    // Exercise a different pending input route as well as a different value.
+    // Neither may enter the canonical response or progress record before Save.
+    (component as any).selectRating('sus02', 5, 'voice');
+    await component.updateComplete;
+    expect(component.querySelector<HTMLInputElement>('.rating-option input[value="5"]')?.checked).toBe(true);
+    const savedDuringEdit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedDuringEdit.stage).toBe('review');
+    expect(savedDuringEdit.ratings.sus02).toBe(1);
+    expect(savedDuringEdit.ratingInputRoutes.sus02).toBe('standard-scale');
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Cancel change and return to review'))!
+      .click();
+    await component.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Selected answer: 1 — Strongly disagree');
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Input route: full scale');
+    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+    expect(component.querySelector('.sr-only[aria-live="polite"]')?.textContent)
+      .toContain('edit cancelled. Original answer kept. 1 — Strongly disagree');
+    const savedAfterCancel = JSON.parse(localStorage.getItem(progressKey)!) as {
+      stage: string;
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedAfterCancel.stage).toBe('review');
+    expect(savedAfterCancel.ratings.sus02).toBe(1);
+    expect(savedAfterCancel.ratingInputRoutes.sus02).toBe('standard-scale');
+    expect(scoreQuestionnaire(susDefinition, savedAfterCancel.ratings).primaryScore)
+      .toBe(scoreBeforeEdit);
+
+    component.querySelector<HTMLButtonElement>('button[aria-label^="Change item 2 answer."]')!.click();
+    await component.updateComplete;
+    expect(component.querySelector('#rating-heading')?.textContent).toContain('Item 2');
+    component.querySelector<HTMLInputElement>('.rating-option input[value="2"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Save change and return to review'))!
+      .click();
+    await component.updateComplete;
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
+      .toContain('Selected answer: 2');
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1]
+      .querySelector('.review-scale-context')?.textContent?.replace(/\s+/g, ' ').trim())
+      .toBe('Scale: 1 — Strongly disagree to 5 — Strongly agree');
+    expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
+    const savedAfterCommit = JSON.parse(localStorage.getItem(progressKey)!) as {
+      ratings: Record<string, number>;
+      ratingInputRoutes: Record<string, string>;
+    };
+    expect(savedAfterCommit.ratings.sus02).toBe(2);
+    expect(savedAfterCommit.ratingInputRoutes.sus02).toBe('standard-scale');
+
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit responses'))!
       .click();
     await component.updateComplete;
 
     expect(component.textContent).toContain('SUS score');
-    expect(component.textContent).toContain('100.00');
+    expect(component.textContent).toContain('47.50');
     expect(completed).not.toBeNull();
     expect((completed as unknown as StudyResultRecord).instrument.id).toBe('system-usability-scale');
     expect((completed as unknown as StudyResultRecord).result.strategy).toBe('sus-standard-v1');
+    expect((completed as unknown as StudyResultRecord).result.ratings.sus02).toBe(2);
+    expect((completed as unknown as StudyResultRecord).supportMetadata.ratingInputRoutes.sus02)
+      .toBe('standard-scale');
     expect((completed as unknown as StudyResultRecord).responses.pairPresentationOrder).toEqual([]);
   });
 
@@ -728,6 +919,7 @@ describe('instrument-independent questionnaire workflow', () => {
       ['Study ID', 'SUS-PLATFORM-02'],
       ['Study title', 'System evaluation'],
       ['Task label', 'using the route-planning system'],
+      ['Pseudonymous participant code for this link', 'P-SUS-02'],
     ]) {
       const input = byLabel(label);
       input.value = value;
@@ -750,14 +942,6 @@ describe('instrument-independent questionnaire workflow', () => {
       expectedScore: 50,
       expectedStrategy: 'nasa-tlx-raw-v1',
       expectedTitle: 'Raw NASA Task Load Index',
-    },
-    {
-      instrumentId: 'user-experience-questionnaire-short',
-      participantCode: 'P-UEQS-01',
-      values: [7, 7, 7, 7, 1, 1, 1, 1],
-      expectedScore: 0,
-      expectedStrategy: 'ueqs-standard-v1',
-      expectedTitle: 'User Experience Questionnaire Short',
     },
   ])(
     'runs $instrumentId through the same rating-only participant workflow',

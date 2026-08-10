@@ -231,8 +231,8 @@ function chooseRankedSafeAlternative<T>(
   // Reject the complete browser result when any ranked alternative contains
   // unresolved negation or exclusion meaning. This is deliberately independent
   // of rank: Web Speech can return "4" first and "Note 4" second after the user
-  // actually said "not four". A parsed exact official label such as the UEQ-S
-  // endpoint "Not interesting" is not unresolved and remains eligible.
+  // actually said "not four". A complete displayed response label that itself
+  // begins with “not” is resolved by the label matcher and remains eligible.
   if (attempts.some(({ transcript, value }) =>
     value === null && hasUnsafeSpeechMeaning(transcript))) return null;
 
@@ -432,8 +432,8 @@ export function parseRatingTranscript(
   // labels without inventing meanings for the intermediate response positions.
   // Accept an exact visible endpoint (or a deliberately configured alias), then
   // still require confirmation in the participant interface. This check must
-  // precede the general negation guard because "Not interesting" is an official
-  // UEQ-S endpoint rather than a negated instruction.
+  // precede the general negation guard because a displayed label beginning with
+  // “not” is a response value rather than a negated instruction.
   const declaredLabel = exactDeclaredLabelCandidate(text, dimension, allowedValues);
   if (declaredLabel !== undefined) return declaredLabel;
   const endpoint = exactEndpointCandidate(text, dimension, allowedValues);

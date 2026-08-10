@@ -14,12 +14,14 @@ observed result and Pass, Partial, Fail or Not supported.
 3. Select Raw TLX. Confirm the same six items, 21 values, no comparisons and
    unweighted-mean scoring.
 4. Select SUS. Confirm 10 items, 5 values, no comparisons and SUS scoring.
-5. Select UEQ-S. Confirm 8 semantic differentials, 7 response positions, no
-   comparisons and overall/pragmatic/hedonic scoring.
-6. Confirm SUS and UEQ-S remove smiley and simpler-wording controls while retaining
+5. Confirm that UEQ-S is absent from this public candidate and that no UEQ-S
+   definition file is present in `questionnaires/`.
+6. Import the committed original synthetic semantic-differential fixture. Confirm
+   seven visually unnumbered positions and preserved accessible endpoint context.
+7. Confirm SUS removes smiley and simpler-wording controls while retaining
    presentation, audio, recovery, voice and gaze controls.
-7. Generate, download and re-import one configuration for each instrument.
-8. Import a result in the configuration input. Confirm `There is a problem` receives
+8. Generate, download and re-import one configuration for each distributable instrument.
+9. Import a result in the configuration input. Confirm `There is a problem` receives
    focus and is moved to the start of the visible viewport on desktop, iPhone and
    iPad.
 
@@ -66,9 +68,10 @@ through the participant-result flow. The LSG converted SP1–SP5 on the 1–7 sc
 also completed through that flow. The primary tester subsequently imported and ran the
 supervisor-supplied German LSG on the synchronized public candidate without an import
 or participant-flow error. This verifies the structured-import path, not German
-spoken-label recognition. The unchanged `0.8.7-q7` bridge retains the recorded normal
-UCL Qualtrics accepted-row evidence; the current candidate repeated the changed-risk
-offline warning, reconnect/retry and refresh-recovery paths.
+spoken-label recognition. The recorded `0.8.7-q7` Qualtrics accepted row is a
+historical baseline only. Bridge `0.8.8-q8` adds the definition fingerprint and
+must receive a fresh synthetic accepted row before release; the current candidate
+repeated the changed-risk offline warning, reconnect/retry and refresh-recovery paths.
 
 ### Recorded rc.4 voice and recovery smoke check
 
@@ -105,13 +108,14 @@ single-retry regression tests; they are not a universal speech-recognition claim
 2. Complete values 0, 20, 40, 60, 80 and 100. Confirm no pair page appears and the
    Raw workload score is 50.
 
-### UEQ-S
+### Synthetic semantic-differential regression
 
-1. Confirm the eight official adjective pairs and 1–7 semantic-differential
-   positions.
-2. Complete 7 for the first four and 1 for the last four. Confirm no pair page
-   appears, the overall score is 0, pragmatic quality is 3 and hedonic quality is
-   -3.
+1. Load `custom-semantic-differential-check.questionnaire.json` through the
+   validated custom-definition route.
+2. Confirm seven visually unnumbered positions between the two original synthetic
+   endpoints, no pair page and a deterministic mean result.
+3. Confirm this fixture is labelled synthetic and is not described as UEQ-S or as
+   psychometric-equivalence evidence.
 
 ## 4. Errors, focus and recovery
 
@@ -215,3 +219,27 @@ At minimum:
 
 Do not describe central collection as complete until the real UCL account contains
 and exports both synthetic records.
+
+## 9. Reproducible rendered-browser evidence
+
+1. Run `npm run build`, then `npm run test:browser` from `source` in installed
+   Chromium. The browser suite must serve `dist`, not the Vite development server.
+2. Confirm all twelve pre-specified interface states were scanned and none is
+   missing: introduction, missing-answer error, voice listening, voice proposal,
+   voice-recognition error, ordinary item, saved-progress offer, review,
+   completion, pairwise, the synthetic semantic-differential fixture and the imported
+   labelled German scale.
+3. Inspect every incomplete axe check; do not silently count it as a pass.
+4. Confirm every state/profile combination exists at 1280, 768 and 320 CSS-pixel
+   widths, Chromium CDP page-scale factor 2.0 and the corresponding 640 by 450
+   reflow layout (60 scans total). Confirm no horizontal overflow above one CSS
+   pixel.
+5. Confirm actual Tab traversal reaches the tested control with a rendered focus
+   indicator, and every measured critical target is at least 24 by 24 CSS pixels.
+6. Run `npm run report:browser` and archive the axe JSON, axe HTML and Playwright HTML
+   reports with the exact
+   commit SHA. In GitHub Actions, use the job summary and the
+   `rendered-accessibility-evidence` artifact.
+7. Report the browser version, state count, violation count, incomplete count,
+   overflow count and target-size failures. State explicitly that this is bounded
+   automated evidence, not a WCAG conformance result or representative-user evidence.

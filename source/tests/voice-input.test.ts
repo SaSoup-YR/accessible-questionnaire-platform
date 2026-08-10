@@ -246,27 +246,40 @@ describe('voice-answer parsing', () => {
     expect(parseRatingTranscript('not strongly agree', item, values, [])).toBeNull();
   });
 
-  it('accepts exact official UEQ-S endpoints without misreading its negative endpoint', () => {
-    const definition = getQuestionnaireDefinition('user-experience-questionnaire-short')!;
+  it('accepts exact synthetic semantic-differential endpoints without weakening the negation veto', () => {
+    const draft = createCustomQuestionnaireDraft();
+    draft.name = 'Synthetic endpoint safety check';
+    draft.shortName = 'SESC';
+    draft.scaleType = 'semantic-differential';
+    draft.minimum = 1;
+    draft.maximum = 7;
+    draft.step = 1;
+    draft.items = [
+      createCustomItemDraft({
+        name: 'Not configured or configured',
+        prompt: 'Choose one position.',
+        lowAnchor: 'Not configured',
+        highAnchor: 'Configured',
+      }),
+    ];
+    const definition = createCustomQuestionnaireDefinition(draft);
     const values = buildRatingValues(definition);
-    const firstItem = definition.items[0];
-    const interestItem = definition.items[5];
+    const item = definition.items[0];
 
-    expect(parseRatingTranscript('obstructive', firstItem, values, [])).toBe(1);
-    expect(parseRatingTranscript('I select supportive', firstItem, values, [])).toBe(7);
-    expect(parseRatingTranscript('not interesting', interestItem, values, [])).toBe(1);
-    expect(parseRatingAlternatives(['not interesting'], interestItem, values, [])).toEqual({
-      transcript: 'not interesting',
+    expect(parseRatingTranscript('not configured', item, values, [])).toBe(1);
+    expect(parseRatingAlternatives(['not configured'], item, values, [])).toEqual({
+      transcript: 'not configured',
       value: 1,
     });
-    expect(parseRatingTranscript('interesting', interestItem, values, [])).toBe(7);
-    expect(parseRatingTranscript('not interesting or interesting', interestItem, values, [])).toBeNull();
-    expect(parseRatingTranscript('middle', firstItem, values, [])).toBeNull();
+    expect(parseRatingTranscript('I select configured', item, values, [])).toBe(7);
+    expect(parseRatingTranscript('not configured or configured', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('do not choose configured', item, values, [])).toBeNull();
+    expect(parseRatingTranscript('middle', item, values, [])).toBeNull();
     expect(parseRatingAlternatives(
-      ['not interesting', 'interesting'],
-      interestItem,
+      ['not configured', 'configured'],
+      item,
       values,
       [],
-    )).toEqual({ transcript: 'not interesting', value: 1 });
+    )).toEqual({ transcript: 'not configured', value: 1 });
   });
 });

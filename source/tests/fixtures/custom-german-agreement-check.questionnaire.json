@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "language": "de",
+  "id": "custom-german-agreement-check",
+  "version": "1.0.0",
+  "name": "German Agreement Check",
+  "shortName": "GAC",
+  "description": "A browser fixture for a fully labelled imported scale.",
+  "introPrompt": "Bitte beantworten Sie die Frage.",
+  "officialContentNotice": "Browser regression fixture.",
+  "source": {
+    "label": "AQP browser fixture"
+  },
+  "scale": {
+    "type": "agreement",
+    "minimum": 1,
+    "maximum": 5,
+    "step": 1
+  },
+  "items": [
+    {
+      "id": "item-01",
+      "name": "Item 1",
+      "prompt": "Ich hatte das Gefühl, nur Bilder zu sehen.",
+      "shortMeaning": "Agreement with the item.",
+      "lowAnchor": "trifft gar nicht zu",
+      "highAnchor": "trifft völlig zu",
+      "responseLabels": {
+        "1": "trifft gar nicht zu",
+        "2": "trifft eher nicht zu",
+        "3": "teils/teils",
+        "4": "trifft eher zu",
+        "5": "trifft völlig zu"
+      }
+    }
+  ],
+  "scoring": {
+    "strategy": "mean-v1",
+    "scoreName": "Mean score",
+    "minimum": 1,
+    "maximum": 5
+  },
+  "supports": {
+    "simplerExplanations": false,
+    "smileyLandmarks": false
+  }
+}

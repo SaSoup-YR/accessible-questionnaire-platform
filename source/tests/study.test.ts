@@ -19,6 +19,9 @@ import {
   encodeStudyConfig,
   loadCompletedResults,
   normaliseStudyConfig,
+  questionnaireDefinitionHash,
+  readParticipantCodeFromHash,
+  reconstructResultExport,
   removeCompletedResult,
   resultsToCsv,
   saveCompletedResult,
@@ -26,7 +29,7 @@ import {
 } from '../src/study';
 
 const support = {
-  showSimpleLanguage: true,
+  showSimpleLanguage: false,
   answerMode: 'standard' as const,
   largeText: true,
   audioGuidance: false,
@@ -118,10 +121,23 @@ describe('study configuration', () => {
     const encoded = encodeStudyConfig(source);
     expect(decodeStudyConfig(encoded)).toEqual(source);
 
-    const url = new URL(buildParticipantUrl('https://example.test/index.html?discard=yes', source));
+    const url = new URL(buildParticipantUrl('https://example.test/index.html?discard=yes', source, 'P-LINK-01'));
     expect(url.search).toBe('');
     expect(url.hash).toContain('study=');
     expect(decodeStudyConfig(new URLSearchParams(url.hash.slice(1)).get('study')!)).toEqual(source);
+    expect(readParticipantCodeFromHash(url.hash)).toBe('P-LINK-01');
+    expect(readParticipantCodeFromHash('#participant=')).toBeNull();
+    expect(readParticipantCodeFromHash('#participant=%3Cscript%3E')).toBeNull();
+    expect(readParticipantCodeFromHash(`#participant=${'P'.repeat(33)}`)).toBeNull();
+    expect(() => buildParticipantUrl('https://example.test/', source, '<script>')).toThrow(
+      /Participant code/,
+    );
+    expect(source.definitionHash).toBe(
+      questionnaireDefinitionHash(getQuestionnaireDefinition(source.instrumentId)!),
+    );
+    const definition = getQuestionnaireDefinition(source.instrumentId)!;
+    const reordered = Object.fromEntries(Object.entries(definition).reverse()) as typeof definition;
+    expect(questionnaireDefinitionHash(reordered)).toBe(questionnaireDefinitionHash(definition));
   });
 
   it('rejects identifiers that could mix study records or contain personal prose', () => {
@@ -157,7 +173,7 @@ describe('study configuration', () => {
       studyTitle: 'SUS study',
       taskLabel: 'using the test system',
       showScoreToParticipant: false,
-      support,
+      support: { ...support, answerMode: 'smiley' },
       collection: { mode: 'local' },
     })).toThrow(/not compatible/i);
   });
@@ -197,6 +213,41 @@ describe('study configuration', () => {
     });
     expect(decodeStudyConfig(encodeStudyConfig(customConfig))).toEqual(customConfig);
     expect(customConfig.questionnaireDefinition).toEqual(definition);
+    const alteredDefinition = {
+      ...definition,
+      items: definition.items.map((item, index) => index === 0
+        ? { ...item, prompt: 'This text was altered after link generation.' }
+        : item),
+    };
+    const tamperedJson = JSON.stringify({
+      ...customConfig,
+      questionnaireDefinition: alteredDefinition,
+    });
+    const tamperedBytes = new TextEncoder().encode(tamperedJson);
+    let tamperedBinary = '';
+    tamperedBytes.forEach((byte) => { tamperedBinary += String.fromCharCode(byte); });
+    const tamperedEncoded = btoa(tamperedBinary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+    expect(decodeStudyConfig(tamperedEncoded)).toBeNull();
+
+    const hashlessTamperedJson = JSON.stringify({
+      ...customConfig,
+      questionnaireDefinition: alteredDefinition,
+      definitionHash: undefined,
+    });
+    const hashlessTamperedBytes = new TextEncoder().encode(hashlessTamperedJson);
+    let hashlessTamperedBinary = '';
+    hashlessTamperedBytes.forEach((byte) => {
+      hashlessTamperedBinary += String.fromCharCode(byte);
+    });
+    const hashlessTamperedEncoded = btoa(hashlessTamperedBinary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+    expect(decodeStudyConfig(hashlessTamperedEncoded)).toBeNull();
+
     expect(() => createStudyConfig({
       ...customConfig,
       questionnaireDefinition: {
@@ -205,9 +256,46 @@ describe('study configuration', () => {
       },
     })).toThrow(/supported questionnaire/i);
   });
+
+  it('rejects a Version 4 configuration when its required definition fingerprint is missing', () => {
+    const hashlessConfig = { ...config(), definitionHash: undefined };
+    expect(normaliseStudyConfig(hashlessConfig)).toBeNull();
+  });
 });
 
 describe('completed result records', () => {
+  it('reconstructs the complete instrument and response set from one JSON export alone', () => {
+    const exported = JSON.parse(JSON.stringify(record()));
+    const reconstructed = reconstructResultExport(exported);
+    const expectedDefinition = getQuestionnaireDefinition('nasa-tlx-weighted')!;
+
+    expect(reconstructed.definition).toEqual(expectedDefinition);
+    expect(reconstructed.definitionHash).toBe(questionnaireDefinitionHash(expectedDefinition));
+    expect(reconstructed.ratings).toEqual(exported.responses.ratings);
+    expect(reconstructed.pairwiseChoices).toEqual(exported.responses.pairwiseChoices);
+    expect(reconstructed.pairPresentationOrder).toEqual(exported.responses.pairPresentationOrder);
+    expect(reconstructed.score).toEqual(exported.result);
+  });
+
+  it('refuses submission when the configuration fingerprint is stale', () => {
+    const validRecord = record();
+    const staleConfig = {
+      ...config(),
+      definitionHash: `sha256:${'0'.repeat(64)}`,
+    };
+
+    expect(() => createStudyResultRecord({
+      config: staleConfig,
+      participantCode: validRecord.participantCode,
+      startedAt: validRecord.timing.startedAt,
+      completedAt: validRecord.timing.completedAt,
+      pairPresentationOrder: validRecord.responses.pairPresentationOrder,
+      pairwiseChoices: validRecord.responses.pairwiseChoices,
+      result: validRecord.result,
+      supportMetadata: validRecord.supportMetadata,
+    })).toThrow(/definition does not match the saved study configuration/i);
+  });
+
   it('migrates a validated Version 0.7 completed backup without changing its answers or score', () => {
     const legacy = legacyCompletedRecord();
     localStorage.setItem(LEGACY_COMPLETED_RESULTS_KEY, JSON.stringify([legacy]));
@@ -282,6 +370,32 @@ describe('completed result records', () => {
     expect(loadCompletedResults()).toEqual([]);
   });
 
+  it('rejects a record whose definition fingerprint no longer matches the configured instrument', () => {
+    const altered = record();
+    altered.instrument.definitionHash = `sha256:${'0'.repeat(64)}`;
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('rejects a Version 4 record when its definition fingerprint is missing', () => {
+    const altered = record();
+    delete (altered.instrument as Partial<typeof altered.instrument>).definitionHash;
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
+  it('does not bless a changed Version 4 definition when its fingerprint is deleted', () => {
+    const altered = record();
+    altered.instrument.definition = {
+      ...altered.instrument.definition,
+      items: altered.instrument.definition.items.map((item, index) =>
+        index === 0 ? { ...item, prompt: `${item.prompt} Altered.` } : item),
+    };
+    delete (altered.instrument as Partial<typeof altered.instrument>).definitionHash;
+    localStorage.setItem(COMPLETED_RESULTS_KEY, JSON.stringify([altered]));
+    expect(loadCompletedResults()).toEqual([]);
+  });
+
   it('rejects undeclared answer keys rather than hiding them in a plausible record', () => {
     const altered = record();
     altered.responses.ratings.unregistered_item = 50;
@@ -301,6 +415,7 @@ describe('completed result records', () => {
     const csv = resultsToCsv([record()]);
     const [header, row] = csv.split('\r\n');
     expect(header).toContain('participant_code');
+    expect(header).toContain('definition_hash');
     expect(header).toContain('rating_mental');
     expect(header).toContain('weight_performance');
     expect(header).toContain('pair_mental-physical');

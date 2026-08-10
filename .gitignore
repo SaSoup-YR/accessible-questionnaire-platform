@@ -1,0 +1,11 @@
+source/playwright-report/
+source/test-results/
+docs/evidence/axe-browser-report.json
+docs/evidence/axe-browser-report.html
+docs/evidence/technical-evaluation-report.json
+docs/evidence/technical-evaluation-report.html
+docs/evidence/cross-browser-support-report.json
+docs/evidence/cross-browser-support-report.html
+deliverables/rendered/
+.qa/
+__pycache__/

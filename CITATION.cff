@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: >-
+  This repository is a pre-release research prototype. Cite the exact archived
+  release once one is published; do not cite an untagged branch as a release.
+title: "Accessible Questionnaire Platform"
+type: software
+authors:
+  - family-names: "Wang"
+    given-names: "Yurui"
+repository-code: "https://github.com/SaSoup-YR/accessible-questionnaire-platform"
+url: "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
+license: MIT
+abstract: >-
+  A pre-release, bounded questionnaire-administration research prototype with explicit
+  definition, scoring, import, provenance and technical-accessibility evidence
+  boundaries.

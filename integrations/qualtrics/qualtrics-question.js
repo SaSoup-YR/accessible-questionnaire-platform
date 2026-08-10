@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.7-q7';
+  var bridgeBuild = '0.8.8-q8';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -264,9 +264,27 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (
       !record.instrument.id ||
       !record.instrument.name ||
+      !record.instrument.version ||
+      record.instrument.definitionSchemaVersion !== 1 ||
+      typeof record.instrument.definitionHash !== 'string' ||
+      !/^sha256:[0-9a-f]{64}$/.test(record.instrument.definitionHash) ||
       !record.instrument.scoringStrategy
     ) {
       throw new Error('The questionnaire definition metadata is incomplete.');
+    }
+    var definition = record.instrument.definition;
+    if (
+      !definition ||
+      typeof definition !== 'object' ||
+      Array.isArray(definition) ||
+      definition.schemaVersion !== 1 ||
+      definition.id !== record.instrument.id ||
+      definition.name !== record.instrument.name ||
+      definition.version !== record.instrument.version ||
+      !definition.scoring ||
+      definition.scoring.strategy !== record.instrument.scoringStrategy
+    ) {
+      throw new Error('The questionnaire definition snapshot does not match its metadata.');
     }
     if (
       !record.result.scoreName ||
@@ -291,7 +309,6 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       throw new Error('The questionnaire record is larger than the approved Qualtrics field allocation.');
     }
 
-    setField('AQP_ACCEPTED', 1);
     setField('AQP_SCHEMA', record.schemaVersion);
     setField('AQP_SUBMISSION_ID', record.submissionId);
     setField('AQP_STUDY_ID', record.study.studyId);
@@ -304,6 +321,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setField('AQP_INSTRUMENT_ID', record.instrument.id);
     setField('AQP_INSTRUMENT_NAME', record.instrument.name);
     setField('AQP_INSTRUMENT_VERSION', record.instrument.version);
+    setField('AQP_DEFINITION_HASH', record.instrument.definitionHash);
     setField('AQP_SCORING_STRATEGY', record.instrument.scoringStrategy);
     setField('AQP_SCORE_NAME', record.result.scoreName);
     setField('AQP_PRIMARY_SCORE', Number(record.result.primaryScore).toFixed(2));
@@ -335,6 +353,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         index < chunkCount ? raw.slice(index * rawChunkLength, (index + 1) * rawChunkLength) : ''
       );
     }
+
+    /*
+     * Commit marker: write only after every provenance, result and raw-record
+     * field has staged successfully. A partial write must never look accepted.
+     */
+    setField('AQP_ACCEPTED', 1);
   }
 
   function receiveResult(event) {
