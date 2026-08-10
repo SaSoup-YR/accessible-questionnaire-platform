@@ -730,6 +730,10 @@ describe('review and experimental gaze route', () => {
     await component.updateComplete;
     expect(component.querySelector('.gaze-positioning')).not.toBeNull();
     expect(component.querySelector('.gaze-calibration')).toBeNull();
+    expect(component.querySelector('.gaze-camera-preview-slot')?.getAttribute('role')).toBe('img');
+    expect(component.querySelector('.gaze-camera-preview-slot')?.getAttribute('aria-label')).toBe(
+      'Live camera positioning preview',
+    );
     expect(fake.showVideoPreview).toHaveBeenCalledWith(true);
     expect(fake.showPredictionPoints).toHaveBeenCalledWith(false);
 

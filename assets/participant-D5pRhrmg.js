@@ -326,7 +326,11 @@ import{r as J,s as Y,a as h,t as Z,i as ae,g as V,D as $,v,b as re,c as oe,d as 
             Centre your face in the preview and keep the device steady. This preview is for positioning only and will
             disappear before calibration.
           </p>
-          <div class="gaze-camera-preview-slot" aria-label="Live camera positioning preview"></div>
+          <div
+            class="gaze-camera-preview-slot"
+            role="img"
+            aria-label="Live camera positioning preview"
+          ></div>
           <p class="gaze-positioning-tip">
             Make sure your whole face is visible, the lighting is even and your eyes are not covered. On a phone or
             tablet, place the device on a stable support if possible.
