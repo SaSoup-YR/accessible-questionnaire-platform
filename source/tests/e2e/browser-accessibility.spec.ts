@@ -117,7 +117,16 @@ interface ScanRecord {
     undersized: Array<{ element: string; width: number; height: number }>;
   };
   violations: Array<{ id: string; impact: string | null; nodes: number }>;
-  incomplete: Array<{ id: string; impact: string | null; nodes: number }>;
+  incomplete: Array<{
+    id: string;
+    impact: string | null;
+    nodes: number;
+    nodeDetails: Array<{
+      target: string;
+      html: string;
+      failureSummary: string;
+    }>;
+  }>;
 }
 
 const scans: ScanRecord[] = [];
@@ -215,6 +224,11 @@ async function scanProfile(page: Page, state: string, profile: typeof scanProfil
       id,
       impact: impact ?? null,
       nodes: nodes.length,
+      nodeDetails: nodes.map(({ target, html, failureSummary }) => ({
+        target: JSON.stringify(target),
+        html,
+        failureSummary: failureSummary ?? 'axe did not provide a failure summary',
+      })),
     })),
   });
   expect(

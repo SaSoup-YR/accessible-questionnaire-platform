@@ -103,6 +103,38 @@ if (!existsSync(reportPath)) {
       Array.isArray(scan.targetSize?.undersized) ? scan.targetSize.undersized.length : 0,
     ].map((value) => `<td>${htmlCell(value)}</td>`).join('')}</tr>`).join('\n');
 
+    const incompleteRows = scans.flatMap((scan) =>
+      (Array.isArray(scan.incomplete) ? scan.incomplete : []).flatMap((result) => {
+        const details = Array.isArray(result.nodeDetails) ? result.nodeDetails : [];
+        if (details.length === 0) {
+          return [{
+            state: scan.state ?? 'Unnamed state',
+            profile: scan.profile ?? 'Unspecified profile',
+            rule: result.id ?? 'unknown',
+            impact: result.impact ?? 'not recorded',
+            target: 'Node details not recorded',
+            failureSummary: 'Inspection requires the machine-readable axe result.',
+          }];
+        }
+        return details.map((detail) => ({
+          state: scan.state ?? 'Unnamed state',
+          profile: scan.profile ?? 'Unspecified profile',
+          rule: result.id ?? 'unknown',
+          impact: result.impact ?? 'not recorded',
+          target: detail.target ?? 'not recorded',
+          failureSummary: detail.failureSummary ?? 'not recorded',
+        }));
+      }));
+
+    const htmlIncompleteRows = incompleteRows.map((row) => `<tr>${[
+      row.state,
+      row.profile,
+      row.rule,
+      row.impact,
+      row.target,
+      row.failureSummary,
+    ].map((value) => `<td>${htmlCell(value)}</td>`).join('')}</tr>`).join('\n');
+
     const htmlPath = reportPath.endsWith('.json')
       ? `${reportPath.slice(0, -5)}.html`
       : `${reportPath}.html`;
@@ -142,6 +174,11 @@ if (!existsSync(reportPath)) {
       <thead><tr><th>State</th><th>State setup</th><th>Profile</th><th>Zoom %</th><th>Path</th><th>Observed scale</th><th>Violations</th><th>Incomplete</th><th>Overflow px</th><th>Targets tested</th><th>Min width</th><th>Min height</th><th>Undersized</th></tr></thead>
       <tbody>${htmlRows}</tbody>
     </table>
+    <h2>Incomplete axe checks requiring inspection</h2>
+    ${incompleteRows.length > 0 ? `<table>
+      <thead><tr><th>State</th><th>Profile</th><th>Rule</th><th>Impact</th><th>Target</th><th>Failure summary</th></tr></thead>
+      <tbody>${htmlIncompleteRows}</tbody>
+    </table>` : '<p>None.</p>'}
     <p class="boundary"><strong>Interpretation boundary:</strong> ${htmlCell(report.interpretation ?? 'Automated results are bounded technical evidence, not a complete accessibility claim.')}</p>
   </main>
 </body>
@@ -165,6 +202,23 @@ if (!existsSync(reportPath)) {
       '| State | State setup | Profile | Zoom % | Path | Observed scale | Violations | Incomplete | Overflow (px) | Min target width | Min target height | Undersized |',
       '| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
       ...rows,
+      '',
+      '## Incomplete axe checks requiring inspection',
+      '',
+      ...(incompleteRows.length > 0
+        ? [
+            '| State | Profile | Rule | Impact | Target | Failure summary |',
+            '| --- | --- | --- | --- | --- | --- |',
+            ...incompleteRows.map((row) => `| ${[
+              row.state,
+              row.profile,
+              row.rule,
+              row.impact,
+              row.target,
+              row.failureSummary,
+            ].map(tableCell).join(' | ')} |`),
+          ]
+        : ['None.']),
       '',
       `> ${tableCell(report.interpretation ?? 'Automated results are bounded technical evidence, not a complete accessibility claim.')}`,
       '',
