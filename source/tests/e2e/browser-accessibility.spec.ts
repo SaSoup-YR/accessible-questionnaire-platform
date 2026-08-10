@@ -416,6 +416,51 @@ test('invalid participant link is rendered as a blocked, actionable state', asyn
   await scan(page, 'Invalid participant link');
 });
 
+test('participant-code link precedence and manual fallback are enforced in Chromium', async ({ page }) => {
+  const oldLink = configuredParticipant('system-usability-scale', 'E2E-OLD-LINK-01').url;
+  await page.goto(oldLink);
+  await expect(page.locator('#participant-code')).toHaveValue('E2E-OLD-LINK-01');
+  await page.getByRole('button', { name: 'Start the 10 items' }).click();
+  await expect(page.locator('.step-label')).toContainText('Item 1 of 10');
+
+  const newLink = configuredParticipant('system-usability-scale', 'E2E-NEW-LINK-02').url;
+  await page.goto(newLink);
+  await expect(page.locator('#participant-code')).toHaveValue('E2E-NEW-LINK-02');
+  await expect(page.locator('.restored-code-note')).toHaveCount(0);
+
+  await page.evaluate(() => sessionStorage.clear());
+  const missingCodeLink = new URL(newLink);
+  const missingCodeParameters = new URLSearchParams(missingCodeLink.hash.slice(1));
+  missingCodeParameters.delete('participant');
+  missingCodeLink.hash = missingCodeParameters.toString();
+  await page.goto(missingCodeLink.toString());
+  await expect(page.locator('#participant-code')).toHaveValue('');
+  await expect(page.locator('#participant-code')).toBeEditable();
+  await expect(page.locator('#participant-code')).toHaveAttribute('aria-invalid', 'false');
+  await page.locator('#participant-code').fill('E2E-MANUAL-03');
+  await page.getByRole('button', { name: 'Start the 10 items' }).click();
+  await expect(page.locator('.step-label')).toContainText('Item 1 of 10');
+  expect(await page.evaluate(() => Object.keys(localStorage).some((key) =>
+    key.startsWith('accessible-questionnaire-v0.8-progress:') &&
+    key.endsWith(':E2E-MANUAL-03')))).toBe(true);
+
+  const invalidCodeLink = new URL(newLink);
+  const invalidCodeParameters = new URLSearchParams(invalidCodeLink.hash.slice(1));
+  invalidCodeParameters.set('participant', '<script>');
+  invalidCodeLink.hash = invalidCodeParameters.toString();
+  await page.goto(invalidCodeLink.toString());
+  await expect(page.locator('#participant-code')).toHaveValue('');
+  await expect(page.locator('#participant-code')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#participant-code-help')).toContainText(
+    'participant code in this link is invalid',
+  );
+  await expect(page.locator('.restored-code-note')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start the 10 items' }).click();
+  await expect(page.locator('#error-summary')).toContainText(
+    'Enter the valid pseudonymous participant code',
+  );
+});
+
 test('SUS rendered states, recovery, review editing and completion', async ({ page }) => {
   const { url, definitionHash } = configuredParticipant(
     'system-usability-scale',
@@ -436,6 +481,9 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   await page.getByText('Accessibility and audio options (optional)').click();
   await expect(page.locator('.participant-support-setup')).toHaveAttribute('open', '');
   await scan(page, 'SUS accessibility options expanded');
+
+  await page.locator('#participant-code').fill('E2E-SUS-02');
+  await expect(page.locator('#participant-code')).toHaveValue('E2E-SUS-02');
 
   await page.getByRole('button', { name: 'Start the 10 items' }).click();
   await expect(page.locator('.audio-guidance')).toHaveCount(0);
@@ -488,6 +536,8 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   await scan(page, 'SUS item screen');
 
   await page.reload();
+  await expect(page.locator('#participant-code')).toHaveValue('E2E-SUS-02');
+  await expect(page.locator('.restored-code-note')).toContainText('restored for this tab');
   await expect(page.locator('.saved-session')).toContainText('3 of 10');
   await scan(page, 'SUS saved-session recovery offer');
   await page.getByRole('button', { name: /Resume saved questionnaire/ }).click();
@@ -543,7 +593,7 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   const readSavedItemTwo = () => page.evaluate(() => {
     const key = Object.keys(localStorage).find((candidate) =>
       candidate.startsWith('accessible-questionnaire-v0.8-progress:') &&
-      candidate.endsWith(':E2E-SUS-01'));
+      candidate.endsWith(':E2E-SUS-02'));
     if (!key) return null;
     const saved = JSON.parse(localStorage.getItem(key) ?? 'null') as {
       stage?: string;
@@ -600,18 +650,18 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
 
   await page.getByRole('button', { name: 'Calculate and submit responses' }).click();
   await expect(page.locator('#complete-heading')).toBeVisible();
-  const storedInstrument = await page.evaluate(({ storageKey, participantCode }) => {
+  const storedRecord = await page.evaluate(({ storageKey, participantCode }) => {
     const records = JSON.parse(localStorage.getItem(storageKey) ?? '[]') as Array<{
       participantCode: string;
       instrument: { definitionHash: string; definition?: { id: string; items: unknown[] } };
     }>;
-    return records.find((record) => record.participantCode === participantCode)
-      ?.instrument ?? null;
-  }, { storageKey: completedResultsKey, participantCode: 'E2E-SUS-01' });
+    return records.find((record) => record.participantCode === participantCode) ?? null;
+  }, { storageKey: completedResultsKey, participantCode: 'E2E-SUS-02' });
   expect(definitionHash).toMatch(/^sha256:[0-9a-f]{64}$/);
-  expect(storedInstrument?.definitionHash).toBe(definitionHash);
-  expect(storedInstrument?.definition?.id).toBe('system-usability-scale');
-  expect(storedInstrument?.definition?.items).toHaveLength(10);
+  expect(storedRecord?.participantCode).toBe('E2E-SUS-02');
+  expect(storedRecord?.instrument.definitionHash).toBe(definitionHash);
+  expect(storedRecord?.instrument.definition?.id).toBe('system-usability-scale');
+  expect(storedRecord?.instrument.definition?.items).toHaveLength(10);
   await scan(page, 'SUS completion screen');
 
   // Reload the document rather than navigating to the already-current URL.
