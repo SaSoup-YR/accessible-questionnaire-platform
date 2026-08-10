@@ -1,4 +1,4 @@
-# AQP manual assistive-technology audit v1.1
+# AQP manual assistive-technology audit v1.2
 
 Status: **protocol ready; audit not yet executed**
 Protocol revised: 2026-08-10
@@ -115,7 +115,7 @@ Complete every route column with `P/F/NA — exact observation (evidence ID)`.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | A14 | 2.4.3, 4.1.3 | After three SUS answers, reload and wait on the saved-progress offer. | Focus reaches Resume; the exact saved count `3 of 10`, Resume and Erase choices are available and announced. Record exact speech. | NT | NT | NT | NT |
 | A15 | 2.4.3, 3.2.2 | Resume the saved session. | The three answers remain; the logical next item and heading receive focus; no answer changes automatically. | NT | NT | NT | NT |
-| A16 | 1.3.1, 2.4.6, 2.5.3, 3.3.4, 4.1.2 | Reach the SUS review screen and navigate each record. | Every record exposes the full item statement, selected value and visible answer label. Its visible **Change item N answer** control is unique, begins its accessible name with the same words and is available to the declared gaze route. | NT | NT | NT | NT |
+| A16 | 1.3.1, 2.4.6, 2.5.3, 3.3.4, 4.1.2 | Reach the SUS review screen and navigate each record. Pay particular attention to Item 3 = 4. | Every record exposes the full item statement and selected value. If the questionnaire declares a label for that value, the label is visible; otherwise the declared scale endpoints are visible so the position can be interpreted without invented response wording. Its visible **Change item N answer** control is unique, begins its accessible name with the same words and is available to the declared gaze route. | NT | NT | NT | NT |
 | A17 | 2.4.3, 3.3.4, 4.1.3 | Note item 2's value and input route. Open item 2, select 5 and Cancel. Reopen item 2, select 5 and Save. | Cancel returns focus to review, truthfully announces that the original answer was kept, and leaves the original value, route, recovery record and calculated score unchanged. Save alone commits 5, returns focus to item 2, announces the updated label and leaves every other answer unchanged. Record exact speech for both paths. | NT | NT | NT | NT |
 
 #### Submission (A18)

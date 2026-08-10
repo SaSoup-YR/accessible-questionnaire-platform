@@ -1388,6 +1388,7 @@ export class AccessibleNasaTlx extends LitElement {
                 <div class="review-rating-answer">
                   <p id=${`review-item-answer-${index + 1}`}>
                     <strong>Selected answer: ${this.reviewRatingLabel(dimension)}</strong>
+                    ${this.renderReviewRatingScaleContext(dimension)}
                   </p>
                   <small>Input route: ${this.ratingRouteLabel(dimension.id)}</small>
                   <button
@@ -1395,7 +1396,7 @@ export class AccessibleNasaTlx extends LitElement {
                     type="button"
                     data-gaze-target
                     data-gaze-label=${`Change item ${index + 1} answer`}
-                    aria-label=${`Change item ${index + 1} answer. ${dimension.name}. Current answer: ${this.reviewRatingLabel(dimension)}`}
+                    aria-label=${`Change item ${index + 1} answer. ${dimension.name}. Current answer: ${this.reviewRatingAccessibleLabel(dimension)}`}
                     @click=${() => this.editRatingFromReview(index)}
                   >
                     Change item ${index + 1} answer
@@ -1933,6 +1934,48 @@ export class AccessibleNasaTlx extends LitElement {
     return String(value);
   }
 
+  /**
+   * A validated instrument may declare only its endpoint anchors. In that case
+   * an interior response has no authoritative label: inventing one would change
+   * the questionnaire content, while showing only a number would make the review
+   * record depend on remembered scale context. Expose the declared endpoints
+   * instead, and omit this extra context when the selected value already has an
+   * authoritative label.
+   */
+  private reviewRatingScaleContextText(dimension: TlxDimension) {
+    const value = this.ratings[dimension.id];
+    if (value === undefined || this.ratingValueLabel(dimension, value)) return null;
+    if (this.definition.scale.type === 'semantic-differential') {
+      return `Scale endpoints: ${dimension.lowAnchor} to ${dimension.highAnchor}`;
+    }
+    return `Scale: ${this.definition.scale.minimum} — ${dimension.lowAnchor} to ${this.definition.scale.maximum} — ${dimension.highAnchor}`;
+  }
+
+  private renderReviewRatingScaleContext(dimension: TlxDimension) {
+    const context = this.reviewRatingScaleContextText(dimension);
+    if (!context) return nothing;
+    if (this.definition.scale.type === 'semantic-differential') {
+      return html`<span class="review-scale-context">
+        Scale endpoints:
+        <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>
+        to
+        <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
+      </span>`;
+    }
+    return html`<span class="review-scale-context">
+      Scale: ${this.definition.scale.minimum} —
+      <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>
+      to ${this.definition.scale.maximum} —
+      <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
+    </span>`;
+  }
+
+  private reviewRatingAccessibleLabel(dimension: TlxDimension) {
+    const answer = this.reviewRatingLabel(dimension);
+    const context = this.reviewRatingScaleContextText(dimension);
+    return context ? `${answer}. ${context}` : answer;
+  }
+
   private selectRating(dimension: DimensionId, value: number, route: RatingInputRoute) {
     if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
     const effectiveRoute = this.gazeActivationInProgress
@@ -2175,7 +2218,7 @@ export class AccessibleNasaTlx extends LitElement {
         block: 'center',
         onReveal: () => this.requestParentReveal(reviewItem),
       });
-      this.statusMessage = `${message} ${this.reviewRatingLabel(this.dimensions[index])}`;
+      this.statusMessage = `${message} ${this.reviewRatingAccessibleLabel(this.dimensions[index])}`;
       this.announceAutomatic(this.statusMessage);
     });
   }

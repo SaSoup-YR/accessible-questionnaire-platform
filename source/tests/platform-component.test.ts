@@ -686,6 +686,10 @@ describe('instrument-independent questionnaire workflow', () => {
       }
     }
 
+    const labelledReviewCards = component.querySelectorAll<HTMLElement>('.review-rating-card');
+    expect(labelledReviewCards[1].textContent).toContain('Selected answer: 4 — Agree');
+    expect(labelledReviewCards[1].querySelector('.review-scale-context')).toBeNull();
+
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Calculate and submit responses'))!
       .click();
@@ -762,8 +766,11 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(component.textContent).toContain('exact visible endpoint label');
     expect(component.textContent).not.toContain('Neutral');
 
-    for (let index = 0; index < 10; index += 1) {
-      const expectedValue = index % 2 === 0 ? '5' : '1';
+    // Brooke's worked vector also reproduces the supervisor's concrete review
+    // concern: Item 3 has the unlabelled interior value 4.
+    const answerVector = [5, 1, 4, 2, 3, 5, 1, 4, 2, 3];
+    for (let index = 0; index < answerVector.length; index += 1) {
+      const expectedValue = String(answerVector[index]);
       const options = component.querySelectorAll<HTMLInputElement>('.rating-option input');
       expect(options).toHaveLength(5);
       component.querySelector<HTMLInputElement>(`.rating-option input[value="${expectedValue}"]`)!.click();
@@ -785,6 +792,12 @@ describe('instrument-independent questionnaire workflow', () => {
       'I think that I would like to use this system frequently.',
     );
     expect(reviewCards[0].textContent).toContain('Selected answer: 5 — Strongly agree');
+    expect(reviewCards[0].querySelector('.review-scale-context')).toBeNull();
+    expect(reviewCards[2].textContent).toContain('I thought the system was easy to use.');
+    expect(reviewCards[2].textContent).toContain('Selected answer: 4');
+    expect(reviewCards[2].querySelector('.review-scale-context')?.textContent
+      ?.replace(/\s+/g, ' ').trim())
+      .toBe('Scale: 1 — Strongly disagree to 5 — Strongly agree');
 
     const changeButtons = [...component.querySelectorAll<HTMLButtonElement>(
       '.review-rating-card button[data-gaze-target]',
@@ -808,7 +821,7 @@ describe('instrument-independent questionnaire workflow', () => {
     expect(savedBeforeEdit.ratingInputRoutes.sus02).toBe('standard-scale');
     const susDefinition = getQuestionnaireDefinition('system-usability-scale')!;
     const scoreBeforeEdit = scoreQuestionnaire(susDefinition, savedBeforeEdit.ratings).primaryScore;
-    expect(scoreBeforeEdit).toBe(100);
+    expect(scoreBeforeEdit).toBe(50);
 
     component.querySelector<HTMLButtonElement>('button[aria-label^="Change item 2 answer."]')!.click();
     await component.updateComplete;
@@ -859,6 +872,9 @@ describe('instrument-independent questionnaire workflow', () => {
     await component.updateComplete;
     expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1].textContent)
       .toContain('Selected answer: 2');
+    expect(component.querySelectorAll<HTMLElement>('.review-rating-card')[1]
+      .querySelector('.review-scale-context')?.textContent?.replace(/\s+/g, ' ').trim())
+      .toBe('Scale: 1 — Strongly disagree to 5 — Strongly agree');
     expect(document.activeElement).toBe(component.querySelector('#review-item-2'));
     const savedAfterCommit = JSON.parse(localStorage.getItem(progressKey)!) as {
       ratings: Record<string, number>;
@@ -873,7 +889,7 @@ describe('instrument-independent questionnaire workflow', () => {
     await component.updateComplete;
 
     expect(component.textContent).toContain('SUS score');
-    expect(component.textContent).toContain('97.50');
+    expect(component.textContent).toContain('47.50');
     expect(completed).not.toBeNull();
     expect((completed as unknown as StudyResultRecord).instrument.id).toBe('system-usability-scale');
     expect((completed as unknown as StudyResultRecord).result.strategy).toBe('sus-standard-v1');

@@ -1076,6 +1076,12 @@ button:disabled {
   margin: 0;
 }
 
+.review-scale-context {
+  display: block;
+  margin-top: 0.3rem;
+  font-weight: 400;
+}
+
 .review-rating-answer .secondary-button {
   margin-top: 0.35rem;
 }

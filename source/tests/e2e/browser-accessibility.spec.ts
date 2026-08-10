@@ -481,7 +481,9 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   await scan(page, 'SUS built-in voice unavailable');
   await choose(page, 3);
   await page.getByRole('button', { name: 'Next question' }).click();
-  await choose(page, 2);
+  // Preserve Mark's concrete regression case: Item 3 has the interior SUS
+  // value 4, for which the instrument declares endpoints but no invented label.
+  await choose(page, 4);
   await page.getByRole('button', { name: 'Next question' }).click();
   await scan(page, 'SUS item screen');
 
@@ -505,6 +507,15 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
     'I think that I would like to use this system frequently.',
   );
   await expect(page.locator('.review-rating-card').first()).toContainText('Selected answer');
+  const markReviewCase = page.locator('#review-item-3');
+  await expect(markReviewCase).toContainText('I thought the system was easy to use.');
+  await expect(markReviewCase).toContainText('Selected answer: 4');
+  await expect(markReviewCase.locator('.review-scale-context')).toContainText(
+    'Scale: 1 — Strongly disagree to 5 — Strongly agree',
+  );
+  await expect(markReviewCase.getByRole('button')).toHaveAccessibleName(
+    /Current answer: 4\. Scale: 1 — Strongly disagree to 5 — Strongly agree$/,
+  );
   await expect(page.locator('.audio-guidance')).toHaveCount(0);
   const reviewChangeButtons = page.locator('.review-rating-card button[data-gaze-target]');
   await expect(reviewChangeButtons).toHaveCount(10);
