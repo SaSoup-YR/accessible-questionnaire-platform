@@ -104,6 +104,12 @@ interface ScanRecord {
   viewport: { width: number; height: number } | null;
   visualViewport: { width: number; height: number; scale: number } | null;
   horizontalOverflowCssPixels: number;
+  horizontalOverflowElements: Array<{
+    element: string;
+    left: number;
+    right: number;
+    width: number;
+  }>;
   targetSize: {
     tested: number;
     minimumWidthCssPixels: number | null;
@@ -142,6 +148,24 @@ async function scanProfile(page: Page, state: string, profile: typeof scanProfil
   const result = await new AxeBuilder({ page }).withTags(wcagTags).analyze();
   const horizontalOverflowCssPixels = await page.evaluate(() =>
     Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
+  const horizontalOverflowElements = await page.locator('body *').evaluateAll((elements) => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return elements.flatMap((element) => {
+      const rect = element.getBoundingClientRect();
+      if (rect.right <= viewportWidth + 1 && rect.left >= -1) return [];
+      const identifier = [
+        element.tagName.toLowerCase(),
+        element.id ? `#${element.id}` : '',
+        ...Array.from(element.classList).slice(0, 3).map((name) => `.${name}`),
+      ].join('');
+      return [{
+        element: identifier,
+        left: Math.round(rect.left * 100) / 100,
+        right: Math.round(rect.right * 100) / 100,
+        width: Math.round(rect.width * 100) / 100,
+      }];
+    }).slice(0, 20);
+  });
   const renderedTargets = await page.locator(
     'button:visible, summary:visible, .rating-option:visible, .choice-card:visible, .smiley-option:visible',
   ).evaluateAll((elements) => elements.map((element) => {
@@ -171,6 +195,7 @@ async function scanProfile(page: Page, state: string, profile: typeof scanProfil
     viewport: page.viewportSize(),
     visualViewport,
     horizontalOverflowCssPixels,
+    horizontalOverflowElements,
     targetSize: {
       tested: renderedTargets.length,
       minimumWidthCssPixels: renderedTargets.length
@@ -198,7 +223,7 @@ async function scanProfile(page: Page, state: string, profile: typeof scanProfil
   ).toEqual([]);
   expect(
     horizontalOverflowCssPixels,
-    `${state} at ${profile.id}: horizontal overflow`,
+    `${state} at ${profile.id}: horizontal overflow; extending elements: ${JSON.stringify(horizontalOverflowElements)}`,
   ).toBeLessThanOrEqual(1);
   expect(
     undersized,

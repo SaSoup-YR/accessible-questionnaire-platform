@@ -332,6 +332,7 @@ figcaption {
 
 .answer-mode-control label {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: flex-start;
   min-height: 3.5rem;
@@ -353,8 +354,15 @@ figcaption {
   gap: 0.2rem;
 }
 
+.answer-mode-control label span:not(.selected-marker) {
+  flex: 1 1 10rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .answer-mode-control label > .selected-marker {
   display: inline-flex;
+  flex: 0 0 auto;
   margin-left: auto;
 }
 
