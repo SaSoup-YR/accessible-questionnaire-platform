@@ -1,6 +1,6 @@
 # Supervisor feedback closure matrix v2
 
-Version: 2.7\
+Version: 2.8\
 Frozen: 2026-08-10\
 Candidate branch: `feat/researcher-wizard`\
 Release rule: implementation is not marked release-complete until the named
@@ -16,6 +16,27 @@ commit is deployed, and the deployment is re-tested.
 - **Manual-NT:** the required observation has not been made and is not counted.
 - **Protocol-ready:** a complete method exists but no participant data exist.
 - **Blocked:** a named external decision, permission or approval is missing.
+
+## Numbering rule and current execution queue
+
+The identifiers in section A (`F1`–`F5`) are the **earlier five platform
+corrections**. They are not the numbered sections in Mark's later email. The
+later email is tracked below as `M1`–`M6`; this distinction must be retained in
+the dissertation, supervisor correspondence and test records.
+
+| ID | Mark's later-email section | Current acceptance state | Next falsifiable gate |
+| --- | --- | --- | --- |
+| M1 | Manual assistive-technology audit | **Manual-NT / Not evidenced.** The v1.3 procedure exists, but no route observation exists. | Run A01–A33 on R1–R4, record exact observed speech/commands and replace every applicable NT with P/F/NA. |
+| M2 | Quantified technical evaluation | **Partial.** T2–T6 pass on candidate `4fe422c`; T1 is 0-mismatch only for 3/4 originally requested built-ins plus all committed import fixtures. | Obtain written acceptance of the three-built-in release boundary or written UEQ-S redistribution permission and restore/retest the fourth built-in; then reproduce all counts on the final release SHA. |
+| M3 | Evaluation matrix v6 | **Local-complete.** Matrix v6.5 removes C6, revises C2/C5/C7 and gives every active row an evidence status. | Publish/send the exact v6.5 artefact and update only from later immutable evidence. |
+| M4 | Observed Part 1 researcher protocol | **Protocol-ready / Not evidenced.** Local protocol v1.2 closes the design gaps; the Word pack already sent to the supervisor predates those changes. | Synchronise the official-template submission pack to v1.2, freeze all activation fields and obtain written amendment approval before any session. |
+| M5 | Ethics and dissertation boundary | **Blocked externally.** The technical dissertation route is defined; ethics activation fields and approval are not complete. | Insert the real AQP approval ID/title/route, confirm storage/coder/retention with the PI, sign and submit; keep sessions out unless written approval is in hand by 18 August. |
+| M6 | Repeated endpoint label | **CI-pass on candidate `4fe422c`.** Endpoint duplication is suppressed without removing distinct German middle labels. | Inspect the final deployed visual output and accessibility tree; rerun the regression on the release SHA. |
+
+Execution order follows the agreed rule **all code and automation first, then
+manual audit, then release acceptance**: M2 scope closure → M3/M4/M5 document
+synchronisation → M6 evidence confirmation → M1 manual audit and contrast
+inspection → authorised merge/deployment and final smoke tests.
 
 ## A. First five code corrections
 
@@ -40,12 +61,12 @@ commit is deployed, and the deployment is re-tested.
 
 | ID | Required evaluation | Reproducible artefact | Current quantified result | Status/gap |
 | --- | --- | --- | --- | --- |
-| T1 | Programmatic fidelity round trip against independent truth for built-ins and every QSF/LSS/LSG/LSQ fixture. | `docs/evidence/fidelity-source-of-truth.json`, `source/tests/technical-evaluation.test.ts`, generated JSON/HTML report. | 8 cases, 31 items, 234 field comparisons, 0 mismatches. | CI-pass on candidate `816e1c4`. Only three distributable built-ins are present; UEQ-S is excluded pending redistribution permission. This is a disclosed scope shortfall, not a fourth pass. |
-| T2 | Twelve-row adversarial battery and zero silently altered. | Same technical test/report. | 12 inputs: 10 specific refusals, 2 generic XML refusals, 0 accepted losses, 0 silently altered. | CI-pass on candidate `816e1c4`; final main/release reproduction pending. |
-| T3 | Every runner state at 1280, 768, 320 and 200% zoom, with build artefact. | Frozen state inventory, Playwright/axe spec, CI workflow and report publisher. | 135/135 required state/profile rows; 0 violations; 13 incomplete `color-contrast` scan results involving 20 node occurrences; 0 overflow failures; 0 critical target-size failures; and 0 missing rows. | CI-pass on candidate `816e1c4`. Deterministic fixtures are labelled where external host/hardware callbacks are simulated. Incomplete contrast occurrences require recorded inspection and are not automatic passes. |
-| T4 | Cross-browser support matrix and explicit Firefox/Web Speech limitation. | `source/tests/e2e-support/cross-browser-support.spec.ts` and `docs/CROSS-BROWSER-SUPPORT-MATRIX.md`. | Capability test passed the production runner smoke route in Chromium, Firefox and Playwright WebKit; SpeechRecognition present in Chromium and absent in Firefox/WebKit. | CI-pass on candidate `816e1c4`; WebKit/Linux is not Safari/VoiceOver evidence and OS voice control remains not assessed. |
-| T5 | Reconstruct definition, response set and score from export alone. | Technical evaluation reconstruction rows and self-contained result definition. | 8/8 exports and 31/31 responses reconstructed, 0 mismatches. | CI-pass on candidate `816e1c4`; final main/release reproduction pending. |
-| T6 | Quantify definition-driven reuse rather than assume it. | Technical evaluation reuse/allowlist rows. | 5 compatible imports admitted as data with 0 instrument-specific production files; 96/96 shared contract executions with 0 test copies; 16/16 allowlist combinations match. | CI-pass on candidate `816e1c4`. A new scorer/response structure remains an executable boundary and is not a data-only pass. |
+| T1 | Programmatic fidelity round trip against independent truth for built-ins and every QSF/LSS/LSG/LSQ fixture. | `docs/evidence/fidelity-source-of-truth.json`, `source/tests/technical-evaluation.test.ts`, generated JSON/HTML report. | 8 cases, 31 items, 234 field comparisons, 0 mismatches. | CI-pass on candidate `4fe422c` in run `31399712181` for the tested denominator. Only three distributable built-ins are present; UEQ-S is excluded pending redistribution permission. This is a disclosed scope shortfall, not a fourth pass. |
+| T2 | Twelve-row adversarial battery and zero silently altered. | Same technical test/report. | 12 inputs: 10 specific refusals, 2 generic XML refusals, 0 accepted losses, 0 silently altered. | CI-pass on candidate `4fe422c` in run `31399712181`; final main/release reproduction pending. |
+| T3 | Every runner state at 1280, 768, 320 and 200% zoom, with build artefact. | Frozen state inventory, Playwright/axe spec, CI workflow and report publisher. | 135/135 required state/profile rows; 0 violations; 13 incomplete `color-contrast` scan results involving 20 node occurrences; 0 overflow failures; 0 critical target-size failures; and 0 missing rows. | CI-pass on candidate `4fe422c` in run `31399712181`. Deterministic fixtures are labelled where external host/hardware callbacks are simulated. Incomplete contrast occurrences require recorded inspection and are not automatic passes. |
+| T4 | Cross-browser support matrix and explicit Firefox/Web Speech limitation. | `source/tests/e2e-support/cross-browser-support.spec.ts` and `docs/CROSS-BROWSER-SUPPORT-MATRIX.md`. | Capability test passed the production runner smoke route in Chromium, Firefox and Playwright WebKit; SpeechRecognition present in Chromium and absent in Firefox/WebKit. | CI-pass on candidate `4fe422c` in run `31399712181`; WebKit/Linux is not Safari/VoiceOver evidence and OS voice control remains not assessed. |
+| T5 | Reconstruct definition, response set and score from export alone. | Technical evaluation reconstruction rows and self-contained result definition. | 8/8 exports and 31/31 responses reconstructed, 0 mismatches. | CI-pass on candidate `4fe422c` in run `31399712181`; final main/release reproduction pending. |
+| T6 | Quantify definition-driven reuse rather than assume it. | Technical evaluation reuse/allowlist rows. | 5 compatible imports admitted as data with 0 instrument-specific production files; 96/96 shared contract executions with 0 test copies; 16/16 allowlist combinations match. | CI-pass on candidate `4fe422c` in run `31399712181`. A new scorer/response structure remains an executable boundary and is not a data-only pass. |
 
 ## D. Latest feedback, section 3 — matrix v6
 
@@ -55,7 +76,7 @@ commit is deployed, and the deployment is re-tested.
 | Give C2 a decision rule for the new audit design. | C2 requires 135 browser rows plus complete manual P/F/NA observations and no S3 failure on a supported route. | Rule complete; evidence Not evidenced. |
 | Give C5 a decision rule for the optional observed researcher study. | C5 separates timed setup from untimed synthetic verification, freezes platform-specific end-state mappings, immediate per-condition SEQ/SUS, critical-error criteria, the separate discrepancy task and one-to-one second-coder evidence; significance tests remain prohibited. | Rule complete in protocol v1.2; study Not evidenced. |
 | Make C7's definition hash checkable. | C7 requires canonical hash agreement, rejection of missing/stale Version 4 hashes and export-only reconstruction. Qualtrics host acceptance additionally requires a schema-complete definition snapshot and a last-write acceptance marker. | CI-pass on candidate `4fe422c` in run `31399712181`; deployment and fresh synthetic Qualtrics-row verification remain pending. |
-| Fill every evidence status, including Not evidenced. | `docs/AQP-EVALUATION-MATRIX-v6.md` v6.4 has a status for every active row. | Complete for the candidate state; update only after new evidence. |
+| Fill every evidence status, including Not evidenced. | `docs/AQP-EVALUATION-MATRIX-v6.md` v6.5 has a status for every active row. | Complete for the candidate state; update only after new evidence. |
 
 ## E. Latest feedback, section 4 — optional observed researcher protocol
 
@@ -91,7 +112,7 @@ the original AQP approval record or provided by the applicant/PI.
 
 | Requirement | Implementation/test | Current status | Final gate |
 | --- | --- | --- | --- |
-| Keep the legend as the announced endpoint source; keep anchor row aria-hidden; suppress only an option label identical to its endpoint; retain distinct middle German labels. | `visibleResponseLabel` in `accessible-nasa-tlx.ts`; component regression and S27 real-browser case. | CI-pass on candidate `816e1c4`. | Deployed visual/accessibility-tree inspection. |
+| Keep the legend as the announced endpoint source; keep anchor row aria-hidden; suppress only an option label identical to its endpoint; retain distinct middle German labels. | `visibleResponseLabel` in `accessible-nasa-tlx.ts`; component regression and S27 real-browser case. | CI-pass on candidate `4fe422c` in run `31399712181`. | Deployed visual/accessibility-tree inspection. |
 
 ## Reproduction commands
 
@@ -130,4 +151,4 @@ failures, 0 critical target-size failures and no missing row.
 - [ ] Execute A01–A33 on R1–R4 and retain exact observations.
 - [ ] Record failures honestly, fix them and re-run; do not convert NT/NA into pass.
 - [ ] Update matrix statuses only from the resulting evidence.
-- [ ] Send the deployed URL, immutable SHA, CI/artifact links, matrix v6.4 and completed audit to the supervisor.
+- [ ] Send the deployed URL, immutable SHA, CI/artifact links, matrix v6.5 and completed audit to the supervisor.
