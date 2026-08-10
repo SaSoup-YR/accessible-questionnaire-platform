@@ -55,8 +55,11 @@ so the evidence can be inspected without treating a green check mark as the resu
 The downloadable artifact is retained for 90 days. The workflow can also be run
 manually for an exact revision.
 
-The report records the exact revision, generation time, Chromium version, profile,
-requested and observed scale, pre-specified scanned states, rule tags, violations,
+The report records the tested revision and, for pull requests, the source-head and
+base revisions separately. This prevents GitHub's temporary pull-request merge SHA
+from being mistaken for the source commit. It also records generation time,
+Chromium version, profile, requested and observed scale, pre-specified scanned
+states, rule tags, violations,
 incomplete checks, horizontal overflow and measured critical targets for every
 state. A missing state/profile combination, undersized critical target or overflow
 failure fails the suite. An incomplete axe result must be inspected rather than

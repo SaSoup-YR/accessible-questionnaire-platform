@@ -402,6 +402,10 @@ afterAll(() => {
     evidenceType: 'quantified technical fidelity evaluation',
     generatedAt: new Date().toISOString(),
     revision: process.env.GITHUB_SHA ?? 'local-uncommitted',
+    testedRevision: process.env.GITHUB_SHA ?? 'local-uncommitted',
+    sourceHeadRevision: process.env.AQP_SOURCE_HEAD_SHA ?? 'local-uncommitted',
+    baseRevision: process.env.AQP_BASE_SHA || null,
+    workflowEvent: process.env.AQP_WORKFLOW_EVENT ?? 'local',
     sourceOfTruth: 'docs/evidence/fidelity-source-of-truth.json',
     fidelity: {
       cases: fidelityResults.length,

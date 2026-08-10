@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+env:
+  AQP_WORKFLOW_EVENT: ${{ github.event_name }}
+  AQP_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  AQP_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+
 jobs:
   verify:
     runs-on: ubuntu-latest

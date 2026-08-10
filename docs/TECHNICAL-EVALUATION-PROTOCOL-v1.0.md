@@ -207,7 +207,8 @@ Required profiles per state:
   physical window at 200% zoom.
 
 This produces **135 state-profile scans**. The report records exact Chromium
-version, commit SHA, state, viewport, requested and observed scale, axe violations,
+version, tested SHA and (for pull requests) distinct source-head/base SHAs, state,
+viewport, requested and observed scale, axe violations,
 incomplete checks, overflow and target measurements. Release gates are:
 
 - all 27 × 5 state/profile combinations present;

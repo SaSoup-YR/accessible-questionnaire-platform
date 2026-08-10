@@ -158,6 +158,10 @@ if (!existsSync(reportPath)) {
     <h1>Rendered accessibility evidence</h1>
     <dl>
       <dt>Revision</dt><dd><code>${htmlCell(report.revision ?? 'not recorded')}</code></dd>
+      <dt>Tested revision</dt><dd><code>${htmlCell(report.testedRevision ?? report.revision ?? 'not recorded')}</code></dd>
+      <dt>Source head revision</dt><dd><code>${htmlCell(report.sourceHeadRevision ?? 'not recorded')}</code></dd>
+      <dt>Base revision</dt><dd><code>${htmlCell(report.baseRevision ?? 'not applicable')}</code></dd>
+      <dt>Workflow event</dt><dd>${htmlCell(report.workflowEvent ?? 'not recorded')}</dd>
       <dt>Generated</dt><dd>${htmlCell(report.generatedAt ?? 'not recorded')}</dd>
       <dt>Browser</dt><dd>${htmlCell(report.browser ?? 'not recorded')}</dd>
       <dt>Profiles</dt><dd>${htmlCell((report.profiles ?? []).map((profile) => `${profile.id}: ${profile.viewport?.width} × ${profile.viewport?.height}, ${profile.zoomPercent}%`).join('; ') || 'not recorded')}</dd>
@@ -188,6 +192,10 @@ if (!existsSync(reportPath)) {
       '# Rendered accessibility evidence',
       '',
       `- Revision: \`${tableCell(report.revision ?? 'not recorded')}\``,
+      `- Tested revision: \`${tableCell(report.testedRevision ?? report.revision ?? 'not recorded')}\``,
+      `- Source head revision: \`${tableCell(report.sourceHeadRevision ?? 'not recorded')}\``,
+      `- Base revision: \`${tableCell(report.baseRevision ?? 'not applicable')}\``,
+      `- Workflow event: ${tableCell(report.workflowEvent ?? 'not recorded')}`,
       `- Generated: ${tableCell(report.generatedAt ?? 'not recorded')}`,
       `- Browser: ${tableCell(report.browser ?? 'not recorded')}`,
       `- Rendered states scanned: **${report.summary?.scannedStates ?? 0}**`,

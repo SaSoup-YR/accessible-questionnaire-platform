@@ -65,6 +65,10 @@ test('records native browser support without injecting feature mocks', async ({
   writeFileSync(output, `${JSON.stringify({
     schemaVersion: 1,
     revision: process.env.GITHUB_SHA ?? 'local-uncommitted',
+    testedRevision: process.env.GITHUB_SHA ?? 'local-uncommitted',
+    sourceHeadRevision: process.env.AQP_SOURCE_HEAD_SHA ?? 'local-uncommitted',
+    baseRevision: process.env.AQP_BASE_SHA || null,
+    workflowEvent: process.env.AQP_WORKFLOW_EVENT ?? 'local',
     generatedAt: new Date().toISOString(),
     engine: browserName,
     browserVersion: browser.version(),

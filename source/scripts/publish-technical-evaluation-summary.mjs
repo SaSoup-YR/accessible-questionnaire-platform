@@ -51,6 +51,10 @@ if (!existsSync(reportPath)) {
       '# Quantified technical evaluation',
       '',
       `- Revision: \`${escapeCell(report.revision ?? 'not recorded')}\``,
+      `- Tested revision: \`${escapeCell(report.testedRevision ?? report.revision ?? 'not recorded')}\``,
+      `- Source head revision: \`${escapeCell(report.sourceHeadRevision ?? 'not recorded')}\``,
+      `- Base revision: \`${escapeCell(report.baseRevision ?? 'not applicable')}\``,
+      `- Workflow event: ${escapeCell(report.workflowEvent ?? 'not recorded')}`,
       `- Fidelity cases: **${report.fidelity?.cases ?? 0}**`,
       `- Items checked: **${report.fidelity?.itemsChecked ?? 0}**`,
       `- Field comparisons: **${report.fidelity?.fieldComparisons ?? 0}**`,
@@ -97,7 +101,11 @@ if (!existsSync(reportPath)) {
 body{max-width:90rem;margin:0 auto;padding:2rem;font:16px/1.5 system-ui,sans-serif;color:#17202a}
 table{width:100%;border-collapse:collapse;margin:1rem 0 2rem}th,td{padding:.6rem;border:1px solid #687887;text-align:left;vertical-align:top}th{background:#e8f3fb}.boundary{padding:1rem;border-left:.35rem solid #725b00;background:#fff9dc}code{overflow-wrap:anywhere}
 </style></head><body><main><h1>Quantified technical evaluation</h1>
-<p>Revision: <code>${escapeHtml(report.revision ?? 'not recorded')}</code></p>
+<dl><dt>Revision</dt><dd><code>${escapeHtml(report.revision ?? 'not recorded')}</code></dd>
+<dt>Tested revision</dt><dd><code>${escapeHtml(report.testedRevision ?? report.revision ?? 'not recorded')}</code></dd>
+<dt>Source head revision</dt><dd><code>${escapeHtml(report.sourceHeadRevision ?? 'not recorded')}</code></dd>
+<dt>Base revision</dt><dd><code>${escapeHtml(report.baseRevision ?? 'not applicable')}</code></dd>
+<dt>Workflow event</dt><dd>${escapeHtml(report.workflowEvent ?? 'not recorded')}</dd></dl>
 <ul><li>${report.fidelity?.itemsChecked ?? 0} items; ${report.fidelity?.fieldComparisons ?? 0} fidelity comparisons; ${report.fidelity?.mismatches ?? 0} mismatches.</li>
 <li>${report.negativeBattery?.adversarialInputs ?? 0} adversarial inputs; ${report.negativeBattery?.silentlyAltered ?? 0} silently altered.</li>
 <li>${report.exportReconstruction?.exportsChecked ?? 0} exports reconstructed; ${report.exportReconstruction?.mismatches ?? 0} mismatches.</li>
