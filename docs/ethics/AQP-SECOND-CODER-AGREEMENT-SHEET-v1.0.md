@@ -2,10 +2,10 @@
 
 **Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
 **Status:** Protocol draft only; use only after written amendment approval.
-**Version:** 1.0, 10 August 2026
+**Version:** 1.1, 10 August 2026
 
 Complete independently before seeing the primary observer's codes. Use the fixed
-success, assist and error definitions in Protocol v1.1. Access only the recordings
+success, assist and error definitions in Protocol v1.2. Access only the recordings
 listed in the approved amendment and record the approved RDSS evidence IDs, not a
 copy of the file path or participant identity.
 
@@ -27,7 +27,7 @@ copy of the file path or participant identity.
 | Task-success category | | |
 | Active time (seconds) | | |
 | Assist events: timestamp, category, exact words | | |
-| Error events: timestamp, category, recovery | | |
+| Error events: timestamp, category, recovery, critical Yes/No | | |
 | End-state checkpoint pass vector | | |
 
 ## Pre-consensus agreement
@@ -38,12 +38,18 @@ copy of the file path or participant identity.
 | End-state checkpoints agreed / total | |
 | Primary assist count / second-coder count | |
 | Primary error count / second-coder count | |
-| Matched events within 10 seconds | |
-| Union of both coders' events | |
+| One-to-one matched events within 10 seconds | |
+| Union = primary + second − matched | |
 | Event agreement = matched / union | |
 | Disagreements before discussion | |
 
 Freeze this sheet before consensus. Record any consensus result separately; do not
 overwrite the independent numbers.
+
+For event agreement, match only events in the same condition with the same event
+type and predefined category. Each event may be used once. Choose the
+maximum-cardinality set of pairs within 10 seconds; break ties by the smallest
+absolute time difference and then the earlier timestamp. Preserve unmatched and
+disputed events before discussion.
 
 **Second coder signature/date:** ________________________________

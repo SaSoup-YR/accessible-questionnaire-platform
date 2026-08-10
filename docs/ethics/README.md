@@ -9,6 +9,11 @@ amendment form. The submission versions must be edited in the original UCL
 templates, carry the exact title and approval ID from the existing approval, and
 be approved in writing before recruitment.
 
+The versioned Researcher Task Sheet, Observer Coding Sheet, Second-Coder
+Agreement Sheet and Post-Condition Measures Sheet are protocol attachments. The
+same approved post-condition sheet must be used immediately after each system;
+its raw SEQ/SUS responses are not evidence until sessions are approved and run.
+
 The exact planted discrepancy is intentionally absent. Its source wording,
 altered wording and file hashes are held only in the private sealed ethics
 appendix. A discrepancy previously exposed in repository history is retired and

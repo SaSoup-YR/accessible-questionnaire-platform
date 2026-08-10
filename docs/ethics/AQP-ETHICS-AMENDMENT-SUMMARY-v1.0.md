@@ -1,6 +1,6 @@
 # Observed researcher study — public amendment summary
 
-Version: **1.0 — 9 August 2026**
+Version: **1.1 — 10 August 2026**
 Proposed activity: **Observed Evaluation of Questionnaire Study-Setup Workflows**
 Student researcher: **Yurui Wang**
 Supervisor and study contact: **Dr Mark Colley, m.colley@ucl.ac.uk**
@@ -57,10 +57,17 @@ Participants complete the same SUS setup task in two whole-tool conditions:
    items, required settings, one-question-per-page presentation and verified
    Brooke score calculation.
 
-The required end state is frozen in the protocol. Condition order is
-counterbalanced. The observer uses a fixed neutral script and does not coach.
-The study records task success, active time, assists, observable errors, the
-Single Ease Question, SUS for each system and three short open questions.
+The required end state and its separate AQP/Qualtrics checkpoint mapping are
+frozen in the protocol. Condition order uses a concealed, preregistered eight-slot
+AQ/QA allocation. The observer uses a fixed neutral script and does not coach.
+Timed setup ends when the participant declares completion or reaches 20 minutes.
+SEQ and SUS are then administered immediately for that system. After both timed
+conditions and their immediate measures, the observer, not the participant, uses
+one fixed synthetic answer vector to verify each link, identity, score and export
+outside task time. The study records task success,
+active time, assists, observable errors, critical status, SEQ and SUS. Three short
+formative open questions are asked only after the immediate discrepancy debrief
+and are not used as discrepancy-detection evidence.
 
 After both conditions, participants check a source sheet against an imported
 definition containing one mild, intentionally planted label difference. The
@@ -125,15 +132,16 @@ ethics confirmation and updated participant materials.
 
 - Official UCL Amendment Form/subform for the route named in the original approval.
 - Updated original ethics application with changes marked, if required by that route.
-- Observed Researcher Study Protocol v1.0.
-- Participant Information Sheet v1.0 in the original UCL template.
-- Consent Form v1.0 in the original UCL template.
+- Observed Researcher Study Protocol v1.2.
+- Participant Information Sheet v1.1 in the original UCL template.
+- Consent Form v1.1 in the original UCL template.
 - Recruitment Invitation v1.0.
 - Eligibility Screener v1.0.
-- Researcher Task Sheet v1.0.
-- Observer Coding Sheet v1.0.
-- Debrief Sheet v1.0.
-- Second-Coder Agreement Sheet v1.0.
+- Researcher Task Sheet v1.1.
+- Observer Coding Sheet v1.1.
+- Post-Condition Measures Sheet v1.0.
+- Debrief Sheet v1.1.
+- Second-Coder Agreement Sheet v1.1.
 - Project Risk Assessment v1.0 in the original UCL template.
 
 No payment or reimbursement is planned, so the subject payment-receipt form is

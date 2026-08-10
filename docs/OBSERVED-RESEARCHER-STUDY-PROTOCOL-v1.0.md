@@ -1,4 +1,4 @@
-# Observed researcher study protocol v1.1
+# Observed researcher study protocol v1.2
 
 Status: **planned additional formative study; do not run without approved amendment**
 Protocol revised: 2026-08-10
@@ -23,8 +23,8 @@ draft.
   AQP and from a precisely specified Qualtrics template starting state?
 - **RQ2:** What time, assistance and observable errors occur in each whole-tool
   workflow?
-- **RQ3:** Can the AQP source-review workflow help researchers detect one seeded
-  discrepancy before a participant link is released?
+- **RQ3:** Can researchers detect one seeded discrepancy while using the AQP
+  source-review workflow before a participant link is released?
 - **RQ4:** What barriers and improvement suggestions arise during observed use?
 
 This is a formative whole-workflow comparison. It does not isolate one interface
@@ -42,10 +42,18 @@ Eligibility:
 - able to use the approved session language and consent to screen recording.
 
 Record prior Qualtrics and survey-platform experience before assignment. Do not
-exclude a participant after seeing task outcomes. Target 6 or 8 participants so
-the two orders contain 3/3 or 4/4 participants. If exactly 7 complete, assign the
-last order at random and report the 4/3 imbalance. Do not replace a difficult case
-because of performance.
+exclude a participant after seeing task outcomes. Before recruitment, generate
+and freeze eight concealed allocation slots containing four AQ and four QA
+assignments, using the preregistered seed and algorithm. Allocate the next slot in
+enrolment order. If only 6 or 7 usable sessions result, report the actual order
+counts and any imbalance; do not adapt later assignments after seeing outcomes.
+
+A slot may be reused only when the enrolled person withdraws before the order is
+revealed and before any condition action or recording begins. Keep the same slot
+if that person is rescheduled after a study-owned failure before data collection.
+Once a condition action has occurred, do not reuse the slot after withdrawal,
+technical failure or exclusion; retain the case disposition and report it. Never
+replace a difficult case because of performance.
 
 ## Frozen systems and starting states
 
@@ -64,7 +72,8 @@ complete and attached to the preregistration:
 | Ethics | Approval ID, approving route/committee, written amendment decision and approved document versions |
 | AQP | Immutable release tag, commit SHA, deployment URL and passing evidence-report links |
 | Qualtrics | Survey/template ID, `AQP-SUS-COMPARISON-v1` export checksum, account type and verified starting-state screenshot |
-| Preregistration | Public/approved record URL or DOI, timestamp, random seed and concealed AQ/QA allocation list |
+| End-state map | Approved AQP/Qualtrics checkpoint-map version, synthetic-vector file hash and post-condition measures-sheet version |
+| Preregistration | Public/approved record URL or DOI, timestamp, random seed, generation algorithm and concealed eight-slot AQ/QA allocation list |
 | Recruitment | Approved invitation location, eligibility route and recruitment start/end dates |
 | Recording/storage | Approved meeting/recording tool, exact RDSS project path, transfer check and deletion log location |
 | Coding | Named UCL second coder, role, confidentiality/access approval and two recordings selected before outcome review |
@@ -77,8 +86,10 @@ software repository or replace it with a placeholder during a live session.
 Starting state: the researcher opens the AQP researcher landing page with no
 saved setup. `System Usability Scale (SUS)` is available in the built-in instrument
 catalogue. Its 10 items, 1–5 response codes and executable SUS scorer are already
-part of the named release. No study title, task, participant code, collection
-choice or participant link has been configured.
+part of the named release. No study title, task, participant code or participant
+link has been configured. The required collection end state is frozen as
+**This browser only** (`collection.mode = local`); participants may not choose a
+different collection route.
 
 ### Condition Q — Qualtrics SUS template route
 
@@ -86,9 +97,11 @@ Starting state: the researcher is already authenticated in the approved UCL
 Qualtrics account and opens a fresh copy of the frozen `AQP-SUS-COMPARISON-v1`
 template. The template contains the same 10 original SUS items in the same order,
 1–5 response values, required-response setting, one question per page and the
-pre-verified Brooke score calculation. It contains no study-specific title/task,
-participant code or distribution link. The library/template is explicitly
-available; participants are **not** asked to type ten items from scratch.
+pre-verified Brooke score calculation. It contains a blank first-page descriptive
+text placeholder and an empty Survey Flow Embedded Data field named
+`participant_code`, but no study-specific title/task, code value or distribution
+link. The library/template is explicitly available; participants are **not**
+asked to type ten items from scratch.
 
 This starting state is chosen because it matches a realistic ready-made route in
 both systems. The AQP scorer being executable platform code and the Qualtrics
@@ -111,8 +124,39 @@ The participant must produce a working participant link for:
 - Brooke SUS score named `SUS score`; and
 - a result/export route containing the ten final item values and computed score.
 
-The coordinator verifies the artefact after the task. A page saying “complete” is
-not sufficient.
+The participant's timed task is configuration only. They do not answer SUS as part
+of the timed setup. Timing stops when they declare the setup complete or reach the
+limit. The observer then performs the frozen, untimed synthetic verification below.
+A page saying “complete” is not sufficient.
+
+### Frozen condition-to-checkpoint mapping
+
+| Requirement | AQP observable pass | Qualtrics observable pass |
+| --- | --- | --- |
+| Study title and task | Generated participant page shows the exact title and task from the configuration. | Project is named `Researcher setup comparison`; the first visible descriptive-text page shows the exact title and task. |
+| Participant code | Generated participant-specific link opens with editable code `RESEARCHER-DEMO`; configuration uses local collection. | Anonymous distribution link carries `participant_code=RESEARCHER-DEMO`; the response row stores that exact value in the `participant_code` Embedded Data field. |
+| Instrument | Built-in SUS displays the frozen 10 items in order, values 1–5 and endpoint anchors. | Frozen template retains the same 10 items/order, numeric values and endpoint anchors. |
+| Required/paging | Runner requires each item and presents one item per screen. | Force Response remains enabled for all 10 items and each item has its own page break. |
+| Score | Completed synthetic response reports `SUS score = 50`. | Synthetic Data & Analysis row/export contains the frozen `SUS score` field with value 50. |
+| Export | The same-browser conductor result export contains all 10 item values, participant code and score. | A CSV export of the synthetic row contains all 10 item values, participant code and score. |
+| Working link | Link opens the generated local participant page in a separate tab in the same browser. | Anonymous distribution link opens the published survey without editor authentication. |
+
+These are whole-tool end states, not claims that the two implementations expose
+identical controls or collection architecture.
+
+### Untimed observer verification
+
+After both timed conditions and their immediate post-condition measures, the
+observer opens each preserved link and submits the same fixed synthetic vector:
+
+`5, 1, 4, 2, 3, 5, 1, 4, 2, 3`
+
+The expected Brooke SUS score is `50`. The observer then checks every mapped
+checkpoint and exports the resulting record. Observer actions and verification
+time are excluded from participant active time and are not assists. The observer
+must not repair the artefact. A participant configuration error that prevents the
+synthetic submission, changes an expected value/score/identity, or prevents export
+causes the corresponding checkpoint to fail.
 
 ## Design and counterbalancing
 
@@ -123,11 +167,13 @@ Use a within-participant A/Q design.
 | AQ | AQP | Qualtrics |
 | QA | Qualtrics | AQP |
 
-For n=6 allocate 3 AQ and 3 QA; for n=8 allocate 4 AQ and 4 QA. Generate the
-assignment list before recruitment with a reproducible random seed, conceal the
-next assignment until the participant is enrolled, and publish the seed and list
-with the preregistration. Each participant uses the same fixed task and required
-end state in both conditions.
+Before recruitment, create eight slots containing four AQ and four QA assignments,
+randomise their order using the frozen seed and algorithm, and seal the list. The
+next assignment remains concealed until enrolment. Publish the seed, algorithm and
+final list with the preregistration or its time-stamped private appendix, according
+to the approved concealment route. Each participant uses the same fixed task and
+required end state in both conditions. The slot-reuse rule in **Participants** is
+part of the preregistration.
 
 ## Observed procedure
 
@@ -140,16 +186,22 @@ end state in both conditions.
 4. Read the fixed introduction script. Give the first condition task sheet.
 5. Start time when the participant says they understand the task and first acts on
    the system. Observe without coaching.
-6. End time when the participant says the end state is complete or reaches the
-   20-minute condition limit.
-7. Administer one SEQ item immediately. Then verify the generated artefact against
-   the frozen checklist without revealing the second condition.
-8. Repeat steps 4–7 for the other condition.
-9. Administer SUS separately for AQP and Qualtrics, clearly naming the system for
-   each response set. Collect the fixed open questions.
-10. Run the AQP planted-discrepancy task below.
-11. Debrief the discrepancy, stop recording, confirm the withdrawal route and
-   securely transfer the recording.
+6. End time when the participant declares the setup complete or reaches the
+   20-minute condition limit. Do not wait for observer verification.
+7. Before discussion or feedback, administer the fixed post-condition sheet for
+   that system: SEQ first, then all ten SUS items. Record missing items; do not
+   impute a score.
+8. Preserve the generated link/configuration without discussing or verifying the
+   result, then repeat steps 4–7 for the other condition.
+9. Without asking the participant to act and without revealing pass/fail, run the
+   untimed synthetic verification for both preserved setups and freeze both
+   checkpoint vectors. Do not discuss the result or ask open feedback questions.
+10. Run the separate AQP planted-discrepancy task below.
+11. Debrief the discrepancy immediately. Only after that debrief, collect the
+    three fixed formative open responses; label them as post-debrief data and do
+    not use them as discrepancy-detection evidence.
+12. Stop recording, confirm the withdrawal route and securely transfer the
+    recording.
 
 ## Fixed observer script
 
@@ -208,12 +260,20 @@ Exploration that does not change state and ordinary reading are not errors. Reco
 self-corrected errors; mark whether recovered, whether an assist was needed and
 whether the final artefact remained invalid.
 
+An unrecovered error is **critical** when it causes any required end-state
+checkpoint to fail or leaves an incorrect participant/data identity, scoring rule,
+stored response value or unusable participant link. Code `Critical = Yes/No` for
+every error. A recovered error remains in the error count but is not critical in
+the final artefact.
+
 ### Time
 
 Active task time is elapsed time from the first system action to completion/failure,
 minus researcher-owned outages and participant-requested breaks. Do not pause for
 reading, search, backtracking or self-correction because these are part of task
-performance.
+performance. Stop at the participant's declaration or 20-minute limit. Post-task
+measures, observer synthetic completion, export inspection and checkpoint coding
+are outside active task time.
 
 ## Planted-discrepancy task
 
@@ -253,32 +313,52 @@ Debrief line:
 > The difference was intentionally inserted by the research team. The source
 > wording was [read the sealed source wording] and the imported file showed [read
 > the sealed altered wording]. It was not your mistake. We used it only to test
-> whether the review workflow supports detection. Your right to withdraw is
-> unchanged.
+> whether the difference was detected while you used the review workflow. Your
+> right to withdraw is unchanged.
 
 The bracketed wording is filled from the ethics-approved sealed appendix during
 the debrief; it is not improvised by the observer.
 
 ## Measures
 
-Primary observed measures per condition:
+Primary observed measures per setup condition:
 
 - task success category and each end-state checkpoint;
 - active time in seconds;
 - assist count and assist categories;
-- error count, categories, recovery and final validity; and
-- seeded-discrepancy detection, time, assists and false positives.
+- error count, categories, recovery, critical status and final validity; and
+- the untimed observer-verification checkpoint vector.
 
-Post-task/post-condition measures:
+The planted-discrepancy outcome is a separate AQP source-review task, not a
+per-condition setup measure. Report detection, time, assists and false positives
+separately.
 
-- Single Ease Question (SEQ), 1 `very difficult` to 7 `very easy`, after each
-  condition;
-- System Usability Scale (SUS), scored 0–100 using the standard rule, separately
-  for each system; and
-- concise open prompts: “What caused the most difficulty?”, “What helped most?”,
-  and “What one change would you make?”.
+Post-condition measures:
 
-Self-report does not replace observed success, time, assists or errors.
+- Single Ease Question (SEQ), administered immediately after each condition as
+  “Overall, how difficult or easy was this task to complete?”, with numbered
+  responses 1 `Very difficult` to 7 `Very easy`;
+- the original ten-item System Usability Scale (SUS), administered immediately
+  after the SEQ for that system and before discussion. Use the original item order,
+  1 `Strongly disagree` to 5 `Strongly agree`, and the Brooke scoring rule: odd
+  item contribution = response − 1; even item contribution = 5 − response; sum ×
+  2.5 for a 0–100 score. If any item is declined/missing, report the SUS score as
+  missing and do not impute.
+
+Post-session formative prompts, collected only after the planted-discrepancy
+debrief:
+
+- “What caused the most difficulty?”;
+- “What helped most?”; and
+- “What one change would you make?”.
+
+These post-debrief responses may inform future design work. They are not evidence
+that the discrepancy was or was not detected.
+
+Use `docs/ethics/AQP-POST-CONDITION-MEASURES-SHEET-v1.0.md` as the exact neutral
+administration surface for both systems. The observer displays the same read-only
+sheet, names the system, reads wording verbatim if needed and records the numeric
+response. Self-report does not replace observed success, time, assists or errors.
 
 ## Second coding and agreement
 
@@ -291,24 +371,28 @@ For each double-coded session report:
 - exact agreement on condition-level task-success category and every end-state
   checkpoint;
 - each coder's raw assist and error totals;
-- event agreement where the same predefined category occurs within a 10-second
-  window; and
-- matched events divided by the union of both coders' events, with disagreements
-  listed and resolved only after the independent result is frozen.
+- one-to-one event agreement within the same condition, event type and predefined
+  category where timestamps differ by no more than 10 seconds. Each event may be
+  matched once. Choose the maximum-cardinality set; break ties by the smallest
+  absolute time difference and then the earlier timestamp; and
+- matched events divided by the union of both coders' events (`P + S − matched`),
+  with disagreements listed and resolved only after the independent result is
+  frozen.
 
 Do not report agreement only after consensus. Preserve the pre-consensus numbers.
 
 ## Analysis plan
 
 For each participant and condition report success, time, assists, errors, SEQ, SUS
-and serious incidents. Summarise numeric measures with n, median, minimum and
+and critical incidents. Summarise numeric measures with n, median, minimum and
 maximum. Report counts and denominators for success and discrepancy detection.
 Show AQ and QA order groups separately before any overall summary.
 
 Do not run null-hypothesis significance tests, fit a model or claim population
-effects at n=6–8. Do not average away critical errors. Analyse open responses with
-a small deductive incident table linked to the observed task state and severity;
-do not claim thematic saturation.
+effects at n=6–8. Do not average away critical errors. Analyse the post-debrief
+open responses with a small deductive incident table linked to the observed task
+state and severity; treat them as formative feedback, not discrepancy evidence,
+and do not claim thematic saturation.
 
 ## Preregistration and deviations
 
@@ -318,8 +402,10 @@ Before the first session, register on OSF or the approved repository:
 - frozen systems, templates, source sheet and end-state checklist;
 - participant criteria and target n;
 - random seed and AQ/QA schedule;
+- allocation generation/slot-reuse rule;
+- frozen condition-to-checkpoint map, synthetic vector and expected score;
 - task-success, assist and error definitions;
-- measures and analysis plan;
+- exact post-condition measures sheet, administration order and analysis plan;
 - exclusion/withdrawal rules; and
 - second-coder selection rule.
 
@@ -347,6 +433,6 @@ consent/contact data separately from coded task data. The participant may pause
 recording or request removal of identifiable and coded data until seven calendar
 days after their session.
 
-No payment is planned under protocol version 1.1. Any change to payment,
+No payment is planned under protocol version 1.2. Any change to payment,
 recording, storage, participant group or task requires prior ethics confirmation
 and updated participant materials.

@@ -2,7 +2,7 @@
 
 **Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
 **Status:** Public protocol draft only; use the private UCL-template version for submission.
-**Version:** 1.0, 9 August 2026
+**Version:** 1.1, 10 August 2026
 **Student researcher:** Yurui Wang
 **Supervisor and study contact:** Dr Mark Colley, m.colley@ucl.ac.uk
 
@@ -11,7 +11,7 @@ means that you do not consent to that part. Ask any question before signing.
 
 | No. | Consent statement | Initials |
 |---:|---|:---:|
-| 1 | I have read and understood Participant Information Sheet v1.0 dated 9 August 2026. I have had time to consider it and ask questions. | |
+| 1 | I have read and understood Participant Information Sheet v1.1 dated 10 August 2026. I have had time to consider it and ask questions. | |
 | 2 | I confirm that I am 18 or over, have not developed AQP and have set up no more than two online questionnaire studies before. | |
 | 3 | I understand that taking part is voluntary. I may take a break or stop without giving a reason or losing any benefit. | |
 | 4 | I understand that study-window and session-audio recording is required to take part. I agree to recording for task time, assists, errors and independent coding. I may ask to pause or stop; if I do not agree, I will not take part and there is no penalty. | |
@@ -37,7 +37,7 @@ means that you do not consent to that part. Ask any question before signing.
 
 ## Researcher confirmation
 
-I confirm that I gave the participant Participant Information Sheet v1.0,
+I confirm that I gave the participant Participant Information Sheet v1.1,
 answered questions, checked active consent before recording and provided a copy
 of the completed consent form.
 

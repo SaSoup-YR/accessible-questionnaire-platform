@@ -52,7 +52,7 @@ DOCUMENTS = [
         "source": ROOT / "docs/AQP-EVALUATION-MATRIX-v6.md",
         "output": OUT / "AQP_Evaluation_Matrix_v6.docx",
         "running": "AQP evaluation matrix",
-        "version": "Version 6.2 | 10 August 2026",
+        "version": "Version 6.4 | 10 August 2026",
         "landscape": True,
         "table_font": 8.0,
         "kind": "matrix",
@@ -70,10 +70,19 @@ DOCUMENTS = [
         "source": ROOT / "docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md",
         "output": OUT / "AQP_Observed_Researcher_Study_Protocol_v1.docx",
         "running": "AQP observed researcher study",
-        "version": "Protocol v1.1 | ethics amendment required",
+        "version": "Protocol v1.2 | ethics amendment required",
         "landscape": False,
         "table_font": 9.25,
         "kind": "protocol",
+    },
+    {
+        "source": ROOT / "docs/ethics/AQP-POST-CONDITION-MEASURES-SHEET-v1.0.md",
+        "output": OUT / "AQP_Post_Condition_Measures_Sheet_v1.docx",
+        "running": "AQP post-condition measures sheet",
+        "version": "Version 1.0 | ethics amendment required",
+        "landscape": False,
+        "table_font": 9.0,
+        "kind": "measures",
     },
     {
         "source": ROOT / "docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md",
@@ -88,7 +97,7 @@ DOCUMENTS = [
         "source": ROOT / "docs/SUPERVISOR-FEEDBACK-CLOSURE-MATRIX-v2.md",
         "output": OUT / "AQP_Supervisor_Feedback_Closure_Matrix_v2.docx",
         "running": "AQP supervisor feedback closure matrix",
-        "version": "Version 2.6 | 10 August 2026",
+        "version": "Version 2.7 | 10 August 2026",
         "landscape": True,
         "table_font": 7.5,
         "kind": "matrix",
@@ -164,6 +173,24 @@ def repeat_header(row) -> None:
     tr_pr.append(repeat)
 
 
+def set_table_grid(table, *, color: str = "B8C2CC", size: str = "4") -> None:
+    """Add a restrained, explicit grid when a table is a writable form."""
+    tbl_pr = table._tbl.tblPr
+    borders = tbl_pr.find(qn("w:tblBorders"))
+    if borders is None:
+        borders = OxmlElement("w:tblBorders")
+        tbl_pr.append(borders)
+    for edge_name in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        edge = borders.find(qn(f"w:{edge_name}"))
+        if edge is None:
+            edge = OxmlElement(f"w:{edge_name}")
+            borders.append(edge)
+        edge.set(qn("w:val"), "single")
+        edge.set(qn("w:sz"), size)
+        edge.set(qn("w:space"), "0")
+        edge.set(qn("w:color"), color)
+
+
 def prevent_row_split(row) -> None:
     tr_pr = row._tr.get_or_add_trPr()
     cant_split = OxmlElement("w:cantSplit")
@@ -172,6 +199,11 @@ def prevent_row_split(row) -> None:
 
 def widths_for(table, content_width: int, kind: str) -> list[int]:
     columns = len(table.columns)
+    if kind == "measures" and columns == 7:
+        first_label = table.rows[0].cells[0].text.strip() if table.rows else ""
+        if first_label == "Item":
+            return column_widths_from_weights([0.45, 3.60, 0.49, 0.49, 0.49, 0.49, 0.49], content_width)
+        return column_widths_from_weights([1.0] * 7, content_width)
     if kind == "matrix" and columns == 6:
         return column_widths_from_weights([0.45, 1.65, 2.2, 2.1, 1.45, 1.95], content_width)
     if kind == "audit" and columns == 7:
@@ -242,27 +274,10 @@ def format_document(path: Path, *, running: str, version: str,
     set_font(run, size=8.5, color=MUTED)
     add_field(run, "PAGE")
 
-    # Use one page style on every page. LibreOffice can otherwise create a
-    # distinct left/even style with inherited orientation or furniture, which
-    # has produced rotated or clipped even pages in rendered QA.
+    # Use the default header/footer on every page. Merely touching the separate
+    # even-page parts while odd/even mode is disabled can make LibreOffice create
+    # a second page style whose body starts above the top margin.
     document.settings.odd_and_even_pages_header_footer = False
-    even_header = section.even_page_header
-    even_header.is_linked_to_previous = False
-    ehp = even_header.paragraphs[0]
-    ehp.text = ""
-    ehp.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    ehp.paragraph_format.space_after = Pt(0)
-    run = ehp.add_run(f"{running}  |  {version}")
-    set_font(run, size=8.5, color=MUTED)
-
-    even_footer = section.even_page_footer
-    even_footer.is_linked_to_previous = False
-    efp = even_footer.paragraphs[0]
-    efp.text = ""
-    efp.alignment = WD_ALIGN_PARAGRAPH.CENTER if landscape else WD_ALIGN_PARAGRAPH.RIGHT
-    run = efp.add_run("Page ")
-    set_font(run, size=8.5, color=MUTED)
-    add_field(run, "PAGE")
 
     # LibreOffice 25 currently misplaces left/even running furniture in
     # landscape DOCX pages. These landscape deliverables already repeat their
@@ -272,7 +287,7 @@ def format_document(path: Path, *, running: str, version: str,
     # header row on later even pages. Portrait documents retain them.
     if landscape:
         document.settings.odd_and_even_pages_header_footer = False
-        for part in (header, footer, even_header, even_footer):
+        for part in (header, footer):
             part.paragraphs[0].text = ""
 
     first_content = next((p for p in document.paragraphs if p.text.strip()), None)
@@ -322,8 +337,15 @@ def format_document(path: Path, *, running: str, version: str,
         if paragraph._p.pPr is not None and paragraph._p.pPr.numPr is not None:
             paragraph.paragraph_format.left_indent = Inches(0.5)
             paragraph.paragraph_format.first_line_indent = Inches(-0.25)
-            paragraph.paragraph_format.space_after = Pt(8)
-            paragraph.paragraph_format.line_spacing = 1.167
+            if running == "AQP supervisor feedback closure matrix":
+                # Keep the release checklist together without creating a nearly
+                # empty final landscape page. The content remains full-size and
+                # scannable; only excess list whitespace is reduced.
+                paragraph.paragraph_format.space_after = Pt(4)
+                paragraph.paragraph_format.line_spacing = 1.05
+            else:
+                paragraph.paragraph_format.space_after = Pt(8)
+                paragraph.paragraph_format.line_spacing = 1.167
         for run in paragraph.runs:
             if run.font.name is None:
                 set_font(run)
@@ -331,6 +353,9 @@ def format_document(path: Path, *, running: str, version: str,
     content_width = section_content_width_dxa(section)
     for table in document.tables:
         table.style = "Table"
+        if kind == "measures":
+            set_table_grid(table)
+        table_first_label = table.rows[0].cells[0].text.strip() if table.rows else ""
         # Keep column meaning visible when a dense audit or matrix table flows
         # onto a second page. The forced section starts prevent a header from
         # being stranded under unrelated content, while the repeat flag keeps
@@ -338,14 +363,24 @@ def format_document(path: Path, *, running: str, version: str,
         repeat_header(table.rows[0])
         for row_idx, row in enumerate(table.rows):
             prevent_row_split(row)
-            for cell in row.cells:
-                cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+            for cell_idx, cell in enumerate(row.cells):
+                cell.vertical_alignment = (
+                    WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                    if kind == "measures"
+                    else WD_CELL_VERTICAL_ALIGNMENT.TOP
+                )
                 if row_idx == 0:
                     shade_cell(cell, HEADER_FILL)
                 for paragraph in cell.paragraphs:
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(3)
                     paragraph.paragraph_format.line_spacing = 1.0
+                    if kind == "measures" and len(table.columns) == 7:
+                        paragraph.alignment = (
+                            WD_ALIGN_PARAGRAPH.LEFT
+                            if table_first_label == "Item" and cell_idx == 1
+                            else WD_ALIGN_PARAGRAPH.CENTER
+                        )
                     for run in paragraph.runs:
                         set_font(run, size=table_font, bold=True if row_idx == 0 else None)
         apply_table_geometry(

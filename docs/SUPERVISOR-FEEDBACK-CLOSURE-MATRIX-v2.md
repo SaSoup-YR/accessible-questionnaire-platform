@@ -1,6 +1,6 @@
 # Supervisor feedback closure matrix v2
 
-Version: 2.6\
+Version: 2.7\
 Frozen: 2026-08-10\
 Candidate branch: `feat/researcher-wizard`\
 Release rule: implementation is not marked release-complete until the named
@@ -53,19 +53,25 @@ commit is deployed, and the deployment is re-tested.
 | --- | --- | --- |
 | Remove C6 rather than leave it unevidenced. | C6 is in a Removed row, not an active claim. | Complete. |
 | Give C2 a decision rule for the new audit design. | C2 requires 135 browser rows plus complete manual P/F/NA observations and no S3 failure on a supported route. | Rule complete; evidence Not evidenced. |
-| Give C5 a decision rule for the optional observed researcher study. | C5 freezes success, time, assist/error, discrepancy, SEQ/SUS and second-coder evidence and prohibits significance tests. | Rule complete; study Not evidenced. |
+| Give C5 a decision rule for the optional observed researcher study. | C5 separates timed setup from untimed synthetic verification, freezes platform-specific end-state mappings, immediate per-condition SEQ/SUS, critical-error criteria, the separate discrepancy task and one-to-one second-coder evidence; significance tests remain prohibited. | Rule complete in protocol v1.2; study Not evidenced. |
 | Make C7's definition hash checkable. | C7 requires canonical hash agreement, rejection of missing/stale Version 4 hashes and export-only reconstruction. Qualtrics host acceptance additionally requires a schema-complete definition snapshot and a last-write acceptance marker. | CI-pass on candidate `4fe422c` in run `31399712181`; deployment and fresh synthetic Qualtrics-row verification remain pending. |
-| Fill every evidence status, including Not evidenced. | `docs/AQP-EVALUATION-MATRIX-v6.md` v6.2 has a status for every active row. | Complete for the candidate state; update only after new evidence. |
+| Fill every evidence status, including Not evidenced. | `docs/AQP-EVALUATION-MATRIX-v6.md` v6.4 has a status for every active row. | Complete for the candidate state; update only after new evidence. |
 
 ## E. Latest feedback, section 4 — optional observed researcher protocol
 
+Overall status: **Protocol-ready / Not evidenced.** Protocol v1.2 is executable
+once every activation gate and written ethics approval are present; no human
+outcome is inferred from the protocol itself.
+
 | Requirement | Frozen resolution | Current status |
 | --- | --- | --- |
-| Define Qualtrics start/end state. | A frozen UCL Qualtrics template already contains the ten SUS items, values, required setting, one-question-per-page structure and checked Brooke scoring; participants do not type from scratch. Required end state is identical and independently checked. | Protocol-ready; template/version/account and final URL must be frozen before preregistration. |
-| Counterbalance order. | Within-participant AQ/QA allocation, balanced before recruitment and recorded before each session. | Protocol-ready. |
+| Define matched start/end states and collection routes. | AQP starts with built-in SUS and must end in local same-browser collection. The frozen UCL Qualtrics template contains SUS and an empty `participant_code` route. A platform-specific map defines the exact visible title/task, identity, required/paging, link, score and export evidence. | Protocol-ready; immutable AQP release, Qualtrics template/version/account and final URLs remain activation gates. |
+| Separate participant time from output verification. | Timing stops at declaration/20 minutes. Before any feedback the participant completes immediate SEQ/SUS after each condition. Only after both conditions and both measure sheets are complete, the observer submits fixed vector `5,1,4,2,3,5,1,4,2,3` to each preserved setup, expects SUS 50, and checks link/identity/export without repairing the setup. Verification time is neither task time nor an assist. | Protocol-ready; study Not evidenced. |
+| Counterbalance order. | Eight concealed slots (4 AQ, 4 QA) are generated before recruitment with a frozen seed/algorithm. If only 6/7 sessions are usable the actual imbalance is reported; post-action slots are never adaptively reused. | Protocol-ready; seed and concealed list remain activation gates. |
 | Six to eight participants; descriptive/per-participant reporting; no significance tests. | Per-participant rows plus n, median, minimum and maximum; no inferential test or general population claim. | Protocol-ready. |
-| Define success, assist and error. | Operational definitions, 20-minute limit, end-state checklist, self-correction and critical-error rules are frozen in protocol v1.1. | Protocol-ready. |
-| Fixed script, recording and independent coding. | Fixed observer script; screen/shared-window and session audio recorded with consent; second coder independently codes at least two sessions before consensus. | Protocol-ready; ethics/storage/coder activation fields blocked. |
+| Define success, assist and error. | Operational definitions, 20-minute limit, mapped verification checklist and self-correction are frozen. A critical error is an unrecovered error that fails a checkpoint or leaves wrong identity/scoring/value or an unusable link; the coding sheet records `Critical?`. | Protocol-ready; study Not evidenced. |
+| Freeze exact post-task measures and timing. | The same neutral Post-Condition Measures Sheet freezes one 1–7 SEQ item, Brooke's ten-item SUS wording/order/anchors/scoring, no-imputation rule and SEQ→SUS administration immediately after each system. | Protocol-ready; no human responses exist. |
+| Fixed script, recording and independent coding. | Fixed observer script; screen/shared-window and session audio recorded with consent; second coder independently codes at least two sessions before consensus. Event agreement uses one-to-one same-condition/type/category matching within 10 seconds, with each event used once. | Protocol-ready; ethics/storage/coder activation fields blocked. |
 | Mild deception and debrief. | General advance disclosure, sealed private source/altered definition, immediate exact debrief and seven-day withdrawal route. Exact discrepancy is not in the public repository. | Protocol-ready; amendment approval required. |
 
 ## F. Latest feedback, section 5 — ethics and dissertation boundary
@@ -124,4 +130,4 @@ failures, 0 critical target-size failures and no missing row.
 - [ ] Execute A01–A33 on R1–R4 and retain exact observations.
 - [ ] Record failures honestly, fix them and re-run; do not convert NT/NA into pass.
 - [ ] Update matrix statuses only from the resulting evidence.
-- [ ] Send the deployed URL, immutable SHA, CI/artifact links, matrix v6.3 and completed audit to the supervisor.
+- [ ] Send the deployed URL, immutable SHA, CI/artifact links, matrix v6.4 and completed audit to the supervisor.

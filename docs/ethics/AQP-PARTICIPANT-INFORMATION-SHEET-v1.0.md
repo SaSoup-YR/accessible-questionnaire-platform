@@ -2,7 +2,7 @@
 
 **Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
 **Status:** Public protocol draft only; use the private UCL-template version for submission.
-**Version:** 1.0, 9 August 2026
+**Version:** 1.1, 10 August 2026
 **Student researcher:** Yurui Wang
 **Supervisor and study contact:** Dr Mark Colley, m.colley@ucl.ac.uk
 **UCL department:** UCL Interaction Centre
@@ -23,8 +23,8 @@ studies before.
 ## Do I have to take part?
 
 No. Taking part is your choice. You may ask questions before deciding. You may
-take a break, skip an optional feedback question, or stop at any time without
-giving a reason or losing any benefit.
+take a break, decline a rating or questionnaire item, skip an optional feedback
+question, or stop at any time without giving a reason or losing any benefit.
 
 ## What will I do?
 
@@ -34,10 +34,14 @@ The remote session will take up to 75 minutes.
 2. Tell us about your previous survey-platform experience and your browser.
 3. Set up the same short SUS questionnaire in AQP and in a prepared UCL
    Qualtrics template. Some people use AQP first and some use Qualtrics first.
-4. After each setup, give a 1–7 ease rating. At the end, answer a short standard
-   usability questionnaire for each system and three short feedback questions.
+4. Immediately after each setup, give a 1–7 ease rating and answer the same short
+   standard usability questionnaire about the system just used. After both timed
+   setups, the observer tests each link with fixed synthetic answers; that test is
+   not part of your task time.
 5. Check two setup materials for any difference you would resolve before
    releasing a participant link.
+6. Receive an immediate explanation of the intentional-difference task, then
+   answer three short feedback questions about the setup workflows.
 
 Use only the synthetic files and details supplied by the research team. Do not
 enter real participant data.

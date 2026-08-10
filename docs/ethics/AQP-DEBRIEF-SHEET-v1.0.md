@@ -1,7 +1,7 @@
 # Debrief Sheet
 
 **Activity:** Observed Evaluation of Questionnaire Study-Setup Workflows
-**Version:** 1.0, 10 August 2026
+**Version:** 1.1, 10 August 2026
 
 Thank you for taking part. One checking task contained a small intentional label
 difference. The observer will now read the exact source wording and altered
@@ -12,9 +12,9 @@ The exact answer is deliberately absent from this public copy. The live debrief
 must use the private approved copy and must not improvise or omit the two
 wordings.
 
-We did not reveal the location in advance because the study asks whether the review
-workflow helps a researcher notice a measurement difference before release. The
-task is not used to judge you.
+We did not reveal the location in advance because the study asks whether a
+researcher notices a measurement difference while using the review workflow
+before release. The task is not used to judge you.
 
 You may ask questions now. You may stop the study or ask for removal of your
 identifiable and coded data within seven calendar days after your session. Contact
