@@ -459,6 +459,35 @@ test('participant-code link precedence and manual fallback are enforced in Chrom
   await expect(page.locator('#error-summary')).toContainText(
     'Enter the valid pseudonymous participant code',
   );
+
+  await page.goto(
+    `${participantBaseUrl}#study=not-a-valid-configuration&participant=E2E-BAD-STUDY-04`,
+  );
+  await expect(page.getByRole('heading', { name: 'Study link problem' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Start/ })).toBeDisabled();
+});
+
+test('participant skip link preserves the study identity and recoverable session', async ({ page }) => {
+  const { url } = configuredParticipant('system-usability-scale', 'E2E-SKIP-01');
+  await page.goto(url);
+  const originalHash = new URL(page.url()).hash;
+
+  await page.getByRole('button', { name: 'Start the 10 items' }).click();
+  await choose(page, 3);
+  await page.getByRole('button', { name: 'Next question' }).click();
+  await expect(page.locator('.step-label')).toContainText('Rating 2 of 10');
+
+  const skipLink = page.getByRole('link', { name: 'Skip to the current question' });
+  await skipLink.focus();
+  await skipLink.click();
+  await expect(page.locator('#rating-heading')).toBeFocused();
+  expect(new URL(page.url()).hash).toBe(originalHash);
+
+  await page.reload();
+  await expect(page.locator('#participant-code')).toHaveValue('E2E-SKIP-01');
+  await expect(page.getByRole('heading', { level: 1, name: 'System Usability Scale' })).toBeVisible();
+  await expect(page.locator('.saved-session')).toContainText('1 of 10');
+  expect(new URL(page.url()).hash).toBe(originalHash);
 });
 
 test('SUS rendered states, recovery, review editing and completion', async ({ page }) => {

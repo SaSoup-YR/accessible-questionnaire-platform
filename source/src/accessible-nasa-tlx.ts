@@ -271,6 +271,7 @@ export class AccessibleNasaTlx extends LitElement {
     super.connectedCallback();
     this.loadStudyConfiguration();
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('hashchange', this.handleParticipantStudyHashChange);
     queueMicrotask(() => {
       this.restoreParticipantCodeForTab();
       this.findSavedSession();
@@ -291,6 +292,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('hashchange', this.handleParticipantStudyHashChange);
     this.installedResultSink?.bridge.disconnect();
     this.installedResultSink = null;
     this.stopReading(false);
@@ -435,7 +437,9 @@ export class AccessibleNasaTlx extends LitElement {
 
   protected render() {
     return html`
-      <a class="skip-link" href="#question-panel">Skip to the current question</a>
+      <a class="skip-link" href="#question-panel" @click=${this.handleSkipToCurrentQuestion}
+        >Skip to the current question</a
+      >
       <main class=${`app-shell${this.largeText ? ' large-text' : ''}`} id="main-content">
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
@@ -3075,6 +3079,40 @@ export class AccessibleNasaTlx extends LitElement {
       });
     }
     this.hiddenAt = null;
+  };
+
+  private handleParticipantStudyHashChange = () => {
+    const parameters = new URLSearchParams(
+      window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)
+        : window.location.hash,
+    );
+    if (!parameters.has('study')) return;
+    // Participant links encode the complete configuration and identity in the
+    // fragment. A full reload gives valid and invalid replacement links the
+    // same clean initialisation path and cannot retain the previous run state.
+    this.reloadForParticipantStudyLink();
+  };
+
+  private reloadForParticipantStudyLink() {
+    window.location.reload();
+  }
+
+  private handleSkipToCurrentQuestion = (event: MouseEvent) => {
+    // Native fragment navigation would replace the application hash that holds
+    // the study configuration and participant identity. Preserve that hash and
+    // provide the same keyboard destination programmatically instead.
+    event.preventDefault();
+    void this.updateComplete.then(() => {
+      const panel = this.querySelector<HTMLElement>('#question-panel');
+      if (!panel) return;
+      const target = panel.querySelector<HTMLElement>('h2') ?? panel;
+      if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+      focusAndReveal(target, {
+        block: 'start',
+        onReveal: () => this.requestParentReveal(target),
+      });
+    });
   };
 
   private dismissResumeSummary = () => {

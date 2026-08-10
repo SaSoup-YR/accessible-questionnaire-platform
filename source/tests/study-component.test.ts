@@ -440,6 +440,50 @@ describe('study-conductor and participant separation', () => {
       .toBeNull();
   });
 
+  it('reloads for every participant study hash and removes the listener when disconnected', async () => {
+    const component = await renderConfiguredComponent('locked', 'P-HASH-01');
+    const reloadForParticipantStudyLink = vi.fn();
+    (component as any).reloadForParticipantStudyLink = reloadForParticipantStudyLink;
+
+    window.history.replaceState({}, '', `${window.location.pathname}#question-panel`);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(reloadForParticipantStudyLink).not.toHaveBeenCalled();
+
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}#study=not-a-valid-configuration&participant=P-NEW-02`,
+    );
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(reloadForParticipantStudyLink).toHaveBeenCalledTimes(1);
+
+    component.remove();
+    window.history.replaceState({}, '', `${window.location.pathname}#study=also-invalid`);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(reloadForParticipantStudyLink).toHaveBeenCalledTimes(1);
+
+    document.body.append(component);
+    await component.updateComplete;
+    window.history.replaceState({}, '', `${window.location.pathname}#study=`);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(reloadForParticipantStudyLink).toHaveBeenCalledTimes(2);
+  });
+
+  it('moves skip-link focus without replacing the participant study hash', async () => {
+    const component = await renderConfiguredComponent('locked', 'P-SKIP-01');
+    const originalHash = window.location.hash;
+    const skipLink = component.querySelector<HTMLAnchorElement>('.skip-link')!;
+
+    expect(skipLink.getAttribute('href')).toBe('#question-panel');
+    skipLink.click();
+    await component.updateComplete;
+    await Promise.resolve();
+
+    expect(window.location.hash).toBe(originalHash);
+    expect(document.activeElement).toBe(component.querySelector('#intro-heading'));
+    expect(component.querySelector('#intro-heading')?.getAttribute('tabindex')).toBe('-1');
+  });
+
   it('blocks submission and exposes an actionable error when the definition hash is stale', async () => {
     const component = await renderConfiguredComponent('locked', 'P-HASH-01');
     await completeQuestionnaire(component);
