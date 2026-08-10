@@ -421,7 +421,7 @@ test('participant-code link precedence and manual fallback are enforced in Chrom
   await page.goto(oldLink);
   await expect(page.locator('#participant-code')).toHaveValue('E2E-OLD-LINK-01');
   await page.getByRole('button', { name: 'Start the 10 items' }).click();
-  await expect(page.locator('.step-label')).toContainText('Item 1 of 10');
+  await expect(page.locator('.step-label')).toContainText('Rating 1 of 10');
 
   const newLink = configuredParticipant('system-usability-scale', 'E2E-NEW-LINK-02').url;
   await page.goto(newLink);
@@ -439,7 +439,7 @@ test('participant-code link precedence and manual fallback are enforced in Chrom
   await expect(page.locator('#participant-code')).toHaveAttribute('aria-invalid', 'false');
   await page.locator('#participant-code').fill('E2E-MANUAL-03');
   await page.getByRole('button', { name: 'Start the 10 items' }).click();
-  await expect(page.locator('.step-label')).toContainText('Item 1 of 10');
+  await expect(page.locator('.step-label')).toContainText('Rating 1 of 10');
   expect(await page.evaluate(() => Object.keys(localStorage).some((key) =>
     key.startsWith('accessible-questionnaire-v0.8-progress:') &&
     key.endsWith(':E2E-MANUAL-03')))).toBe(true);
