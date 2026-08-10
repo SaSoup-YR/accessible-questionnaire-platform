@@ -4,7 +4,7 @@ A public research prototype that separates questionnaire definitions from a shar
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
 workflow.
 
-- **[Prepare a study](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.7-q7)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.8-q8)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-questionnaire-platform/)**
 
 Use synthetic codes during technical verification. Before real recruitment,
@@ -14,20 +14,20 @@ project's existing approved protocol and data-management plan.
 
 ## Release status
 
-The reviewed release-record commit is prepared for the immutable
-**`v0.8.0-rc.4`** tag, paired with Qualtrics bridge **`0.8.7-q7`**. It is a
-technical release candidate for review and bounded formative evaluation. The
-tag is an immutable evidence point: any later functional change requires a new
-tag and proportionate re-verification. The earlier **`v0.8.0-rc.3`** and
-**`v0.8.0-rc.2`** tags remain unchanged evidence baselines.
+The last reviewed release-record commit is the immutable **`v0.8.0-rc.4`**
+baseline. The current source is an untagged correction candidate paired with
+Qualtrics bridge **`0.8.8-q8`**. It is not a release evidence point until its
+real-browser checks and a fresh synthetic Qualtrics row pass. The earlier
+**`v0.8.0-rc.3`** and **`v0.8.0-rc.2`** tags remain unchanged evidence
+baselines.
 
 The immutable **`v0.8.0-rc.4`** baseline contains the prepared import and
 participant workflow. The current source is a post-`rc.4` researcher-wizard
 candidate: ready-made/saved questionnaires use six short screens and a
 Qualtrics/LimeSurvey import uses ten short screens with separate question,
-value, warning and scoring review. It adds same-tab draft recovery and browser
-step history without changing questionnaire definitions, participant scoring,
-result schemas or the Qualtrics bridge. See
+value, warning and scoring review. It adds same-tab draft recovery, browser
+step history, per-item review correction and a definition fingerprint in the
+configuration and result record. See
 [`docs/RESEARCHER-WIZARD.md`](docs/RESEARCHER-WIZARD.md).
 
 The `rc.4` baseline added `.lsg`
@@ -41,8 +41,17 @@ with a small allowlist of meaning-preserving speech-service variants.
 Verification on the post-`rc.4` wizard candidate:
 
 - a clean lock-file installation completed;
-- 18 test files passed, containing 183 passing tests;
+- the current correction candidate passes 20 unit/component/technical-evaluation
+  and release-policy test files containing 198 tests locally and in
+  [PR CI run 31339674025](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025);
 - 12 representative axe structural accessibility scans passed;
+- the same PR run published all 60/60 required real-browser state/profile scans,
+  with 0 axe violations, incomplete results, overflow failures, target-size
+  failures or missing states;
+- the current independent-oracle round trip checked 8 distributable built-in/import
+  cases, 31 items and 234 fields with 0 mismatches;
+- the 12-row adversarial battery recorded 0 silently altered inputs, and 8/8
+  result exports reconstructed 31/31 item responses with 0 mismatches;
 - TypeScript, production, standalone and synchronized release builds passed;
 - the attached real six-group LimeSurvey LSS exposed all six groups, produced a
   safe conversion for every compatible group/scale selection, and completed the
@@ -70,8 +79,9 @@ conductor and participant flow, same-device recovery, a supervisor-supplied
 German LSG import, disconnected submission warning plus reconnect/retry, and the
 post-fix microphone route. `Not 4`, `Agree quickly` and `Strongly` did not select
 an answer; intentional `4` produced a visible answer proposal and still required
-explicit confirmation. The existing `0.8.7-q7` Qualtrics normal-submission
-evidence remains applicable because the bridge and result schema did not change.
+explicit confirmation. The earlier `0.8.7-q7` Qualtrics normal-submission
+evidence is historical only: the definition-fingerprint field changes the
+`0.8.8-q8` result contract and requires a fresh synthetic accepted row.
 These checks establish the documented technical workflow, not multilingual
 spoken-label support, universal browser reliability or permission to recruit.
 
@@ -146,9 +156,10 @@ accessible or that it improves a questionnaire's psychometric properties.
   matrix layout or logic.
 - Structural validation cannot determine copyright permission, measurement
   validity, population suitability or equivalence to an original instrument.
-- Passing automated and manual technical checks is not a claim of complete WCAG
-  2.2 conformance or coverage of every browser, screen reader and assistive-
-  technology combination.
+- Passing automated checks is not a claim of complete WCAG 2.2 conformance or
+  coverage of every browser, screen reader and assistive-technology combination.
+  The versioned manual audit currently contains a frozen protocol and **NT** cells,
+  not completed NVDA/VoiceOver/voice-control evidence.
 - Voice recognition depends on the browser, operating system and any network-backed
   speech service. The single control requests `en-GB`. It accepts an allowed displayed
   number spoken in English for every questionnaire and, only for English questionnaires,
@@ -171,16 +182,23 @@ accessible or that it improves a questionnaire's psychometric properties.
 
 ## Supported scope
 
-Version 0.8 is questionnaire-independent within a declared profile; it does not
-claim to support any questionnaire.
+Version 0.8 is a bounded shared runner, not a questionnaire-independent survey
+engine. It accepts one shared integer single-choice scale per definition, a limited
+set of response structures and an allowlist of scorer implementations. Adding a
+questionnaire that needs a new scorer or mixed response scales requires code and
+review; the definition file alone is not sufficient.
 
 | Registered definition | Items and scale type | Workflow | Scoring |
 | --- | --- | --- | --- |
 | Weighted NASA-TLX | 6 magnitude items, 0–100 in steps of 5 | ratings plus 15 pairs | weighted NASA-TLX |
 | Raw TLX | 6 magnitude items, 0–100 in steps of 5 | ratings only | unweighted arithmetic mean |
 | System Usability Scale | 10 agreement items, 1–5 | ratings only | standard alternating SUS |
-| UEQ-S | 8 semantic differentials, 1–7 | ratings only | centred overall, pragmatic and hedonic means |
 | Researcher supplied or safely imported | 1–20 integer single-choice items on one shared 0–100-bounded scale | ratings only | researcher-confirmed mean or sum, with optional reverse-scored items |
+
+UEQ-S is deliberately absent from this release candidate: no explicit permission
+covering public repository redistribution and deployment was established. Generic
+semantic-differential rendering remains supported and is tested with original
+synthetic wording; see the [release decision](docs/UEQS-RELEASE-GATE.md).
 
 For both NASA-TLX definitions, the valid displayed and spoken values are
 `0, 5, 10, …, 100`. Values such as `1`, `2`, `3` or `92` are deliberately
@@ -192,6 +210,8 @@ Built-in questionnaire files are discovered from
 [`source/instruments/*.questionnaire.json`](source/instruments/). JSON Schema plus
 runtime semantic checks reject unsupported fields and incompatible scorers. Scoring
 functions are an executable allowlist; JSON cannot inject code.
+The MIT software licence does not relicense third-party questionnaire item text;
+see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and the UEQ-S release decision.
 
 On the conductor page, the researcher first chooses one of two setup routes:
 
@@ -290,7 +310,7 @@ preferences, or permit all definition-approved choices.
 
 Support changes and input routes are recorded separately and never enter scoring.
 Instrument-specific capability checks prevent smileys or unvalidated simpler wording
-from appearing in SUS or UEQ-S. Their standard response positions keep the official
+from appearing in built-in scored instruments. Their standard response positions keep the official
 endpoint labels without inventing meanings such as `Neutral` or `Agree` for
 intermediate values. Imported blank intermediate labels likewise remain numbered rather
 than being given invented meanings. Confirmed voice input is deliberately English-only:
@@ -299,13 +319,17 @@ and English questionnaires additionally accept one complete visible English labe
 including a small set of documented recognition variants.
 Non-English label recognition is not claimed. Recognition availability and transcription
 accuracy still depend on the participant's browser and operating system; buttons always
-remain available and every proposal requires confirmation. NASA-TLX smileys and simpler explanations
-remain definition-specific experimental support routes, not psychometrically equivalent
-replacements that can be applied safely to every imported scale.
+remain available and every proposal requires confirmation. NASA-TLX smiley landmarks
+remain an explicitly declared experimental presentation route; author-written simpler
+explanations are no longer included in any built-in scored definition. A researcher-supplied definition may
+provide separately labelled supplemental help, which receives a distinct fingerprint;
+AQP does not claim psychometric equivalence for that wording.
 
 WCAG 2.2 is used as an engineering and test framework. The repository does not claim
 complete WCAG conformance or disability-group benefit. See
 [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md).
+The evidence limits for jsdom, rendered-browser and human testing are separated in
+[`docs/ACCESSIBILITY-EVIDENCE-BOUNDARY.md`](docs/ACCESSIBILITY-EVIDENCE-BOUNDARY.md).
 
 ## Result safety
 
@@ -354,6 +378,14 @@ Version 0.7 rows are not deleted or backfilled: their values remain under
 | Migration | [`docs/MIGRATION-V0.7-V0.8.md`](docs/MIGRATION-V0.7-V0.8.md) |
 | Colour and WCAG audit | [`docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md`](docs/NON-TEXT-CONTRAST-AND-COLOUR-AUDIT.md), [`docs/WCAG-2.2-COMPONENT-AUDIT.md`](docs/WCAG-2.2-COMPONENT-AUDIT.md) |
 | Technical risk register | [`docs/TECHNICAL-RISK-REGISTER.md`](docs/TECHNICAL-RISK-REGISTER.md) |
+| Supervisor-feedback acceptance evidence | [`docs/SUPERVISOR-ACCEPTANCE-EVIDENCE-v1.md`](docs/SUPERVISOR-ACCEPTANCE-EVIDENCE-v1.md) |
+| Final contribution statement v2 | [`docs/AQP-FINAL-CONTRIBUTION-v2.md`](docs/AQP-FINAL-CONTRIBUTION-v2.md) |
+| Evaluation matrix v6 | [`docs/AQP-EVALUATION-MATRIX-v6.md`](docs/AQP-EVALUATION-MATRIX-v6.md) |
+| Quantified technical evaluation protocol | [`docs/TECHNICAL-EVALUATION-PROTOCOL-v1.0.md`](docs/TECHNICAL-EVALUATION-PROTOCOL-v1.0.md) |
+| Manual AT audit v1.0 | [`docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md`](docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md) |
+| Planned observed researcher study | [`docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md`](docs/OBSERVED-RESEARCHER-STUDY-PROTOCOL-v1.0.md) |
+| Ethics amendment submission summary | [`docs/ethics/AQP-ETHICS-AMENDMENT-SUMMARY-v1.0.md`](docs/ethics/AQP-ETHICS-AMENDMENT-SUMMARY-v1.0.md) |
+| Participant information, consent, recruitment, screening, task, observer, debrief, second-coder, risk and data-receipt templates | [`docs/ethics/`](docs/ethics/) |
 
 Historical Version 0.5 and 0.6 standalone files remain in Git history but were
 removed from the active tree to avoid ambiguous test candidates.
@@ -364,14 +396,29 @@ removed from the active tree to avoid ambiguous test candidates.
 cd source
 npm ci
 npm test
+npm run build
+npx playwright install --with-deps chromium firefox webkit
+npm run test:browser
+npm run test:browser-support
+npm run report:browser
+npm run report:browser-support
 npm run build:release
 ```
 
 Automation covers definition/scorer compatibility, weighted NASA-TLX, Raw TLX, SUS,
-UEQ-S, researcher-supplied and QSF/LSS/LSG/LSQ-imported end-to-end workflows,
+researcher-supplied and QSF/LSS/LSG/LSQ-imported end-to-end workflows, an original
+synthetic semantic-differential rendering fixture,
 configuration and Version 0.7 saved-progress migration, imported-matrix row
 rendering, conservative voice parsing, direct and iframe-parent
 focus/error movement, saved-session semantics, visible-state contrast, result
 validation/export, exact-origin receipts, Qualtrics adverse paths, standalone
-packaging and structural axe scans. Passing automation is software evidence, not
-participant evidence.
+packaging and structural axe scans. The Playwright suite serves the production build
+and adds rendered Chromium checks for named critical states, actual Tab focus,
+computed focus styling, critical target dimensions, 1280/768/320-CSS-pixel widths,
+Chromium page-scale 2.0 and its 640-CSS-pixel reflow companion. The cross-browser
+job separately records native API support in Chromium, Firefox and Playwright
+WebKit. CI publishes quantified fidelity/safety/reconstruction results,
+machine-readable and HTML browser records, a readable Playwright report, failure
+traces and per-state summaries for the exact tested revision. Passing automation
+is software evidence, not participant evidence, disabled-user benefit evidence or
+a WCAG conformance claim.

@@ -14,7 +14,8 @@ import {
   installQualtricsBridgeHandshake,
   submitToApprovedResultSink,
 } from '../src/result-sink';
-import type { StudyResultRecord } from '../src/study';
+import { getQuestionnaireDefinition } from '../src/questionnaire-definition';
+import { questionnaireDefinitionHash, type StudyResultRecord } from '../src/study';
 
 const record = {
   submissionId: 'submission-fixed',
@@ -109,6 +110,156 @@ function createBridgeDocument(frameWindow: { postMessage: ReturnType<typeof vi.f
     status,
     statusAttributes,
     recordedSummary,
+  };
+}
+
+function createCompleteQualtricsRecord(): StudyResultRecord {
+  const definition = structuredClone(getQuestionnaireDefinition('system-usability-scale')!);
+  const items = definition.items.map(({ id }) => id);
+  const ratings = Object.fromEntries(items.map((item, index) => [item, index % 2 === 0 ? 5 : 1]));
+  const contributions = Object.fromEntries(items.map((item) => [item, 4]));
+
+  return {
+    schemaVersion: 4,
+    submissionId: 'submission-complete',
+    study: {
+      studyId: 'SUS-TEST',
+      configId: 'config-test',
+      studyTitle: 'SUS bridge test',
+      taskLabel: 'Evaluate the configured participant flow',
+    },
+    participantCode: 'TEST-001',
+    timing: {
+      startedAt: '2026-07-27T10:00:00.000Z',
+      completedAt: '2026-07-27T10:05:00.000Z',
+    },
+    prototype: { name: 'Accessible Questionnaire Platform', version: '0.8.0' },
+    instrument: {
+      id: definition.id,
+      name: definition.name,
+      version: definition.version,
+      definitionSchemaVersion: 1,
+      definitionHash: questionnaireDefinitionHash(definition),
+      scoringStrategy: definition.scoring.strategy,
+      definition,
+    },
+    collection: {
+      mode: 'qualtrics',
+      parentOrigin: 'https://ucl-example.eu.qualtrics.com',
+    },
+    configuration: {
+      showSimpleLanguage: false,
+      answerMode: 'standard',
+      largeText: false,
+      audioGuidance: false,
+      recoveryEnabled: true,
+      participantAdjustmentPolicy: 'presentation-only',
+      voiceInputAvailable: true,
+      gazeInputAvailable: false,
+    },
+    responses: {
+      ratings,
+      pairwiseChoices: {},
+      pairPresentationOrder: [],
+    },
+    result: {
+      strategy: 'sus-standard-v1',
+      scoreName: 'SUS score',
+      primaryScore: 100,
+      scoreMinimum: 0,
+      scoreMaximum: 100,
+      ratings,
+      details: {
+        kind: 'sus-contributions',
+        contributions,
+      },
+    },
+    supportMetadata: {
+      ratingInputRoutes: { sus01: 'voice' },
+      pairInputRoutes: {},
+      supportChanges: [],
+      simplerExplanationsShownAtSubmission: false,
+      answerModeAtSubmission: 'standard',
+      largeTextUsedAtSubmission: false,
+      automaticAudioGuidanceEnabledAtSubmission: false,
+      recoveryEnabledAtSubmission: true,
+      readAloudUsed: false,
+      interruptionSummaryShown: false,
+      gazeUsed: false,
+      gazeActionCount: 0,
+      gazeEngine: null,
+    },
+  };
+}
+
+function createQualtricsSubmissionRuntime(
+  recordToSubmit: unknown,
+  setEmbeddedDataImplementation?: (name: string, value: string) => void,
+) {
+  const bridge = readFileSync(
+    resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+    'utf8',
+  );
+  let onReady: (() => void) | undefined;
+  let receiveMessage: ((event: MessageEvent) => void) | undefined;
+  const setJSEmbeddedData = vi.fn(setEmbeddedDataImplementation);
+  const hideNextButton = vi.fn();
+  const showNextButton = vi.fn();
+  const clickNextButton = vi.fn();
+  const frameWindow = { postMessage: vi.fn() };
+  const dom = createBridgeDocument(frameWindow);
+  const fakeQualtrics = {
+    SurveyEngine: {
+      addOnReady(callback: () => void) {
+        onReady = callback;
+      },
+      addOnUnload: vi.fn(),
+      setJSEmbeddedData,
+    },
+  };
+  const fakeWindow = {
+    CSS: { supports: () => true },
+    navigator: { onLine: true },
+    setTimeout: vi.fn(() => 1),
+    clearTimeout: vi.fn(),
+    addEventListener(type: string, listener: EventListener) {
+      if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+    },
+    removeEventListener: vi.fn(),
+  };
+
+  new Function('Qualtrics', 'document', 'window', bridge)(
+    fakeQualtrics,
+    dom.documentRef,
+    fakeWindow,
+  );
+  onReady!.call({ hideNextButton, showNextButton, clickNextButton });
+  receiveMessage!({
+    source: frameWindow,
+    origin: 'https://sasoup-yr.github.io',
+    data: {
+      type: QUALTRICS_CHILD_READY_MESSAGE,
+      protocolVersion: 2,
+      bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+    },
+  } as unknown as MessageEvent);
+  receiveMessage!({
+    source: frameWindow,
+    origin: 'https://sasoup-yr.github.io',
+    data: {
+      type: QUALTRICS_SUBMIT_MESSAGE,
+      bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      record: recordToSubmit,
+    },
+  } as unknown as MessageEvent);
+
+  return {
+    setJSEmbeddedData,
+    hideNextButton,
+    showNextButton,
+    clickNextButton,
+    frameWindow,
+    dom,
   };
 }
 
@@ -360,7 +511,7 @@ describe('approved host result sink', () => {
     )
       .trim()
       .split(/\r?\n/);
-    expect(embeddedDataFields).toHaveLength(62);
+    expect(embeddedDataFields).toHaveLength(63);
     expect(embeddedDataFields.every((field) => field.startsWith('__js_AQP_'))).toBe(true);
     const bridgeFieldNames = new Set(
       [...bridge.matchAll(/setField\('([A-Z0-9_]+)'/g)].map((match) => `__js_${match[1]}`),
@@ -583,69 +734,7 @@ describe('approved host result sink', () => {
       resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
       'utf8',
     );
-    const items = Array.from({ length: 10 }, (_, index) => `sus${String(index + 1).padStart(2, '0')}`);
-    const ratings = Object.fromEntries(items.map((item, index) => [item, index % 2 === 0 ? 5 : 1]));
-    const contributions = Object.fromEntries(items.map((item) => [item, 4]));
-    const completeRecord = {
-      schemaVersion: 4,
-      submissionId: 'submission-complete',
-      study: { studyId: 'SUS-TEST', configId: 'config-test' },
-      participantCode: 'TEST-001',
-      timing: {
-        startedAt: '2026-07-27T10:00:00.000Z',
-        completedAt: '2026-07-27T10:05:00.000Z',
-      },
-      prototype: { name: 'Accessible Questionnaire Platform', version: '0.8.0' },
-      instrument: {
-        id: 'system-usability-scale',
-        name: 'System Usability Scale',
-        version: 'brooke-1996',
-        definitionSchemaVersion: 1,
-        scoringStrategy: 'sus-standard-v1',
-      },
-      collection: { mode: 'qualtrics' },
-      configuration: {
-        showSimpleLanguage: false,
-        answerMode: 'standard',
-        largeText: false,
-        audioGuidance: false,
-        recoveryEnabled: true,
-        participantAdjustmentPolicy: 'presentation-only',
-        voiceInputAvailable: true,
-        gazeInputAvailable: false,
-      },
-      responses: {
-        ratings,
-        pairwiseChoices: {},
-        pairPresentationOrder: [],
-      },
-      result: {
-        strategy: 'sus-standard-v1',
-        scoreName: 'SUS score',
-        primaryScore: 100,
-        scoreMinimum: 0,
-        scoreMaximum: 100,
-        ratings,
-        details: {
-          kind: 'sus-contributions',
-          contributions,
-        },
-      },
-      supportMetadata: {
-        ratingInputRoutes: { sus01: 'voice' },
-        pairInputRoutes: {},
-        supportChanges: [],
-        simplerExplanationsShownAtSubmission: false,
-        answerModeAtSubmission: 'standard',
-        largeTextUsedAtSubmission: false,
-        automaticAudioGuidanceEnabledAtSubmission: false,
-        recoveryEnabledAtSubmission: true,
-        readAloudUsed: false,
-        interruptionSummaryShown: false,
-        gazeUsed: false,
-        gazeActionCount: 0,
-      },
-    };
+    const completeRecord = createCompleteQualtricsRecord();
     function createRuntime(online: boolean) {
       let onReady: (() => void) | undefined;
       let receiveMessage: ((event: MessageEvent) => void) | undefined;
@@ -722,9 +811,14 @@ describe('approved host result sink', () => {
 
     expect(onlineRuntime.hideNextButton).toHaveBeenCalledOnce();
     expect(onlineRuntime.showNextButton).not.toHaveBeenCalled();
-    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledTimes(64);
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledTimes(65);
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_ACCEPTED', '1');
+    expect(onlineRuntime.setJSEmbeddedData.mock.lastCall).toEqual(['AQP_ACCEPTED', '1']);
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_INSTRUMENT_ID', 'system-usability-scale');
+    expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith(
+      'AQP_DEFINITION_HASH',
+      expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
+    );
     expect(onlineRuntime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_PRIMARY_SCORE', '100.00');
     expect(onlineRuntime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -770,6 +864,65 @@ describe('approved host result sink', () => {
         submissionId: 'submission-complete',
         error: expect.stringContaining('Internet connection unavailable'),
         bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+      }),
+      'https://sasoup-yr.github.io',
+    );
+  });
+
+  it.each([
+    {
+      caseName: 'a missing definition hash',
+      mutate(recordToMutate: StudyResultRecord) {
+        delete (recordToMutate.instrument as Partial<StudyResultRecord['instrument']>).definitionHash;
+      },
+    },
+    {
+      caseName: 'a malformed definition hash',
+      mutate(recordToMutate: StudyResultRecord) {
+        recordToMutate.instrument.definitionHash = `sha256:${'A'.repeat(64)}`;
+      },
+    },
+    {
+      caseName: 'a missing definition snapshot',
+      mutate(recordToMutate: StudyResultRecord) {
+        delete (recordToMutate.instrument as Partial<StudyResultRecord['instrument']>).definition;
+      },
+    },
+  ])('rejects a record with $caseName before writing the acceptance marker', ({ mutate }) => {
+    const incompleteRecord = structuredClone(createCompleteQualtricsRecord());
+    mutate(incompleteRecord);
+    const runtime = createQualtricsSubmissionRuntime(incompleteRecord);
+
+    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');
+    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+    expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: QUALTRICS_RECEIPT_MESSAGE,
+        accepted: false,
+        submissionId: 'submission-complete',
+      }),
+      'https://sasoup-yr.github.io',
+    );
+  });
+
+  it('does not write the acceptance marker when raw-record staging fails part-way through', () => {
+    const runtime = createQualtricsSubmissionRuntime(
+      createCompleteQualtricsRecord(),
+      (name) => {
+        if (name === 'AQP_RAW_05') throw new Error('Injected raw-field staging failure.');
+      },
+    );
+
+    expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_RAW_05', expect.any(String));
+    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');
+    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+    expect(runtime.dom.status.textContent).toContain('Injected raw-field staging failure');
+    expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: QUALTRICS_RECEIPT_MESSAGE,
+        accepted: false,
+        submissionId: 'submission-complete',
+        error: 'Injected raw-field staging failure.',
       }),
       'https://sasoup-yr.github.io',
     );

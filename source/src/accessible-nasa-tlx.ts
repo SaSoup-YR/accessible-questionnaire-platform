@@ -31,6 +31,8 @@ import {
   downloadTextFile,
   loadCompletedResults,
   progressStorageKey,
+  questionnaireDefinitionHash,
+  readParticipantCodeFromHash,
   readStudyConfigFromHash,
   removeCompletedResult,
   resultFileBase,
@@ -72,6 +74,21 @@ interface PendingVoiceAnswer {
   transcript: string;
   value: number | DimensionId;
   label: string;
+}
+
+interface ReviewRatingEdit {
+  itemIndex: number;
+  itemId: DimensionId;
+  originalValue: number;
+  originalInputRoute: RatingInputRoute | undefined;
+  pendingValue: number;
+  pendingInputRoute: RatingInputRoute | undefined;
+}
+
+interface TabParticipantBinding {
+  version: 1;
+  linkParticipantCode: string | null;
+  activeParticipantCode: string;
 }
 
 interface SavedSession {
@@ -222,6 +239,8 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private participantCode = '';
   @state() private participantCodeError = '';
   @state() private participantCodeRestoredForTab = false;
+  @state() private editingRatingFromReview = false;
+  @state() private reviewRatingEdit: ReviewRatingEdit | null = null;
   @state() private startedAt = '';
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
@@ -241,6 +260,9 @@ export class AccessibleNasaTlx extends LitElement {
   private speechRequestId = 0;
   private savedSessionAnnouncementKey = '';
   private configurationApplied = false;
+  private prefilledParticipantCode = '';
+  private invalidParticipantParameter = false;
+  private reviewReturnFocusIndex: number | null = null;
   private installedResultSink: InstalledStudyResultSink | null = null;
   private readonly gazeCandidateTracker = new DwellTracker(1000);
   private readonly gazeConfirmationTracker = new DwellTracker(1200);
@@ -249,6 +271,7 @@ export class AccessibleNasaTlx extends LitElement {
     super.connectedCallback();
     this.loadStudyConfiguration();
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('hashchange', this.handleParticipantStudyHashChange);
     queueMicrotask(() => {
       this.restoreParticipantCodeForTab();
       this.findSavedSession();
@@ -269,6 +292,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   disconnectedCallback() {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('hashchange', this.handleParticipantStudyHashChange);
     this.installedResultSink?.bridge.disconnect();
     this.installedResultSink = null;
     this.stopReading(false);
@@ -292,6 +316,16 @@ export class AccessibleNasaTlx extends LitElement {
     }
     if (!config) return;
     this.studyConfig = config;
+    const participantParameter = parameters.get('participant');
+    const participantCode = readParticipantCodeFromHash(window.location.hash);
+    if (participantCode) {
+      this.prefilledParticipantCode = participantCode;
+      this.participantCode = participantCode;
+    } else if (participantParameter) {
+      this.invalidParticipantParameter = true;
+      this.participantCodeError =
+        'The participant code in this link is invalid. Enter the approved pseudonymous code manually or ask the study conductor for a new link.';
+    }
     this.pairOrder = shuffledPairs(this.definition);
     this.applyConfiguredSupport();
     if (config.collection.mode === 'qualtrics') {
@@ -403,7 +437,9 @@ export class AccessibleNasaTlx extends LitElement {
 
   protected render() {
     return html`
-      <a class="skip-link" href="#question-panel">Skip to the current question</a>
+      <a class="skip-link" href="#question-panel" @click=${this.handleSkipToCurrentQuestion}
+        >Skip to the current question</a
+      >
       <main class=${`app-shell${this.largeText ? ' large-text' : ''}`} id="main-content">
         <p class="sr-only" aria-live="polite" aria-atomic="true">${this.statusMessage}</p>
         <header class="app-header">
@@ -431,6 +467,9 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderInQuestionSupport() {
+    if (this.studyConfig && !this.canAdjustAllSupport && !this.canAdjustPresentationSupport) {
+      return nothing;
+    }
     return html`
       ${this.studyConfig
         ? this.canAdjustAllSupport
@@ -451,12 +490,11 @@ export class AccessibleNasaTlx extends LitElement {
               </p>
               ${this.renderSupportSettings('toolbar', 'presentation-only')}
             </details>`
-          : this.renderConfiguredSupportSummary()
+          : nothing
         : html`<details class="support-toolbar">
             <summary>Adjust accessibility support (optional)</summary>
             ${this.renderSupportSettings('toolbar', 'all')}
           </details>`}
-      ${this.renderReadAloudControl()}
       ${this.renderGazeSetup()}
     `;
   }
@@ -508,78 +546,32 @@ export class AccessibleNasaTlx extends LitElement {
             </aside>`
           : nothing}
         ${this.recoveredCompletedRecord ? this.renderCompletedBackupOffer() : nothing}
-        <p>${this.definition.introPrompt}</p>
-        ${this.studyConfig
-          ? html`<p>Study task: <strong>${this.studyConfig.taskLabel}</strong></p>`
-          : nothing}
-        <ol class="process-overview">
-          <li>
-            First, answer ${this.dimensions.length} items using values from
-            ${this.definition.scale.minimum} to ${this.definition.scale.maximum}.
-          </li>
-          ${this.pairs.length
-            ? html`<li>Then, make ${this.pairs.length} pairwise comparisons.</li>`
-            : nothing}
-          <li>Finally, review and submit your responses.</li>
-        </ol>
+        <p lang=${this.definition.language} dir="auto">${this.definition.introPrompt}</p>
+        <p>
+          Answer ${this.dimensions.length} item${this.dimensions.length === 1 ? '' : 's'}${this.pairs.length
+            ? ` and ${this.pairs.length} comparison${this.pairs.length === 1 ? '' : 's'}`
+            : ''}, review every answer, then submit.
+        </p>
 
-        <div class="boundary-note">
-          <h3>${this.isResearcherSuppliedDefinition
-            ? 'Questionnaire definition and optional support'
-            : 'Official questionnaire and optional support'}</h3>
+        <details class="support-toolbar participant-support-setup">
+          <summary>Accessibility and audio options (optional)</summary>
           <p>
-            ${this.definition.officialContentNotice}
-            Optional accessibility supports remain separate from the scored response.
+            Screen readers can use the page headings, labels and status messages. Built-in audio is a separate option.
           </p>
-          <p>
-            Screen-reader compatibility is always on through headings, native controls, labels,
-            focus movement and status announcements. It produces speech only when external software such as
-            NVDA or VoiceOver is running. Built-in audio guidance is a separate option for users who want the page itself to speak.
+          ${this.studyConfig ? this.renderConfiguredSupportSummary() : nothing}
+          ${this.studyConfig
+            ? this.canAdjustAllSupport
+              ? this.renderSupportSettings('intro', 'all')
+              : this.canAdjustPresentationSupport
+                ? this.renderSupportSettings('intro', 'presentation-only')
+                : nothing
+            : this.renderSupportSettings('intro', 'all')}
+          ${this.renderReadAloudControl()}
+          ${this.renderGazeSetup()}
+          <p class="support-boundary">
+            ${this.definition.officialContentNotice} Optional support use is recorded separately from scored answers.
           </p>
-        </div>
-
-        <details class="factor-reference">
-          <summary>
-            Review the ${this.dimensions.length}
-            ${this.isResearcherSuppliedDefinition ? '' : 'official '}
-            ${this.pairs.length ? 'factor definitions' : 'items'}
-          </summary>
-          ${this.dimensions.map(
-            (dimension) => html`
-              <div class="reference-item">
-                <h3>${dimension.name}</h3>
-                <p>${dimension.prompt}</p>
-              </div>
-            `,
-          )}
         </details>
-
-        ${this.studyConfig ? this.renderConfiguredSupportSummary() : nothing}
-        ${this.studyConfig
-          ? this.canAdjustAllSupport
-            ? html`<details class="support-toolbar participant-support-setup">
-                <summary>Adjust accessibility support (optional)</summary>
-                <p>
-                  The study settings are already applied. You do not need to change anything before starting. If an
-                  optional support preference helps, you may change it and the change will be recorded for the researcher.
-                </p>
-                ${this.renderSupportSettings('intro', 'all')}
-              </details>`
-            : this.canAdjustPresentationSupport
-            ? html`<details class="support-toolbar participant-support-setup">
-                <summary>Adjust display, audio or recovery (optional)</summary>
-                <p>
-                  The study settings are already applied. You do not need to change anything before starting.
-                  Simpler explanations and the standard/smiley answer presentation remain fixed by the study conductor.
-                </p>
-                ${this.renderSupportSettings('intro', 'presentation-only')}
-              </details>`
-            : nothing
-          : html`<details class="support-toolbar participant-support-setup">
-              <summary>Adjust accessibility support (optional)</summary>
-              ${this.renderSupportSettings('intro', 'all')}
-            </details>`}
-        ${this.renderReadAloudControl()} ${this.renderGazeSetup()}
 
         <button
           class="primary-button large-answer-button"
@@ -605,19 +597,11 @@ export class AccessibleNasaTlx extends LitElement {
     }
     return html`
       <aside class="study-context" aria-labelledby="study-context-heading">
-        <h3 id="study-context-heading">Participant questionnaire</h3>
-        <dl class="study-details">
-          <div><dt>Study</dt><dd>${this.studyConfig.studyTitle}</dd></div>
-          <div><dt>Study ID</dt><dd>${this.studyConfig.studyId}</dd></div>
-          <div><dt>Task</dt><dd>${this.studyConfig.taskLabel}</dd></div>
-          <div>
-            <dt>Result collection</dt>
-            <dd>${this.studyConfig.collection.mode === 'qualtrics' ? 'UCL Qualtrics' : 'This browser only'}</dd>
-          </div>
-        </dl>
+        <h3 id="study-context-heading">${this.studyConfig.studyTitle}</h3>
+        <p>Think about: <strong>${this.studyConfig.taskLabel}</strong></p>
         <label class="participant-code-field" for="participant-code">
           <strong>Pseudonymous participant code</strong>
-          <span>Use the code provided by the study conductor. Do not enter your name or email address.</span>
+          <span>The link normally fills this in. If it is blank, use the code provided by the study conductor. Do not enter your name or email.</span>
           <input
             id="participant-code"
             name="participant-code"
@@ -634,7 +618,7 @@ export class AccessibleNasaTlx extends LitElement {
         <p id="participant-code-help" class=${this.participantCodeError ? 'field-error' : 'support-boundary'}>
           ${this.participantCodeError ||
           (this.recoveryEnabled
-            ? 'Letters, numbers, hyphens and underscores only; maximum 32 characters. If this page reloads in the same tab, this code is restored for that tab so interrupted answers can be found.'
+            ? 'You may correct the code. If this page reloads in the same tab, the code is restored so interrupted answers can be found.'
             : 'Letters, numbers, hyphens and underscores only; maximum 32 characters.')}
         </p>
         ${this.participantCodeRestoredForTab
@@ -669,7 +653,7 @@ export class AccessibleNasaTlx extends LitElement {
         </ul>
         <p>
           ${support.participantAdjustmentPolicy === 'participant-choice'
-            ? 'The starting settings are already applied. You may optionally change simpler explanations, answer presentation, text size, automatic spoken guidance or interruption recovery. Each change is recorded separately from your answers.'
+            ? 'The starting settings are already applied. You may optionally change any support control shown below. Each change is recorded separately from your answers.'
             : support.participantAdjustmentPolicy === 'presentation-only'
               ? 'You may optionally change text size, automatic spoken guidance or interruption recovery. The answer presentation and simpler-explanation setting remain fixed.'
               : 'The prepared settings remain fixed for this study. You can still use any answer route that the study conductor made available.'}
@@ -680,6 +664,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderSupportSettings(context: 'intro' | 'toolbar', scope: 'all' | 'presentation-only') {
     const prefix = `support-${context}`;
+    const audioAvailable = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     return html`
       <fieldset class="support-settings">
         <legend>${scope === 'all' ? 'Accessibility support options' : 'Display and recovery preferences'}</legend>
@@ -769,6 +754,22 @@ export class AccessibleNasaTlx extends LitElement {
           </label>
         </fieldset>
 
+        <label class="toggle-card" for=${`${prefix}-audio`}>
+          <input
+            id=${`${prefix}-audio`}
+            type="checkbox"
+            .checked=${this.audioGuidance}
+            ?disabled=${!audioAvailable}
+            @change=${this.setAudioGuidance}
+          />
+          <span>
+            <strong>Read new questions and feedback aloud</strong>
+            <small>${audioAvailable
+              ? 'Default off. Leave this off when a screen reader is already speaking.'
+              : 'Built-in audio is unavailable in this browser.'}</small>
+          </span>
+        </label>
+
         <label class="toggle-card" for=${`${prefix}-recovery`}>
           <input
             id=${`${prefix}-recovery`}
@@ -788,7 +789,7 @@ export class AccessibleNasaTlx extends LitElement {
   private renderReadAloudControl() {
     const available = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     return html`
-      <div class="quick-support audio-guidance" aria-label="Built-in audio guidance">
+      <div class="quick-support audio-guidance" role="group" aria-label="Built-in audio guidance">
         <div>
           <strong>Built-in audio guidance (produces sound)</strong>
           <p>
@@ -807,23 +808,7 @@ export class AccessibleNasaTlx extends LitElement {
         ${this.audioStatusMessage
           ? html`<p class="audio-status" role="status" aria-atomic="true">${this.audioStatusMessage}</p>`
           : nothing}
-        ${this.canAdjustPresentationSupport
-          ? html`<label class="audio-guidance-toggle">
-              <input
-                type="checkbox"
-                .checked=${this.audioGuidance}
-                ?disabled=${!available}
-                @change=${this.setAudioGuidance}
-              />
-              <span>
-                <strong>Automatically read new questions, selected answers and feedback aloud</strong>
-                <small>
-                  Default off. This includes voice proposals, simpler help, recovery summaries,
-                  errors and completion feedback while this page remains open.
-                </small>
-              </span>
-            </label>`
-          : html`<small>Automatic spoken guidance is ${this.audioGuidance ? 'on' : 'off'} in the study configuration.</small>`}
+        <small>Automatic spoken guidance is ${this.audioGuidance ? 'on' : 'off'}.</small>
         <small>
           ${available
             ? 'Uses the browser speech-synthesis voice; no audio is recorded.'
@@ -836,7 +821,7 @@ export class AccessibleNasaTlx extends LitElement {
   private renderCompletionReadAloudControl() {
     const available = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
     return html`
-      <div class="quick-support audio-guidance completion-audio" aria-label="Result audio guidance">
+      <div class="quick-support audio-guidance completion-audio" role="group" aria-label="Result audio guidance">
         <button
           class="secondary-button large-answer-button"
           type="button"
@@ -919,7 +904,11 @@ export class AccessibleNasaTlx extends LitElement {
             Centre your face in the preview and keep the device steady. This preview is for positioning only and will
             disappear before calibration.
           </p>
-          <div class="gaze-camera-preview-slot" aria-label="Live camera positioning preview"></div>
+          <div
+            class="gaze-camera-preview-slot"
+            role="img"
+            aria-label="Live camera positioning preview"
+          ></div>
           <p class="gaze-positioning-tip">
             Make sure your whole face is visible, the lighting is even and your eyes are not covered. On a phone or
             tablet, place the device on a stable support if possible.
@@ -1009,7 +998,9 @@ export class AccessibleNasaTlx extends LitElement {
 
   private renderRating() {
     const dimension = this.dimensions[this.ratingIndex];
-    const selected = this.ratings[dimension.id];
+    const selected = this.editingRatingFromReview && this.reviewRatingEdit?.itemId === dimension.id
+      ? this.reviewRatingEdit.pendingValue
+      : this.ratings[dimension.id];
     return html`
       <section class="panel" id="question-panel" aria-labelledby="rating-heading">
         <p class="step-label">Rating ${this.ratingIndex + 1} of ${this.dimensions.length}</p>
@@ -1064,23 +1055,36 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderFullRatingScale(dimension: TlxDimension, selected: number | undefined) {
+    const semanticDifferential = this.definition.scale.type === 'semantic-differential';
+    const hasFullyLabelledOptions = Boolean(dimension.responseLabels);
     return html`
       <fieldset class="rating-fieldset">
         <legend>
-          Rate <span lang=${this.definition.language} dir="auto">${dimension.name}</span>:
-          ${this.definition.scale.minimum} is
-          <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>;
-          ${this.definition.scale.maximum} is
-          <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
+          ${semanticDifferential
+            ? html`Choose one position for
+                <span lang=${this.definition.language} dir="auto">${dimension.name}</span>, from
+                <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span> to
+                <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>`
+            : html`Choose one answer for
+                <span lang=${this.definition.language} dir="auto">${dimension.name}</span>:
+                ${this.definition.scale.minimum} is
+                <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>;
+                ${this.definition.scale.maximum} is
+                <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>`}
         </legend>
         <div class="rating-anchors" aria-hidden="true">
-          <span>${this.definition.scale.minimum} — <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span></span>
-          <span>${this.definition.scale.maximum} — <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span></span>
+          <span>${semanticDifferential ? nothing : `${this.definition.scale.minimum} — `}<span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span></span>
+          <span>${semanticDifferential ? nothing : `${this.definition.scale.maximum} — `}<span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span></span>
         </div>
-        <div class="rating-grid">
+        <div class=${`rating-grid${semanticDifferential
+          ? ' semantic-differential-grid'
+          : hasFullyLabelledOptions
+          ? ' fully-labelled-rating-grid'
+          : ''}`}>
           ${this.ratingValues.map((value) => {
             const inputId = `rating-${dimension.id}-${value}`;
             const optionLabel = this.ratingOptionLabel(dimension, value);
+            const visibleResponseLabel = this.visibleResponseLabel(dimension, value);
             return html`
               <label
                 class="rating-option"
@@ -1093,15 +1097,17 @@ export class AccessibleNasaTlx extends LitElement {
                   type="radio"
                   name=${`rating-${dimension.id}`}
                   value=${value}
+                  .required=${value === this.definition.scale.minimum}
                   .checked=${selected === value}
                   aria-label=${optionLabel}
                   @change=${() => this.selectRating(dimension.id, value, 'standard-scale')}
                 />
                 <span class="rating-option-content">
-                  <strong>${value}</strong>
-                  ${dimension.responseLabels?.[String(value)] &&
-                  dimension.responseLabels[String(value)] !== String(value)
-                    ? html`<small lang=${this.definition.language} dir="auto">${dimension.responseLabels[String(value)]}</small>`
+                  ${semanticDifferential
+                    ? html`<span class="semantic-position-dot" aria-hidden="true"></span>`
+                    : html`<strong>${value}</strong>`}
+                  ${visibleResponseLabel
+                    ? html`<small lang=${this.definition.language} dir="auto">${visibleResponseLabel}</small>`
                     : nothing}
                 </span>
                 ${selected === value
@@ -1137,6 +1143,7 @@ export class AccessibleNasaTlx extends LitElement {
                   type="radio"
                   name=${`smiley-${dimension.id}`}
                   value=${value}
+                  .required=${value === this.smileyLandmarks[0]?.value}
                   .checked=${selected === value}
                   aria-label=${`${value}, ${this.landmarkLabel(dimension, value)}, for ${dimension.name}`}
                   aria-describedby=${`smiley-help-${dimension.id}`}
@@ -1198,6 +1205,7 @@ export class AccessibleNasaTlx extends LitElement {
           type="radio"
           name=${pairId}
           value=${dimension.id}
+          required
           .checked=${checked}
           @change=${() => this.selectPair(pairId, dimension.id, 'standard-choice')}
         />
@@ -1213,6 +1221,7 @@ export class AccessibleNasaTlx extends LitElement {
   }
 
   private renderPairHelp(left: TlxDimension, right: TlxDimension) {
+    if (!this.definition.supports.simplerExplanations) return nothing;
     if (this.showSimpleLanguage) {
       return html`<p class="simple-pair-prompt">In simpler words: ${this.definition.pairwise!.simplePrompt}</p>`;
     }
@@ -1310,20 +1319,25 @@ export class AccessibleNasaTlx extends LitElement {
     const finalRating = context === 'rating' && this.ratingIndex === this.dimensions.length - 1;
     const finalPair = context === 'pair' && this.pairIndex === this.pairOrder.length - 1;
     const nextLabel =
-      finalRating
+      context === 'rating' && this.editingRatingFromReview
+        ? 'Save change and return to review'
+      : finalRating
         ? this.pairOrder.length ? 'Continue to comparisons' : 'Review responses'
         : finalPair ? 'Review responses' : 'Next question';
+    const previousLabel = context === 'rating' && this.editingRatingFromReview
+      ? 'Cancel change and return to review'
+      : 'Previous question';
     return html`
       <div class="button-row">
         <button
           class="secondary-button large-answer-button"
           type="button"
           data-gaze-target
-          data-gaze-label="Previous question"
-          ?disabled=${!canGoBack}
+          data-gaze-label=${previousLabel}
+          ?disabled=${!canGoBack && !this.editingRatingFromReview}
           @click=${this.goBack}
         >
-          Previous question
+          ${previousLabel}
         </button>
         <button
           class="primary-button large-answer-button"
@@ -1370,19 +1384,44 @@ export class AccessibleNasaTlx extends LitElement {
           : nothing}
 
         <h3>Item responses</h3>
-        <dl class="review-ratings">
+        <div class="review-ratings">
           ${this.dimensions.map(
-            (dimension) => html`
-              <div>
-                <dt>${dimension.name}</dt>
-                <dd>
-                  ${this.ratings[dimension.id]}
-                  <small>(${this.ratingRouteLabel(dimension.id)})</small>
-                </dd>
-              </div>
+            (dimension, index) => html`
+              <section
+                class="review-rating-card"
+                id=${`review-item-${index + 1}`}
+                role="group"
+                tabindex="-1"
+                aria-labelledby=${`review-item-label-${index + 1}`}
+                aria-describedby=${`review-item-answer-${index + 1}`}
+              >
+                <h4 class="review-rating-label" id=${`review-item-label-${index + 1}`}>
+                  <strong>${dimension.name}</strong>
+                  <span class="review-item-prompt" lang=${this.definition.language} dir="auto">
+                    ${dimension.prompt}
+                  </span>
+                </h4>
+                <div class="review-rating-answer">
+                  <p id=${`review-item-answer-${index + 1}`}>
+                    <strong>Selected answer: ${this.reviewRatingLabel(dimension)}</strong>
+                    ${this.renderReviewRatingScaleContext(dimension)}
+                  </p>
+                  <small>Input route: ${this.ratingRouteLabel(dimension.id)}</small>
+                  <button
+                    class="secondary-button large-answer-button"
+                    type="button"
+                    data-gaze-target
+                    data-gaze-label=${`Change item ${index + 1} answer`}
+                    aria-label=${`Change item ${index + 1} answer. ${dimension.name}. Current answer: ${this.reviewRatingAccessibleLabel(dimension)}`}
+                    @click=${() => this.editRatingFromReview(index)}
+                  >
+                    Change item ${index + 1} answer
+                  </button>
+                </div>
+              </section>
             `,
           )}
-        </dl>
+        </div>
 
         ${this.pairOrder.length
           ? html`<h3>Pairwise comparisons</h3>
@@ -1469,7 +1508,7 @@ export class AccessibleNasaTlx extends LitElement {
               </div>`
             : this.completionSavedByHost
             ? html`<div class="save-status">
-                <h3>Submitting response</h3>
+                <h3>Waiting for Qualtrics</h3>
                 <p>This page will continue automatically. No action is needed.</p>
                 ${this.completionSavedLocally
                   ? nothing
@@ -1731,6 +1770,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private setParticipantCode = (event: Event) => {
     this.participantCode = (event.currentTarget as HTMLInputElement).value.trim();
+    this.invalidParticipantParameter = false;
     this.participantCodeRestoredForTab = false;
     this.participantCodeError =
       this.participantCode && !validParticipantCode(this.participantCode)
@@ -1814,13 +1854,41 @@ export class AccessibleNasaTlx extends LitElement {
 
   private ratingValueLabel(dimension: TlxDimension, value: number) {
     const declaredLabel = dimension.responseLabels?.[String(value)];
-    if (declaredLabel) return declaredLabel;
+    if (declaredLabel && declaredLabel !== String(value)) return declaredLabel;
     if (value === this.definition.scale.minimum) return dimension.lowAnchor;
     if (value === this.definition.scale.maximum) return dimension.highAnchor;
     return null;
   }
 
+  /**
+   * The endpoints are already presented visually in the aria-hidden anchor row
+   * and announced once in the fieldset legend. Imported survey exports often
+   * repeat those exact strings as the first and last response labels. Suppress
+   * only those duplicated endpoint labels; labels for middle positions remain
+   * visible because they carry additional response meaning.
+   */
+  private visibleResponseLabel(dimension: TlxDimension, value: number) {
+    const declared = dimension.responseLabels?.[String(value)];
+    if (!declared || declared === String(value)) return null;
+    const endpoint = value === this.definition.scale.minimum
+      ? dimension.lowAnchor
+      : value === this.definition.scale.maximum
+        ? dimension.highAnchor
+        : null;
+    const normalise = (label: string) => label.replace(/\s+/g, ' ').trim();
+    return endpoint && normalise(declared) === normalise(endpoint)
+      ? null
+      : declared;
+  }
+
   private ratingOptionLabel(dimension: TlxDimension, value: number) {
+    if (this.definition.scale.type === 'semantic-differential') {
+      const position = this.ratingValues.indexOf(value) + 1;
+      const endpoint = this.ratingValueLabel(dimension, value);
+      return endpoint
+        ? `Position ${position} of ${this.ratingValues.length}, ${endpoint}, for ${dimension.name}`
+        : `Position ${position} of ${this.ratingValues.length}, between ${dimension.lowAnchor} and ${dimension.highAnchor}, for ${dimension.name}`;
+    }
     const label = this.ratingValueLabel(dimension, value);
     return label
       ? `${value}, ${label}, for ${dimension.name}`
@@ -1871,16 +1939,86 @@ export class AccessibleNasaTlx extends LitElement {
     return 'full scale';
   }
 
+  private reviewRatingLabel(dimension: TlxDimension) {
+    const value = this.ratings[dimension.id];
+    if (value === undefined) return 'No answer';
+    const label = this.ratingValueLabel(dimension, value);
+    if (this.definition.scale.type === 'semantic-differential') {
+      const position = `Position ${this.ratingValues.indexOf(value) + 1} of ${this.ratingValues.length}`;
+      return label ? `${position} — ${label}` : position;
+    }
+    if (label) return `${value} — ${label}`;
+    return String(value);
+  }
+
+  /**
+   * A validated instrument may declare only its endpoint anchors. In that case
+   * an interior response has no authoritative label: inventing one would change
+   * the questionnaire content, while showing only a number would make the review
+   * record depend on remembered scale context. Expose the declared endpoints
+   * instead, and omit this extra context when the selected value already has an
+   * authoritative label.
+   */
+  private reviewRatingScaleContextText(dimension: TlxDimension) {
+    const value = this.ratings[dimension.id];
+    if (value === undefined || this.ratingValueLabel(dimension, value)) return null;
+    if (this.definition.scale.type === 'semantic-differential') {
+      return `Scale endpoints: ${dimension.lowAnchor} to ${dimension.highAnchor}`;
+    }
+    return `Scale: ${this.definition.scale.minimum} — ${dimension.lowAnchor} to ${this.definition.scale.maximum} — ${dimension.highAnchor}`;
+  }
+
+  private renderReviewRatingScaleContext(dimension: TlxDimension) {
+    const context = this.reviewRatingScaleContextText(dimension);
+    if (!context) return nothing;
+    if (this.definition.scale.type === 'semantic-differential') {
+      return html`<span class="review-scale-context">
+        Scale endpoints:
+        <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>
+        to
+        <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
+      </span>`;
+    }
+    return html`<span class="review-scale-context">
+      Scale: ${this.definition.scale.minimum} —
+      <span lang=${this.definition.language} dir="auto">${dimension.lowAnchor}</span>
+      to ${this.definition.scale.maximum} —
+      <span lang=${this.definition.language} dir="auto">${dimension.highAnchor}</span>
+    </span>`;
+  }
+
+  private reviewRatingAccessibleLabel(dimension: TlxDimension) {
+    const answer = this.reviewRatingLabel(dimension);
+    const context = this.reviewRatingScaleContextText(dimension);
+    return context ? `${answer}. ${context}` : answer;
+  }
+
   private selectRating(dimension: DimensionId, value: number, route: RatingInputRoute) {
     if (route !== 'voice' && this.voiceState !== 'idle') this.clearVoiceAnswer();
-    this.invalidatePendingSubmission();
     const effectiveRoute = this.gazeActivationInProgress
       ? route === 'smiley-landmark'
         ? 'gaze-smiley-landmark'
         : 'gaze-standard-scale'
       : route;
-    this.ratings = { ...this.ratings, [dimension]: value };
-    this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
+    if (this.editingRatingFromReview) {
+      const edit = this.reviewRatingEdit;
+      if (!edit || edit.itemId !== dimension || edit.itemIndex !== this.ratingIndex) {
+        this.showError('This review edit is no longer valid. Return to the review and open the answer again.');
+        return;
+      }
+      // A review edit is transactional. Keep the proposed value and route out of
+      // the canonical response, saved progress and score until the participant
+      // explicitly chooses Save.
+      this.reviewRatingEdit = {
+        ...edit,
+        pendingValue: value,
+        pendingInputRoute: effectiveRoute,
+      };
+    } else {
+      this.invalidatePendingSubmission();
+      this.ratings = { ...this.ratings, [dimension]: value };
+      this.ratingInputRoutes = { ...this.ratingInputRoutes, [dimension]: effectiveRoute };
+    }
     this.clearError();
     const currentDimension = this.dimensionById.get(dimension)!;
     const visibleAsLandmark =
@@ -1893,7 +2031,7 @@ export class AccessibleNasaTlx extends LitElement {
       ? `${currentDimension.name}, ${endpoint}, value ${value}, selected.`
       : `${currentDimension.name}, ${value}, selected.`;
     this.announceAutomatic(this.statusMessage);
-    this.persistProgress();
+    if (!this.editingRatingFromReview) this.persistProgress();
   }
 
   private selectPair(pairId: string, dimension: DimensionId, route: PairInputRoute) {
@@ -1930,10 +2068,16 @@ export class AccessibleNasaTlx extends LitElement {
         this.showError(this.participantCodeError);
         return;
       }
+      // A participant-specific link is authoritative. Replace any tab-scoped
+      // code left by an older link before saving progress for this run.
+      this.rememberParticipantCodeForTab();
     }
     this.startedAt = new Date().toISOString();
     this.stage = 'ratings';
     this.ratingIndex = 0;
+    this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
+    this.reviewReturnFocusIndex = null;
     this.clearError();
     this.persistProgress();
     this.focusHeading();
@@ -1944,8 +2088,42 @@ export class AccessibleNasaTlx extends LitElement {
     this.clearVoiceAnswer();
     if (context === 'rating') {
       const dimension = this.dimensions[this.ratingIndex];
-      if (this.ratings[dimension.id] === undefined) {
+      const reviewEdit = this.editingRatingFromReview ? this.reviewRatingEdit : null;
+      const selectedValue = reviewEdit?.itemId === dimension.id
+        ? reviewEdit.pendingValue
+        : this.ratings[dimension.id];
+      if (selectedValue === undefined) {
         this.showError(`Choose a rating for ${dimension.name} before continuing.`);
+        return;
+      }
+      if (this.editingRatingFromReview) {
+        if (!reviewEdit || reviewEdit.itemId !== dimension.id || reviewEdit.itemIndex !== this.ratingIndex) {
+          this.showError('This review edit is no longer valid. Return to the review and open the answer again.');
+          return;
+        }
+        const returnIndex = this.reviewReturnFocusIndex ?? this.ratingIndex;
+        const changed =
+          reviewEdit.pendingValue !== reviewEdit.originalValue ||
+          reviewEdit.pendingInputRoute !== reviewEdit.originalInputRoute;
+        if (changed) {
+          this.invalidatePendingSubmission();
+          this.ratings = { ...this.ratings, [dimension.id]: reviewEdit.pendingValue };
+          const routes = { ...this.ratingInputRoutes };
+          if (reviewEdit.pendingInputRoute === undefined) delete routes[dimension.id];
+          else routes[dimension.id] = reviewEdit.pendingInputRoute;
+          this.ratingInputRoutes = routes;
+        }
+        this.editingRatingFromReview = false;
+        this.reviewRatingEdit = null;
+        this.stage = 'review';
+        this.clearError();
+        this.persistProgress();
+        this.focusReviewItem(
+          returnIndex,
+          changed
+            ? `${this.dimensions[returnIndex].name} answer updated.`
+            : `${this.dimensions[returnIndex].name} answer unchanged.`,
+        );
         return;
       }
       if (this.ratingIndex < this.dimensions.length - 1) this.ratingIndex += 1;
@@ -1974,7 +2152,20 @@ export class AccessibleNasaTlx extends LitElement {
   private goBack = () => {
     this.stopReading();
     this.clearVoiceAnswer();
-    if (this.stage === 'ratings' && this.ratingIndex > 0) this.ratingIndex -= 1;
+    if (this.stage === 'ratings' && this.editingRatingFromReview) {
+      const returnIndex = this.reviewReturnFocusIndex ?? this.ratingIndex;
+      this.editingRatingFromReview = false;
+      this.reviewRatingEdit = null;
+      this.stage = 'review';
+      this.clearError();
+      this.persistProgress();
+      this.focusReviewItem(
+        returnIndex,
+        `${this.dimensions[returnIndex].name} edit cancelled. Original answer kept.`,
+      );
+      return;
+    }
+    else if (this.stage === 'ratings' && this.ratingIndex > 0) this.ratingIndex -= 1;
     else if (this.stage === 'pairs') {
       if (this.pairIndex > 0) this.pairIndex -= 1;
       else {
@@ -1988,6 +2179,9 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToRatings = () => {
+    this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
+    this.reviewReturnFocusIndex = null;
     this.stage = 'ratings';
     this.ratingIndex = this.dimensions.length - 1;
     this.persistProgress();
@@ -1995,11 +2189,56 @@ export class AccessibleNasaTlx extends LitElement {
   };
 
   private returnToPairs = () => {
+    this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
+    this.reviewReturnFocusIndex = null;
     this.stage = 'pairs';
     this.pairIndex = this.pairOrder.length - 1;
     this.persistProgress();
     this.focusHeading();
   };
+
+  private editRatingFromReview(index: number) {
+    const dimension = this.dimensions[index];
+    const originalValue = this.ratings[dimension.id];
+    if (originalValue === undefined) {
+      this.showError(`${dimension.name} has no saved answer to edit.`);
+      return;
+    }
+    this.editingRatingFromReview = true;
+    this.reviewRatingEdit = {
+      itemIndex: index,
+      itemId: dimension.id,
+      originalValue,
+      originalInputRoute: this.ratingInputRoutes[dimension.id],
+      pendingValue: originalValue,
+      pendingInputRoute: this.ratingInputRoutes[dimension.id],
+    };
+    this.reviewReturnFocusIndex = index;
+    this.stage = 'ratings';
+    this.ratingIndex = index;
+    // Do not persist the temporary edit screen. If the tab reloads before Save,
+    // recovery must reopen the last committed review rather than turning this
+    // one-item edit into the normal sequential rating route.
+    this.focusHeading();
+  }
+
+  private focusReviewItem(index: number, message: string) {
+    void this.updateComplete.then(() => {
+      const reviewItem = this.querySelector<HTMLElement>(`#review-item-${index + 1}`);
+      this.reviewReturnFocusIndex = null;
+      if (!reviewItem) {
+        this.focusHeading();
+        return;
+      }
+      focusAndReveal(reviewItem, {
+        block: 'center',
+        onReveal: () => this.requestParentReveal(reviewItem),
+      });
+      this.statusMessage = `${message} ${this.reviewRatingAccessibleLabel(this.dimensions[index])}`;
+      this.announceAutomatic(this.statusMessage);
+    });
+  }
 
   private effectiveStudyConfig(): StudyConfig {
     if (this.studyConfig) return this.studyConfig;
@@ -2009,6 +2248,7 @@ export class AccessibleNasaTlx extends LitElement {
       createdAt: this.startedAt || new Date().toISOString(),
       prototypeVersion: PROTOTYPE_VERSION,
       instrumentId: this.definition.id,
+      definitionHash: questionnaireDefinitionHash(this.definition),
       studyId: 'DEMO',
       studyTitle: 'Technical demonstration',
       taskLabel: 'a task completed before the questionnaire',
@@ -2155,6 +2395,9 @@ export class AccessibleNasaTlx extends LitElement {
     this.forgetParticipantCodeForTab();
     this.stage = 'intro';
     this.ratingIndex = 0;
+    this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
+    this.reviewReturnFocusIndex = null;
     this.pairIndex = 0;
     this.pairOrder = shuffledPairs(this.definition);
     this.pairResponses = {};
@@ -2175,7 +2418,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.startedAt = '';
     this.participantCodeError = '';
     this.participantCodeRestoredForTab = false;
-    if (this.studyConfig) this.participantCode = '';
+    if (this.studyConfig) this.participantCode = this.prefilledParticipantCode;
     this.errorMessage = '';
     this.voiceState = 'idle';
     this.pendingVoiceAnswer = null;
@@ -2838,6 +3081,40 @@ export class AccessibleNasaTlx extends LitElement {
     this.hiddenAt = null;
   };
 
+  private handleParticipantStudyHashChange = () => {
+    const parameters = new URLSearchParams(
+      window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)
+        : window.location.hash,
+    );
+    if (!parameters.has('study')) return;
+    // Participant links encode the complete configuration and identity in the
+    // fragment. A full reload gives valid and invalid replacement links the
+    // same clean initialisation path and cannot retain the previous run state.
+    this.reloadForParticipantStudyLink();
+  };
+
+  private reloadForParticipantStudyLink() {
+    window.location.reload();
+  }
+
+  private handleSkipToCurrentQuestion = (event: MouseEvent) => {
+    // Native fragment navigation would replace the application hash that holds
+    // the study configuration and participant identity. Preserve that hash and
+    // provide the same keyboard destination programmatically instead.
+    event.preventDefault();
+    void this.updateComplete.then(() => {
+      const panel = this.querySelector<HTMLElement>('#question-panel');
+      if (!panel) return;
+      const target = panel.querySelector<HTMLElement>('h2') ?? panel;
+      if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+      focusAndReveal(target, {
+        block: 'start',
+        onReveal: () => this.requestParentReveal(target),
+      });
+    });
+  };
+
   private dismissResumeSummary = () => {
     this.resumeSummaryVisible = false;
     this.statusMessage = `Continuing at ${this.currentPositionDescription()}.`;
@@ -2855,11 +3132,27 @@ export class AccessibleNasaTlx extends LitElement {
     return `accessible-questionnaire-v0.8-tab-participant:${this.studyConfig.configId}`;
   }
 
-  private rememberParticipantCodeForTab() {
+  private currentTabParticipantBindingKey() {
+    if (!this.studyConfig) return null;
+    return `accessible-questionnaire-v0.8-tab-participant-binding:${this.studyConfig.configId}`;
+  }
+
+  private rememberParticipantCodeForTab(committed = false) {
     const storageKey = this.currentTabParticipantCodeKey();
     if (!storageKey || !this.recoveryEnabled || !validParticipantCode(this.participantCode)) return;
     try {
       sessionStorage.setItem(storageKey, this.participantCode);
+      if (committed) {
+        const bindingKey = this.currentTabParticipantBindingKey();
+        if (bindingKey) {
+          const binding: TabParticipantBinding = {
+            version: 1,
+            linkParticipantCode: this.prefilledParticipantCode || null,
+            activeParticipantCode: this.participantCode,
+          };
+          sessionStorage.setItem(bindingKey, JSON.stringify(binding));
+        }
+      }
     } catch {
       // Tab-scoped storage is an optional convenience. Local progress recovery and
       // the participant-code field remain available if the browser blocks it.
@@ -2871,6 +3164,8 @@ export class AccessibleNasaTlx extends LitElement {
     if (!storageKey) return;
     try {
       sessionStorage.removeItem(storageKey);
+      const bindingKey = this.currentTabParticipantBindingKey();
+      if (bindingKey) sessionStorage.removeItem(bindingKey);
     } catch {
       // The browser may block tab-scoped storage.
     }
@@ -2878,8 +3173,40 @@ export class AccessibleNasaTlx extends LitElement {
 
   private restoreParticipantCodeForTab() {
     const storageKey = this.currentTabParticipantCodeKey();
-    if (!storageKey || !this.recoveryEnabled || validParticipantCode(this.participantCode)) return;
+    if (!storageKey || !this.recoveryEnabled || this.invalidParticipantParameter) return;
     try {
+      const bindingKey = this.currentTabParticipantBindingKey();
+      const rawBinding = bindingKey ? sessionStorage.getItem(bindingKey) : null;
+      if (rawBinding) {
+        try {
+          const binding = JSON.parse(rawBinding) as Partial<TabParticipantBinding>;
+          const currentLinkParticipantCode = this.prefilledParticipantCode || null;
+          const validBinding =
+            binding.version === 1 &&
+            (binding.linkParticipantCode === null ||
+              (typeof binding.linkParticipantCode === 'string' &&
+                validParticipantCode(binding.linkParticipantCode))) &&
+            typeof binding.activeParticipantCode === 'string' &&
+            validParticipantCode(binding.activeParticipantCode);
+          if (
+            validBinding &&
+            typeof binding.activeParticipantCode === 'string' &&
+            binding.linkParticipantCode === currentLinkParticipantCode
+          ) {
+            if (this.participantCode !== binding.activeParticipantCode) {
+              this.participantCode = binding.activeParticipantCode;
+              this.participantCodeRestoredForTab = true;
+              this.statusMessage = 'Participant code restored for this tab. Checking for interrupted answers.';
+            }
+            return;
+          }
+        } catch {
+          // Ignore a damaged optional binding and use the safe fallback below.
+        }
+      }
+      // A different valid participant-specific link always starts a new identity
+      // context, even if this tab still contains a binding from an older link.
+      if (validParticipantCode(this.participantCode)) return;
       const savedCode = sessionStorage.getItem(storageKey);
       if (!savedCode || !validParticipantCode(savedCode)) return;
       this.participantCode = savedCode;
@@ -2920,6 +3247,9 @@ export class AccessibleNasaTlx extends LitElement {
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(session));
+      // Bind a manual correction to this exact participant link only after the
+      // corrected identity has successfully saved an in-progress session.
+      this.rememberParticipantCodeForTab(true);
     } catch {
       this.statusMessage = 'Progress could not be saved by this browser.';
       this.announceAutomatic(this.statusMessage);
@@ -3101,6 +3431,9 @@ export class AccessibleNasaTlx extends LitElement {
     const session = this.savedSession;
     if (!session) return;
     this.stage = session.stage;
+    this.editingRatingFromReview = false;
+    this.reviewRatingEdit = null;
+    this.reviewReturnFocusIndex = null;
     this.ratingIndex = session.ratingIndex;
     this.pairIndex = session.pairIndex;
     this.pairOrder = session.pairOrder;

@@ -97,9 +97,11 @@ JSON Schema catches structural errors. Runtime validation additionally checks
 scorer compatibility, HTTPS sources, unique item IDs, scale divisibility,
 landmark positions and capability dependencies.
 
-The built-in registry includes weighted NASA-TLX, Raw TLX, SUS and UEQ-S. These
-exercise an optional comparison stage, three scale semantics and four reviewed
-scoring strategies.
+The distributable built-in registry includes weighted NASA-TLX, Raw TLX and SUS.
+Original synthetic fixtures exercise semantic-differential rendering without
+redistributing a third-party instrument. The specialised centred-score extension
+remains executable/tested code, but no corresponding public built-in item set is
+shipped in this candidate.
 
 The runner fails closed. An unknown property, scorer or incompatible definition
 stops the build or registration instead of being ignored.
@@ -113,6 +115,6 @@ configuration; the public site does not fetch an arbitrary remote definition URL
 The no-code path supports a shared bounded integer scale with reviewed mean or sum
 scoring. Adding a new response type, subscale rule, weighting formula, adaptive
 flow or other scorer still requires reviewed implementation and tests in
-`source/src/scoring.ts`. This is why the public claim remains
-questionnaire-independent within the supported profile rather than compatible
+`source/src/scoring.ts`. This is why the public claim is **bounded
+definition-driven reuse**, not questionnaire independence and not compatibility
 with every questionnaire.

@@ -6,20 +6,31 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "preview:test": "vite preview --host 127.0.0.1 --port 4173",
     "build:standalone": "npm run build && vite build --config vite.standalone.config.ts && node scripts/build-standalone.mjs",
     "build:release": "npm run build:standalone && node scripts/sync-release.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare:browser-configs": "vite-node scripts/prepare-browser-configs.ts",
+    "test:browser": "npm run prepare:browser-configs && playwright test",
+    "test:browser-support": "playwright test --config playwright.support.config.ts",
+    "report:browser": "node scripts/publish-accessibility-summary.mjs ../docs/evidence/axe-browser-report.json",
+    "report:technical": "node scripts/publish-technical-evaluation-summary.mjs ../docs/evidence/technical-evaluation-report.json",
+    "report:browser-support": "node scripts/publish-cross-browser-summary.mjs"
   },
   "dependencies": {
+    "@noble/hashes": "^2.3.0",
     "lit": "^3.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.1",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.0.0",
     "axe-core": "^4.12.1",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.0",
+    "vite-node": "^3.2.4",
     "vitest": "^3.2.4"
   }
 }

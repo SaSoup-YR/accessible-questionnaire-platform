@@ -332,6 +332,7 @@ figcaption {
 
 .answer-mode-control label {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: flex-start;
   min-height: 3.5rem;
@@ -353,8 +354,15 @@ figcaption {
   gap: 0.2rem;
 }
 
+.answer-mode-control label span:not(.selected-marker) {
+  flex: 1 1 10rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .answer-mode-control label > .selected-marker {
   display: inline-flex;
+  flex: 0 0 auto;
   margin-left: auto;
 }
 
@@ -456,6 +464,15 @@ figcaption {
 
 .gaze-setup-content {
   padding: 0 1.25rem 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.gaze-setup-content > *,
+.gaze-setup-content li {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .gaze-warning,
@@ -836,6 +853,27 @@ figcaption {
   hyphens: auto;
 }
 
+.semantic-differential-grid {
+  grid-template-columns: repeat(7, minmax(2.75rem, 1fr));
+}
+
+.fully-labelled-rating-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.semantic-position-dot {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.rating-option:has(input:checked) .semantic-position-dot {
+  box-shadow: inset 0 0 0 0.28rem #fff;
+  background: var(--selected-border);
+}
+
 .rating-fieldset legend,
 .rating-anchors span {
   overflow-wrap: anywhere;
@@ -1005,21 +1043,47 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.review-ratings div {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
+.review-rating-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.45fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
   background: #f2f5f8;
 }
 
-.review-ratings dt {
-  font-weight: 700;
+.review-rating-card:focus {
+  outline: 3px solid var(--focus-outline);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--focus-halo);
 }
 
-.review-ratings dd {
-  margin: 0;
+.review-rating-label {
   display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.review-rating-answer {
+  display: grid;
+  gap: 0.4rem;
   justify-items: end;
+  text-align: right;
+}
+
+.review-rating-answer p {
+  margin: 0;
+}
+
+.review-scale-context {
+  display: block;
+  margin-top: 0.3rem;
+  font-weight: 400;
+}
+
+.review-rating-answer .secondary-button {
+  margin-top: 0.35rem;
 }
 
 .score {
@@ -1590,6 +1654,21 @@ pre {
 }
 
 @media (max-width: 700px) {
+  .gaze-setup,
+  .gaze-setup-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .gaze-setup-content {
+    padding-inline: 0.75rem;
+  }
+
+  .gaze-setup-content ul {
+    margin-inline: 0;
+    padding-inline-start: 1.5rem;
+  }
+
   .form-grid,
   .config-grid,
   .platform-import-findings {
@@ -1603,6 +1682,24 @@ pre {
 
   .review-list {
     columns: 1;
+  }
+
+  .review-rating-card {
+    grid-template-columns: 1fr;
+  }
+
+  .review-rating-answer {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .semantic-differential-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+
+  .fully-labelled-rating-grid {
+    grid-template-columns: 1fr;
   }
 
   .button-row > * {

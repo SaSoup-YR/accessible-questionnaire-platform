@@ -9,8 +9,9 @@ npm test
 The exact checkpoint count is recorded in the root `BUILD-INFO.json` after each
 verified release build.
 
-- `questionnaire-definition.test.ts` — discovery, four built-in definitions, semantic
-  rejection, and weighted NASA-TLX, Raw TLX, SUS and UEQ-S scoring.
+- `questionnaire-definition.test.ts` — discovery of three distributable built-ins,
+  semantic rejection, weighted NASA-TLX/Raw TLX/SUS scoring, and a synthetic
+  eight-item check of the retained centred-score extension.
 - `custom-questionnaire.test.ts` — no-code definition creation, bounded embedding,
   mean/sum and reverse scoring, and executable/oversize rejection.
 - `platform-questionnaire-import.test.ts` — bounded QSF/LSS/LSG/LSQ format detection,
@@ -18,7 +19,7 @@ verified release build.
   active attributes, multi-group selection, reviewed Array-row expansion,
   question/answer order, safe conversion, malformed input, unsupported content,
   code rejection and JSON round-trip.
-- `platform-component.test.ts` — complete researcher-supplied, SUS, Raw TLX and UEQ-S
+- `platform-component.test.ts` — complete researcher-supplied, SUS and Raw TLX
   participant flows, imported-QSF completion/export and conductor link generation
   through the shared components, one English voice control, spoken English numbers
   for every questionnaire, exact visible labels for English questionnaires, and the

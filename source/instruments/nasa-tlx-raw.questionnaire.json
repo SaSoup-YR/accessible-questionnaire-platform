@@ -23,7 +23,6 @@
       "id": "mental",
       "name": "Mental Demand",
       "prompt": "How much mental and perceptual activity was required (for example, thinking, deciding, calculating, remembering, looking or searching)? Was the task easy or demanding, simple or complex, exacting or forgiving?",
-      "simpleExplanation": "Think about how much concentration, remembering, deciding, calculating or noticing the task required.",
       "shortMeaning": "Thinking, deciding, remembering or concentrating.",
       "lowAnchor": "Low",
       "highAnchor": "High",
@@ -34,7 +33,6 @@
       "id": "physical",
       "name": "Physical Demand",
       "prompt": "How much physical activity was required (for example, pushing, pulling, turning, controlling or activating)? Was the task easy or demanding, slow or brisk, slack or strenuous, restful or laborious?",
-      "simpleExplanation": "Think about how much physical movement, control or force the task required.",
       "shortMeaning": "Movement, control or physical force.",
       "lowAnchor": "Low",
       "highAnchor": "High",
@@ -45,7 +43,6 @@
       "id": "temporal",
       "name": "Temporal Demand",
       "prompt": "How much time pressure did you feel due to the rate or pace at which the task or task elements occurred? Was the pace slow and leisurely or rapid and frantic?",
-      "simpleExplanation": "Think about pressure caused by the pace or speed of the task. This is about feeling rushed, not simply how long the task lasted.",
       "shortMeaning": "Time pressure caused by the pace of the task.",
       "lowAnchor": "Low",
       "highAnchor": "High",
@@ -56,7 +53,6 @@
       "id": "performance",
       "name": "Performance",
       "prompt": "How successful do you think you were in accomplishing the goals of the task set by the experimenter or yourself? How satisfied were you with your performance in accomplishing these goals?",
-      "simpleExplanation": "Think about how successfully you completed the task and how satisfied you were with the result. On this scale, Good is on the left and Poor is on the right.",
       "shortMeaning": "How successful and satisfied you were with your result.",
       "lowAnchor": "Good",
       "highAnchor": "Poor",
@@ -67,7 +63,6 @@
       "id": "effort",
       "name": "Effort",
       "prompt": "How hard did you have to work mentally and physically to accomplish your level of performance?",
-      "simpleExplanation": "Think about how hard you had to work, mentally and physically, to achieve your result. This is the work you put in, rather than the demands of the task itself.",
       "shortMeaning": "How hard you had to work to achieve your result.",
       "lowAnchor": "Low",
       "highAnchor": "High",
@@ -78,7 +73,6 @@
       "id": "frustration",
       "name": "Frustration",
       "prompt": "How insecure, discouraged, irritated, stressed and annoyed versus secure, gratified, content, relaxed and complacent did you feel during the task?",
-      "simpleExplanation": "Think about how stressed, irritated or discouraged you felt, compared with feeling secure, content and relaxed.",
       "shortMeaning": "Feeling stressed, irritated or discouraged.",
       "lowAnchor": "Low",
       "highAnchor": "High",
@@ -93,7 +87,7 @@
     "maximum": 100
   },
   "supports": {
-    "simplerExplanations": true,
+    "simplerExplanations": false,
     "smileyLandmarks": false
   }
 }

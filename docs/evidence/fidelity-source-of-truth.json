@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "status": "hand-maintained test oracle",
+  "purpose": "Independent expected content for the AQP fidelity round-trip. This file is not generated from the implementation or questionnaire-definition files.",
+  "verificationBoundary": "Each case specifies the expected item sequence, participant-visible wording, response labels, stored values, required status, executable scoring identifier, reported score name and one independently calculated score.",
+  "references": {
+    "nasaTlx": "Hart, S. G. (1986), Task Load Index materials, NASA Technical Reports Server 20000021488.",
+    "sus": "Brooke, J. (1996), SUS: A quick and dirty usability scale.",
+    "imports": "Expected values were transcribed independently from the sanitised native QSF/LSS/LSG/LSQ fixtures named in each case."
+  },
+  "responseSets": {
+    "nasa-0-100": {
+      "storedValues": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100],
+      "labels": { "0": "$LOW", "100": "$HIGH" }
+    },
+    "sus-1-5": {
+      "storedValues": [1, 2, 3, 4, 5],
+      "labels": { "1": "Strongly disagree", "5": "Strongly agree" }
+    },
+    "agreement-1-5": {
+      "storedValues": [1, 2, 3, 4, 5],
+      "labels": {
+        "1": "Strongly disagree",
+        "2": "Disagree",
+        "3": "Neither agree nor disagree",
+        "4": "Agree",
+        "5": "Strongly agree"
+      }
+    },
+    "lsg-1-5": {
+      "storedValues": [1, 2, 3, 4, 5],
+      "labels": {
+        "1": "Strongly disagree",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "Strongly agree"
+      }
+    }
+  },
+  "itemSets": {
+    "nasa-tlx": [
+      {
+        "id": "mental",
+        "name": "Mental Demand",
+        "text": "How much mental and perceptual activity was required (for example, thinking, deciding, calculating, remembering, looking or searching)? Was the task easy or demanding, simple or complex, exacting or forgiving?",
+        "low": "Low",
+        "high": "High"
+      },
+      {
+        "id": "physical",
+        "name": "Physical Demand",
+        "text": "How much physical activity was required (for example, pushing, pulling, turning, controlling or activating)? Was the task easy or demanding, slow or brisk, slack or strenuous, restful or laborious?",
+        "low": "Low",
+        "high": "High"
+      },
+      {
+        "id": "temporal",
+        "name": "Temporal Demand",
+        "text": "How much time pressure did you feel due to the rate or pace at which the task or task elements occurred? Was the pace slow and leisurely or rapid and frantic?",
+        "low": "Low",
+        "high": "High"
+      },
+      {
+        "id": "performance",
+        "name": "Performance",
+        "text": "How successful do you think you were in accomplishing the goals of the task set by the experimenter or yourself? How satisfied were you with your performance in accomplishing these goals?",
+        "low": "Good",
+        "high": "Poor"
+      },
+      {
+        "id": "effort",
+        "name": "Effort",
+        "text": "How hard did you have to work mentally and physically to accomplish your level of performance?",
+        "low": "Low",
+        "high": "High"
+      },
+      {
+        "id": "frustration",
+        "name": "Frustration",
+        "text": "How insecure, discouraged, irritated, stressed and annoyed versus secure, gratified, content, relaxed and complacent did you feel during the task?",
+        "low": "Low",
+        "high": "High"
+      }
+    ],
+    "sus": [
+      { "id": "sus01", "name": "Item 1", "text": "I think that I would like to use this system frequently.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus02", "name": "Item 2", "text": "I found the system unnecessarily complex.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus03", "name": "Item 3", "text": "I thought the system was easy to use.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus04", "name": "Item 4", "text": "I think that I would need the support of a technical person to be able to use this system.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus05", "name": "Item 5", "text": "I found the various functions in this system were well integrated.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus06", "name": "Item 6", "text": "I thought there was too much inconsistency in this system.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus07", "name": "Item 7", "text": "I would imagine that most people would learn to use this system very quickly.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus08", "name": "Item 8", "text": "I found the system very cumbersome to use.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus09", "name": "Item 9", "text": "I felt very confident using the system.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "sus10", "name": "Item 10", "text": "I needed to learn a lot of things before I could get going with this system.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ],
+    "qsf": [
+      { "id": "item-01", "name": "CLARITY", "text": "The instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "item-02", "name": "CONTROL", "text": "I felt in control.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ],
+    "lss-legacy": [
+      { "id": "item-01", "name": "CLARITY", "text": "The instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "item-02", "name": "CONTROL", "text": "I felt in control.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ],
+    "lss-current": [
+      { "id": "item-01", "name": "CLARITY", "text": "The task instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "item-02", "name": "CONTROL", "text": "I felt in control while completing the task.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ],
+    "lsg": [
+      { "id": "item-01", "name": "CLARITY", "text": "The task instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" },
+      { "id": "item-02", "name": "CONTROL", "text": "I felt in control.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ],
+    "lsq": [
+      { "id": "item-01", "name": "CLARITY", "text": "The task instructions were clear.", "low": "Strongly disagree", "high": "Strongly agree" }
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "built-in-nasa-tlx-weighted",
+      "kind": "built-in",
+      "instrumentId": "nasa-tlx-weighted",
+      "itemSet": "nasa-tlx",
+      "responseSet": "nasa-0-100",
+      "required": true,
+      "scoring": { "rule": "nasa-tlx-weighted-v1", "scoreName": "Weighted workload score", "ratings": [50, 50, 50, 50, 50, 50], "pairChoice": "left", "expectedScore": 50 }
+    },
+    {
+      "caseId": "built-in-nasa-tlx-raw",
+      "kind": "built-in",
+      "instrumentId": "nasa-tlx-raw",
+      "itemSet": "nasa-tlx",
+      "responseSet": "nasa-0-100",
+      "required": true,
+      "scoring": { "rule": "nasa-tlx-raw-v1", "scoreName": "Raw workload score", "ratings": [0, 20, 40, 60, 80, 100], "expectedScore": 50 }
+    },
+    {
+      "caseId": "built-in-sus",
+      "kind": "built-in",
+      "instrumentId": "system-usability-scale",
+      "itemSet": "sus",
+      "responseSet": "sus-1-5",
+      "required": true,
+      "scoring": { "rule": "sus-standard-v1", "scoreName": "SUS score", "ratings": [5, 1, 4, 2, 3, 5, 1, 4, 2, 3], "expectedScore": 50 }
+    },
+    {
+      "caseId": "import-qsf",
+      "kind": "import",
+      "fixture": "qualtrics-rating.qsf",
+      "itemSet": "qsf",
+      "responseSet": "agreement-1-5",
+      "required": true,
+      "scoring": { "rule": "mean-v1", "scoreName": "Questionnaire score", "ratings": [4, 2], "expectedScore": 3 }
+    },
+    {
+      "caseId": "import-lss-legacy",
+      "kind": "import",
+      "fixture": "limesurvey-rating.lss",
+      "itemSet": "lss-legacy",
+      "responseSet": "agreement-1-5",
+      "required": true,
+      "scoring": { "rule": "mean-v1", "scoreName": "Questionnaire score", "ratings": [4, 2], "expectedScore": 3 }
+    },
+    {
+      "caseId": "import-lss-current",
+      "kind": "import",
+      "fixture": "limesurvey-current-rating.lss",
+      "itemSet": "lss-current",
+      "responseSet": "agreement-1-5",
+      "required": true,
+      "scoring": { "rule": "mean-v1", "scoreName": "Questionnaire score", "ratings": [4, 2], "expectedScore": 3 }
+    },
+    {
+      "caseId": "import-lsg",
+      "kind": "import",
+      "fixture": "limesurvey-group-rating.lsg",
+      "itemSet": "lsg",
+      "responseSet": "lsg-1-5",
+      "required": true,
+      "scoring": { "rule": "mean-v1", "scoreName": "Questionnaire score", "ratings": [4, 2], "expectedScore": 3 }
+    },
+    {
+      "caseId": "import-lsq",
+      "kind": "import",
+      "fixture": "limesurvey-question-rating.lsq",
+      "itemSet": "lsq",
+      "responseSet": "agreement-1-5",
+      "required": true,
+      "scoring": { "rule": "mean-v1", "scoreName": "Questionnaire score", "ratings": [4], "expectedScore": 4 }
+    }
+  ]
+}

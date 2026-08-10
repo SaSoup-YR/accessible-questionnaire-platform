@@ -76,7 +76,6 @@ describe('automated structural accessibility scan', () => {
 
   it('finds no detectable violations on a rating with configurable support active', async () => {
     const component = await renderComponent();
-    checkbox(component, 'Show simpler explanations')!.click();
     component.querySelector<HTMLInputElement>('input[value="smiley"]')!.click();
     component.querySelector('.text-size-control input[value="large"]')!.dispatchEvent(
       new Event('change', { bubbles: true }),
@@ -109,6 +108,7 @@ describe('automated structural accessibility scan', () => {
     (conductor as any).studyId = 'SUCCESS-01';
     (conductor as any).studyTitle = 'Success confirmation check';
     (conductor as any).taskLabel = 'checking the generated study workflow';
+    (conductor as any).participantCode = 'A11Y-001';
     await conductor.updateComplete;
     [...conductor.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Generate link')!

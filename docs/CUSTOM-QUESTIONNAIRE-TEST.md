@@ -11,7 +11,7 @@ that the interface improves accessibility.
 ## Fixed test definition
 
 Open the versioned
-[`study.html?package=0.8.7-q7`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.7-q7)
+[`study.html?package=0.8.8-q8`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.8-q8)
 page, select **Add your own questionnaire**, and enter the following values.
 
 | Field | Test value |

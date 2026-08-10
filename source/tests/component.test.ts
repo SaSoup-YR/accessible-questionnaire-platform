@@ -118,26 +118,24 @@ describe('corrected NASA-TLX task flow', () => {
 });
 
 describe('reading and answer presentation', () => {
-  it('keeps optional support off and the simpler explanation collapsed by default', async () => {
+  it('keeps sourced item wording visible without an author-written paraphrase', async () => {
     const component = await renderComponent();
     await startRatings(component);
 
     const explanation = component.querySelector<HTMLDetailsElement>('.optional-explanation');
-    expect(explanation).not.toBeNull();
-    expect(explanation!.open).toBe(false);
+    expect(explanation).toBeNull();
     expect(component.querySelector('.simple-language-panel')).toBeNull();
+    expect(component.querySelectorAll('.official-definition')).toHaveLength(1);
     expect(component.querySelectorAll('.rating-option')).toHaveLength(21);
   });
 
-  it('shows one official definition and a non-duplicating simpler explanation', async () => {
+  it('does not offer an unproven built-in rewording as equivalent item text', async () => {
     const component = await renderComponent();
-    checkboxByLabel(component, 'Show simpler explanations')!.click();
-    await component.updateComplete;
     await startRatings(component);
 
     expect(component.querySelectorAll('.official-definition')).toHaveLength(1);
-    expect(component.querySelector('.simple-language-panel')?.textContent).toContain('Simpler explanation');
-    expect(component.querySelector('.simple-language-panel')?.textContent).not.toContain('Official definition');
+    expect(component.textContent).not.toContain('Show a simpler explanation');
+    expect(component.querySelector('.simple-language-panel')).toBeNull();
   });
 
   it('lets the respondent choose large text and reverse it', async () => {
@@ -279,7 +277,7 @@ describe('speech support integration', () => {
     expect(cancel).toHaveBeenCalledTimes(1);
 
     const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
-      label.textContent?.includes('Automatically read new questions'),
+      label.textContent?.includes('Read new questions and feedback aloud'),
     )!.querySelector<HTMLInputElement>('input')!;
     audio.click();
     await component.updateComplete;
@@ -290,18 +288,13 @@ describe('speech support integration', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(spoken.at(-1)).toContain('Smiley landmark answer format selected');
 
-    checkboxByLabel(component, 'Show simpler explanations')!.click();
-    await component.updateComplete;
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(spoken.at(-1)).toContain('Simpler explanations are on');
-
     await startRatings(component);
     await new Promise((resolve) => setTimeout(resolve, 0));
     await component.updateComplete;
     expect(spoken.at(-1)).toContain('Rating 1 of 6. Mental Demand');
     expect(spoken.at(-1)).toContain('Choose a smiley landmark');
     expect(spoken.at(-1)).toContain('Low, value 0');
-    expect(spoken.at(-1)).toContain('Simpler explanation');
+    expect(spoken.at(-1)).not.toContain('Simpler explanation');
 
     [...component.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.includes('Next question'))!
@@ -376,7 +369,7 @@ describe('speech support integration', () => {
 
     const component = await renderComponent();
     const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
-      label.textContent?.includes('Automatically read new questions'),
+      label.textContent?.includes('Read new questions and feedback aloud'),
     )!.querySelector<HTMLInputElement>('input')!;
     audio.click();
     await component.updateComplete;
@@ -437,7 +430,7 @@ describe('speech support integration', () => {
     const component = await renderComponent();
     checkboxByLabel(component, 'Save progress and show a return summary')!.click();
     const audio = [...component.querySelectorAll<HTMLLabelElement>('label')].find((label) =>
-      label.textContent?.includes('Automatically read new questions'),
+      label.textContent?.includes('Read new questions and feedback aloud'),
     )!.querySelector<HTMLInputElement>('input')!;
     audio.click();
     await startRatings(component);
@@ -737,6 +730,10 @@ describe('review and experimental gaze route', () => {
     await component.updateComplete;
     expect(component.querySelector('.gaze-positioning')).not.toBeNull();
     expect(component.querySelector('.gaze-calibration')).toBeNull();
+    expect(component.querySelector('.gaze-camera-preview-slot')?.getAttribute('role')).toBe('img');
+    expect(component.querySelector('.gaze-camera-preview-slot')?.getAttribute('aria-label')).toBe(
+      'Live camera positioning preview',
+    );
     expect(fake.showVideoPreview).toHaveBeenCalledWith(true);
     expect(fake.showPredictionPoints).toHaveBeenCalledWith(false);
 

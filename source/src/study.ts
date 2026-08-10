@@ -1,9 +1,12 @@
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 import {
   DEFAULT_QUESTIONNAIRE_ID,
   buildQuestionnairePairs,
   buildRatingValues,
   getQuestionnaireDefinition,
   resolveQuestionnaireDefinition,
+  validateQuestionnaireDefinition,
   type QuestionnaireDefinition,
 } from './questionnaire-definition';
 import {
@@ -55,6 +58,7 @@ export interface StudyConfig {
   createdAt: string;
   prototypeVersion: typeof PROTOTYPE_VERSION;
   instrumentId: string;
+  definitionHash: string;
   questionnaireDefinition?: QuestionnaireDefinition;
   studyId: string;
   studyTitle: string;
@@ -103,8 +107,10 @@ export interface StudyResultRecord {
     name: string;
     version: string;
     definitionSchemaVersion: 1;
+    definitionHash: string;
     scoringStrategy: QuestionnaireScore['strategy'];
-    definition?: QuestionnaireDefinition;
+    /** Complete immutable snapshot needed to reconstruct the administered instrument from the export alone. */
+    definition: QuestionnaireDefinition;
   };
   collection: StudyCollectionConfig;
   configuration: StudySupportConfig;
@@ -183,6 +189,28 @@ function cleanText(value: string, field: string, maximumLength: number) {
   if (!cleaned) throw new Error(`${field} is required.`);
   if (cleaned.length > maximumLength) throw new Error(`${field} must be ${maximumLength} characters or fewer.`);
   return cleaned;
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, entry]) => entry !== undefined)
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`).join(',')}}`;
+}
+
+/**
+ * Stable content identifier for the exact validated definition shown by the
+ * runner. This is an integrity fingerprint, not a digital signature.
+ */
+export function questionnaireDefinitionHash(definition: QuestionnaireDefinition) {
+  const bytes = new TextEncoder().encode(canonicalJson(definition));
+  return `sha256:${bytesToHex(sha256(bytes))}`;
+}
+
+function validDefinitionHash(value: unknown): value is string {
+  return typeof value === 'string' && /^sha256:[0-9a-f]{64}$/.test(value);
 }
 
 export function validStudyId(value: string) {
@@ -270,6 +298,7 @@ export function createStudyConfig(draft: StudyConfigDraft, overrides: Partial<Pi
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     prototypeVersion: PROTOTYPE_VERSION,
     instrumentId,
+    definitionHash: questionnaireDefinitionHash(definition),
     ...(getQuestionnaireDefinition(instrumentId)
       ? {}
       : { questionnaireDefinition: definition }),
@@ -297,6 +326,8 @@ export function isStudyConfig(value: unknown): value is StudyConfig {
     config.prototypeVersion === PROTOTYPE_VERSION &&
     typeof config.instrumentId === 'string' &&
     definition !== null &&
+    validDefinitionHash(config.definitionHash) &&
+    config.definitionHash === questionnaireDefinitionHash(definition) &&
     typeof config.configId === 'string' &&
     config.configId.length > 0 &&
     typeof config.createdAt === 'string' &&
@@ -352,12 +383,14 @@ function isLegacyStudyConfigV3(value: unknown): value is LegacyStudyConfigV3 {
 export function normaliseStudyConfig(value: unknown): StudyConfig | null {
   if (isStudyConfig(value)) return value;
   if (!isLegacyStudyConfigV3(value)) return null;
+  const definition = getQuestionnaireDefinition(DEFAULT_QUESTIONNAIRE_ID)!;
   return {
     schemaVersion: 4,
     configId: value.configId,
     createdAt: value.createdAt,
     prototypeVersion: PROTOTYPE_VERSION,
     instrumentId: DEFAULT_QUESTIONNAIRE_ID,
+    definitionHash: questionnaireDefinitionHash(definition),
     studyId: value.studyId,
     studyTitle: value.studyTitle,
     taskLabel: value.taskLabel,
@@ -401,11 +434,23 @@ export function readStudyConfigFromHash(hash: string): StudyConfig | null {
   return encoded ? decodeStudyConfig(encoded) : null;
 }
 
-export function buildParticipantUrl(baseUrl: string, config: StudyConfig) {
+export function readParticipantCodeFromHash(hash: string) {
+  const parameters = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+  const participantCode = parameters.get('participant');
+  return participantCode && validParticipantCode(participantCode) ? participantCode : null;
+}
+
+export function buildParticipantUrl(baseUrl: string, config: StudyConfig, participantCode?: string) {
   const url = new URL(baseUrl);
   url.search = '';
   const parameters = new URLSearchParams();
   parameters.set('study', encodeStudyConfig(config));
+  if (participantCode !== undefined) {
+    if (!validParticipantCode(participantCode)) {
+      throw new Error('Participant code must use 1–32 letters, numbers, hyphens or underscores.');
+    }
+    parameters.set('participant', participantCode);
+  }
   url.hash = parameters.toString();
   const participantUrl = url.toString();
   if (participantUrl.length > MAX_PARTICIPANT_URL_LENGTH) {
@@ -431,6 +476,10 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
   if (input.result.strategy !== definition.scoring.strategy) {
     throw new Error('The calculated result does not match the configured questionnaire.');
   }
+  const definitionHash = questionnaireDefinitionHash(definition);
+  if (input.config.definitionHash !== definitionHash) {
+    throw new Error('The questionnaire definition does not match the saved study configuration.');
+  }
   return {
     schemaVersion: 4,
     submissionId: input.submissionId ?? randomId('submission'),
@@ -451,10 +500,9 @@ export function createStudyResultRecord(input: StudyResultInput): StudyResultRec
       name: definition.name,
       version: definition.version,
       definitionSchemaVersion: definition.schemaVersion,
+      definitionHash,
       scoringStrategy: definition.scoring.strategy,
-      ...(input.config.questionnaireDefinition
-        ? { definition }
-        : {}),
+      definition: structuredClone(definition),
     },
     collection: { ...input.config.collection },
     configuration: { ...input.config.support },
@@ -472,13 +520,19 @@ function sameNumber(left: number, right: number) {
   return Number.isFinite(left) && Number.isFinite(right) && Math.abs(left - right) < 1e-9;
 }
 
+function resultDefinition(record: Partial<StudyResultRecord>) {
+  try {
+    const definition = validateQuestionnaireDefinition(record.instrument?.definition);
+    return definition.id === record.instrument?.id ? definition : null;
+  } catch {
+    return null;
+  }
+}
+
 export function isStudyResultRecord(value: unknown): value is StudyResultRecord {
   if (!value || typeof value !== 'object') return false;
   const record = value as StudyResultRecord;
-  const definition = resolveQuestionnaireDefinition(
-    record.instrument?.id ?? '',
-    record.instrument?.definition,
-  );
+  const definition = resultDefinition(record);
   if (
     record.schemaVersion !== 4 ||
     typeof record.submissionId !== 'string' ||
@@ -499,6 +553,7 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
     record.instrument?.name !== definition.name ||
     record.instrument?.version !== definition.version ||
     record.instrument?.definitionSchemaVersion !== definition.schemaVersion ||
+    record.instrument?.definitionHash !== questionnaireDefinitionHash(definition) ||
     record.instrument?.scoringStrategy !== definition.scoring.strategy ||
     !validCollectionConfig(record.collection) ||
     !validSupportConfig(record.configuration) ||
@@ -598,6 +653,36 @@ export function isStudyResultRecord(value: unknown): value is StudyResultRecord 
   }
 }
 
+export interface ReconstructedResultExport {
+  definition: QuestionnaireDefinition;
+  definitionHash: string;
+  ratings: Record<string, number>;
+  pairwiseChoices: PairResponses;
+  pairPresentationOrder: string[];
+  score: QuestionnaireScore;
+}
+
+/**
+ * Reconstructs the administered instrument and response set solely from one
+ * exported result record. No built-in questionnaire lookup is used: the
+ * definition snapshot is validated, fingerprinted and checked with the stored
+ * responses before a copy is returned.
+ */
+export function reconstructResultExport(value: unknown): ReconstructedResultExport {
+  if (!isStudyResultRecord(value)) {
+    throw new Error('The result export is invalid or internally inconsistent.');
+  }
+  const record = value as StudyResultRecord;
+  return {
+    definition: structuredClone(record.instrument.definition),
+    definitionHash: record.instrument.definitionHash,
+    ratings: { ...record.responses.ratings },
+    pairwiseChoices: { ...record.responses.pairwiseChoices },
+    pairPresentationOrder: [...record.responses.pairPresentationOrder],
+    score: structuredClone(record.result),
+  };
+}
+
 function normaliseLegacyStudyResultRecord(value: unknown): StudyResultRecord | null {
   if (!value || typeof value !== 'object') return null;
   const legacy = value as LegacyStudyResultRecordV3;
@@ -656,7 +741,9 @@ function normaliseLegacyStudyResultRecord(value: unknown): StudyResultRecord | n
         name: definition.name,
         version: definition.version,
         definitionSchemaVersion: definition.schemaVersion,
+        definitionHash: questionnaireDefinitionHash(definition),
         scoringStrategy: definition.scoring.strategy,
+        definition: structuredClone(definition),
       },
       collection: { ...legacy.collection },
       configuration: { ...legacy.configuration },
@@ -680,7 +767,11 @@ export function loadCompletedResults(storage: StorageLike = localStorage): Study
     const raw = storage.getItem(COMPLETED_RESULTS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) current = parsed.filter(isStudyResultRecord);
+      if (Array.isArray(parsed)) {
+        current = parsed.filter(
+          (candidate): candidate is StudyResultRecord => isStudyResultRecord(candidate),
+        );
+      }
     }
   } catch {
     current = [];
@@ -755,10 +846,7 @@ function csvCell(value: unknown) {
 }
 
 function resultRow(record: StudyResultRecord): Record<string, unknown> {
-  const definition = resolveQuestionnaireDefinition(
-    record.instrument.id,
-    record.instrument.definition,
-  );
+  const definition = resultDefinition(record);
   if (!definition) throw new Error(`Unknown questionnaire definition ${record.instrument.id}.`);
   const pairs = buildQuestionnairePairs(definition);
   const row: Record<string, unknown> = {
@@ -774,11 +862,10 @@ function resultRow(record: StudyResultRecord): Record<string, unknown> {
     prototype_version: record.prototype.version,
     instrument_id: record.instrument.id,
     instrument_version: record.instrument.version,
+    definition_hash: record.instrument.definitionHash,
     scoring_strategy: record.instrument.scoringStrategy,
-    embedded_definition: record.instrument.definition ? 1 : 0,
-    questionnaire_definition_json: record.instrument.definition
-      ? JSON.stringify(record.instrument.definition)
-      : '',
+    embedded_definition: 1,
+    questionnaire_definition_json: JSON.stringify(record.instrument.definition),
     instrument_source: definition.source.label,
     instrument_source_url: definition.source.url ?? '',
     collection_mode: record.collection.mode,

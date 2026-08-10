@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { dimensions, pairs, ratingValues, smileyLandmarks } from '../src/nasa-tlx';
 
 describe('NASA-TLX instrument content', () => {
-  it('contains six dimensions with separate official and optional text', () => {
+  it('contains six sourced dimensions without author-written alternate wording', () => {
     expect(dimensions).toHaveLength(6);
     for (const dimension of dimensions) {
       expect(dimension.prompt.length).toBeGreaterThan(40);
-      expect(dimension.simpleExplanation?.length).toBeGreaterThan(20);
-      expect(dimension.simpleExplanation).not.toBe(dimension.prompt);
+      expect(dimension.simpleExplanation).toBeUndefined();
     }
   });
 

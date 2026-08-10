@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "language": "en-GB",
+  "id": "custom-semantic-differential-check",
+  "version": "1.0.0",
+  "name": "Synthetic Semantic Differential Check",
+  "shortName": "SSD",
+  "description": "An original synthetic browser fixture for seven unnumbered response positions.",
+  "introPrompt": "Choose the position that best matches the test interface.",
+  "officialContentNotice": "Synthetic test content written for AQP; no third-party instrument wording is included.",
+  "source": {
+    "label": "AQP synthetic browser fixture"
+  },
+  "scale": {
+    "type": "semantic-differential",
+    "minimum": 1,
+    "maximum": 7,
+    "step": 1
+  },
+  "items": [
+    {
+      "id": "item-01",
+      "name": "Rigid or flexible",
+      "prompt": "Choose one position.",
+      "shortMeaning": "Position between two synthetic endpoints.",
+      "lowAnchor": "Rigid",
+      "highAnchor": "Flexible"
+    }
+  ],
+  "scoring": {
+    "strategy": "mean-v1",
+    "scoreName": "Synthetic mean",
+    "minimum": 1,
+    "maximum": 7
+  },
+  "supports": {
+    "simplerExplanations": false,
+    "smileyLandmarks": false
+  }
+}

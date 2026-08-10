@@ -127,9 +127,9 @@ describe('study conductor defaults and guidance', () => {
   it('separates participant identity and starts with optional participant choice for an accessibility evaluation', async () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
-    expect(component.textContent).toContain('Current Qualtrics generator: 0.8.7-q7');
+    expect(component.textContent).toContain('Current Qualtrics generator: 0.8.8-q8');
     expect(component.querySelector<HTMLAnchorElement>(
-      'a[href="study.html?package=0.8.7-q7"]',
+      'a[href="study.html?package=0.8.8-q8"]',
     )).not.toBeNull();
     expect(component.textContent).toContain('P-001');
     expect(inputFor(component, 'Study ID').placeholder).toBe('ACCESS-TECH-01');
@@ -161,6 +161,7 @@ describe('study conductor defaults and guidance', () => {
       ['Study ID', 'TLX-TECH-01'],
       ['Study title', 'Route-planning workload study'],
       ['Task label', 'planning a route from A to B using the prototype'],
+      ['Pseudonymous participant code for this link', 'P-LOCAL-01'],
     ] as const;
     for (const [label, value] of values) {
       const input = inputFor(component, label);
@@ -177,6 +178,8 @@ describe('study conductor defaults and guidance', () => {
     const config = readStudyConfigFromHash(new URL(link).hash);
     expect(config?.support.participantAdjustmentPolicy).toBe('participant-choice');
     expect(config?.collection.mode).toBe('local');
+    expect(new URLSearchParams(new URL(link).hash.slice(1)).get('participant')).toBe('P-LOCAL-01');
+    expect(config).not.toHaveProperty('participantCode');
     expect(new URL(link).pathname).toMatch(/index\.html$/);
     expect(component.textContent).toContain('Configuration ready');
     const readyPanel = component.querySelector<HTMLElement>('#configuration-ready-panel')!;
@@ -260,6 +263,7 @@ describe('study conductor defaults and guidance', () => {
       ['Study ID', 'CUSTOM-01'],
       ['Study title', 'Custom questionnaire study'],
       ['Task label', 'using the route-planning prototype'],
+      ['Pseudonymous participant code for this link', 'P-CUSTOM-01'],
     ] as const) {
       const input = inputFor(component, label);
       input.value = value;
@@ -605,6 +609,8 @@ describe('study conductor defaults and guidance', () => {
     expect(readyPanel.classList).toContain('success-confirmation');
     expect(readyPanel.textContent).toContain('Configuration imported');
     expect(readyPanel.textContent).toContain(config.configId);
+    expect(readyPanel.textContent).toContain('No participant link is available');
+    expect(component.querySelector('#participant-link')).toBeNull();
     expect(document.activeElement).toBe(readyPanel);
   });
 
@@ -620,6 +626,7 @@ describe('study conductor defaults and guidance', () => {
       ['Study ID', 'TLX-REMOTE-01'],
       ['Study title', 'Remote workload study'],
       ['Task label', 'completing the route-planning task'],
+      ['Pseudonymous participant code for this link', 'P-REMOTE-01'],
     ] as const;
     for (const [label, value] of values) {
       const input = inputFor(component, label);
@@ -653,9 +660,9 @@ describe('study conductor defaults and guidance', () => {
     );
     expect(questionHtml).toContain('${e://Field/__js_AQP_PARTICIPANT_CODE}');
     expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
-    expect(questionHtml).toContain(participantUrl);
+    expect(questionHtml).toContain(participantUrl.replace(/&/g, '&amp;'));
     expect(questionHtml).not.toContain('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE');
-    expect(questionHtml).toContain('data-aqp-package-build="0.8.7-q7"');
+    expect(questionHtml).toContain('data-aqp-package-build="0.8.8-q8"');
     expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
     expect(questionHtml).toBe(
       readFileSync(
@@ -663,12 +670,12 @@ describe('study conductor defaults and guidance', () => {
         'utf8',
       )
         .trim()
-        .replace('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE', participantUrl),
+        .replace('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE', participantUrl.replace(/&/g, '&amp;')),
     );
     const embeddedFields = component.querySelector<HTMLTextAreaElement>(
       '[data-qualtrics-asset="embedded-data"]',
     )!.value;
-    expect(embeddedFields.trim().split(/\r?\n/)).toHaveLength(62);
+    expect(embeddedFields.trim().split(/\r?\n/)).toHaveLength(63);
     expect(embeddedFields).toContain('__js_AQP_ACCEPTED');
     expect(component.querySelector<HTMLTextAreaElement>(
       '[data-qualtrics-asset="question-javascript"]',
@@ -693,7 +700,7 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain('Optional: End of Survey plain-text message');
     expect(component.textContent).toContain('not required for data collection');
     expect(component.textContent).toContain("Qualtrics' default End of Survey page is acceptable");
-    expect(component.textContent).toContain('Qualtrics bridge 0.8.7-q7');
+    expect(component.textContent).toContain('Qualtrics bridge 0.8.8-q8');
     expect(component.textContent).toContain('__js_AQP_ACCEPTED = 1');
     expect(component.textContent).toContain('participant application must fill the browser viewport');
 
@@ -711,6 +718,20 @@ describe('study conductor defaults and guidance', () => {
     expect(component.querySelector('[aria-live="polite"]')?.textContent).toContain(
       'Question HTML copied.',
     );
+
+    const participantCode = inputFor(component, 'Pseudonymous participant code for this link');
+    participantCode.value = '';
+    participantCode.dispatchEvent(new Event('input', { bubbles: true }));
+    await (component as any).updateComplete;
+    expect(component.querySelector('#configuration-ready-panel')).not.toBeNull();
+    expect(component.querySelector('#participant-link')).toBeNull();
+    expect(component.textContent).toContain('No participant link is available');
+
+    participantCode.value = 'P-REMOTE-02';
+    participantCode.dispatchEvent(new Event('input', { bubbles: true }));
+    await (component as any).updateComplete;
+    expect(component.querySelector<HTMLTextAreaElement>('#participant-link')?.value)
+      .toContain('participant=P-REMOTE-02');
   });
 
   it('refuses to build Qualtrics question HTML without a generated participant URL', () => {
