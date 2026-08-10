@@ -565,16 +565,24 @@ test('SUS rendered states, recovery, review editing and completion', async ({ pa
   // A proposed review edit is not committed to recovery storage until Save.
   expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 3, route: 'standard-scale' });
   await page.getByRole('button', { name: 'Cancel change and return to review' }).click();
-  await expect(page.locator('#review-item-2')).toContainText('3');
-  await expect(page.locator('#review-item-2')).not.toContainText('1 — Strongly disagree');
-  await expect(page.locator('#review-item-2')).toBeFocused();
+  const cancelledReviewItem = page.locator('#review-item-2');
+  await expect(cancelledReviewItem.locator('#review-item-answer-2 > strong')).toHaveText(
+    'Selected answer: 3',
+  );
+  await expect(cancelledReviewItem.locator('.review-scale-context')).toHaveText(
+    'Scale: 1 — Strongly disagree to 5 — Strongly agree',
+  );
+  await expect(cancelledReviewItem).toBeFocused();
   expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 3, route: 'standard-scale' });
 
   await page.getByRole('button', { name: /^Change item 2 answer\./ }).click();
   await choose(page, 5);
   await page.getByRole('button', { name: 'Save change and return to review' }).click();
   const editedReviewItem = page.locator('#review-item-2');
-  await expect(editedReviewItem).toContainText('5 — Strongly agree');
+  await expect(editedReviewItem.locator('#review-item-answer-2 > strong')).toHaveText(
+    'Selected answer: 5 — Strongly agree',
+  );
+  await expect(editedReviewItem.locator('.review-scale-context')).toHaveCount(0);
   await expect(editedReviewItem).toBeFocused();
   expect(await readSavedItemTwo()).toEqual({ stage: 'review', value: 5, route: 'standard-scale' });
   const reviewFocusStyle = await editedReviewItem.evaluate((element) => {
