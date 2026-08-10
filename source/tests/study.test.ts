@@ -126,6 +126,12 @@ describe('study configuration', () => {
     expect(url.hash).toContain('study=');
     expect(decodeStudyConfig(new URLSearchParams(url.hash.slice(1)).get('study')!)).toEqual(source);
     expect(readParticipantCodeFromHash(url.hash)).toBe('P-LINK-01');
+    expect(readParticipantCodeFromHash('#participant=')).toBeNull();
+    expect(readParticipantCodeFromHash('#participant=%3Cscript%3E')).toBeNull();
+    expect(readParticipantCodeFromHash(`#participant=${'P'.repeat(33)}`)).toBeNull();
+    expect(() => buildParticipantUrl('https://example.test/', source, '<script>')).toThrow(
+      /Participant code/,
+    );
     expect(source.definitionHash).toBe(
       questionnaireDefinitionHash(getQuestionnaireDefinition(source.instrumentId)!),
     );

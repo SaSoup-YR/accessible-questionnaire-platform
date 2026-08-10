@@ -11,6 +11,7 @@ import {
   buildParticipantUrl,
   createStudyConfig,
   loadCompletedResults,
+  progressStorageKey,
   type ParticipantAdjustmentPolicy,
   type StudyResultRecord,
 } from '../src/study';
@@ -18,6 +19,7 @@ import {
 async function renderConfiguredComponent(
   participantAdjustmentPolicy: ParticipantAdjustmentPolicy = 'locked',
   prefilledParticipantCode?: string,
+  rawParticipantParameter?: string,
 ) {
   const config = createStudyConfig(
     {
@@ -39,8 +41,13 @@ async function renderConfiguredComponent(
     },
     { configId: 'config-study-01', createdAt: '2026-07-20T12:00:00.000Z' },
   );
-  const url = buildParticipantUrl(window.location.href, config, prefilledParticipantCode);
-  window.history.replaceState({}, '', new URL(url).pathname + new URL(url).hash);
+  const url = new URL(buildParticipantUrl(window.location.href, config, prefilledParticipantCode));
+  if (rawParticipantParameter !== undefined) {
+    const parameters = new URLSearchParams(url.hash.slice(1));
+    parameters.set('participant', rawParticipantParameter);
+    url.hash = parameters.toString();
+  }
+  window.history.replaceState({}, '', url.pathname + url.hash);
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
   document.body.append(component);
   await component.updateComplete;
@@ -271,6 +278,14 @@ describe('study-conductor and participant separation', () => {
       'accessible-questionnaire-v0.8-tab-participant:config-study-01',
       'P-OLD-TAB-01',
     );
+    sessionStorage.setItem(
+      'accessible-questionnaire-v0.8-tab-participant-binding:config-study-01',
+      JSON.stringify({
+        version: 1,
+        linkParticipantCode: 'P-OLD-LINK-01',
+        activeParticipantCode: 'P-OLD-TAB-01',
+      }),
+    );
 
     const component = await renderConfiguredComponent('locked', 'P-NEW-LINK-02');
     expect(component.querySelector<HTMLInputElement>('#participant-code')?.value)
@@ -286,6 +301,143 @@ describe('study-conductor and participant separation', () => {
     expect(sessionStorage.getItem(
       'accessible-questionnaire-v0.8-tab-participant:config-study-01',
     )).toBe('P-NEW-LINK-02');
+    expect(JSON.parse(sessionStorage.getItem(
+      'accessible-questionnaire-v0.8-tab-participant-binding:config-study-01',
+    )!)).toEqual({
+      version: 1,
+      linkParticipantCode: 'P-NEW-LINK-02',
+      activeParticipantCode: 'P-NEW-LINK-02',
+    });
+  });
+
+  it('keeps a committed manual correction authoritative when the same link reloads', async () => {
+    const component = await renderConfiguredComponent('locked', 'P-LINK-01');
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    code.value = 'P-CORRECTED-02';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await component.updateComplete;
+
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+    component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!.click();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Next question'))!
+      .click();
+    await component.updateComplete;
+
+    expect(localStorage.getItem(progressStorageKey('config-study-01', 'P-CORRECTED-02')))
+      .not.toBeNull();
+    expect(localStorage.getItem(progressStorageKey('config-study-01', 'P-LINK-01')))
+      .toBeNull();
+    component.remove();
+
+    const restored = await renderConfiguredComponent('locked', 'P-LINK-01');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await restored.updateComplete;
+
+    expect(restored.querySelector<HTMLInputElement>('#participant-code')?.value)
+      .toBe('P-CORRECTED-02');
+    expect(restored.querySelector('.restored-code-note')?.textContent)
+      .toContain('restored for this tab');
+    expect(restored.querySelector('.saved-session')?.textContent).toContain('1 of 21');
+
+    restored.querySelector<HTMLButtonElement>('#resume-saved-questionnaire')!.click();
+    await restored.updateComplete;
+    [...restored.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Continue from here'))!
+      .click();
+    await restored.updateComplete;
+    for (let index = 1; index < 6; index += 1) {
+      restored.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!.click();
+      await restored.updateComplete;
+      [...restored.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes(
+          index === 5 ? 'Continue to comparisons' : 'Next question',
+        ))!
+        .click();
+      await restored.updateComplete;
+    }
+    for (let index = 0; index < 15; index += 1) {
+      restored.querySelector<HTMLInputElement>('.choice-card input')!.click();
+      await restored.updateComplete;
+      [...restored.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.textContent?.includes(
+          index === 14 ? 'Review responses' : 'Next question',
+        ))!
+        .click();
+      await restored.updateComplete;
+    }
+    [...restored.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Calculate and submit'))!
+      .click();
+    await restored.updateComplete;
+
+    const [stored] = loadCompletedResults();
+    expect(stored.participantCode).toBe('P-CORRECTED-02');
+    expect(stored.result.ratings.mental).toBe(50);
+  });
+
+  it('allows a missing participant parameter to use manual fallback and recovery', async () => {
+    const component = await renderConfiguredComponent('locked', undefined, '');
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    expect(code.value).toBe('');
+    expect(code.readOnly).toBe(false);
+    expect(code.getAttribute('aria-invalid')).toBe('false');
+    expect(component.textContent).not.toContain('Study link problem');
+    expect(component.textContent).toContain('Configured NASA-TLX study');
+
+    code.value = 'P-MANUAL-03';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 1 of 6');
+    expect(localStorage.getItem(progressStorageKey('config-study-01', 'P-MANUAL-03')))
+      .not.toBeNull();
+  });
+
+  it('never replaces an invalid link code with a stale tab identity', async () => {
+    sessionStorage.setItem(
+      'accessible-questionnaire-v0.8-tab-participant:config-study-01',
+      'P-OLD-TAB-01',
+    );
+    sessionStorage.setItem(
+      'accessible-questionnaire-v0.8-tab-participant-binding:config-study-01',
+      JSON.stringify({
+        version: 1,
+        linkParticipantCode: null,
+        activeParticipantCode: 'P-OLD-TAB-01',
+      }),
+    );
+
+    const component = await renderConfiguredComponent('locked', undefined, '<script>');
+    const code = component.querySelector<HTMLInputElement>('#participant-code')!;
+    expect(code.value).toBe('');
+    expect(code.getAttribute('aria-invalid')).toBe('true');
+    expect(component.querySelector('#participant-code-help')?.textContent)
+      .toContain('participant code in this link is invalid');
+    expect(component.querySelector('.restored-code-note')).toBeNull();
+    expect(component.textContent).not.toContain('Study link problem');
+    expect(component.textContent).toContain('Configured NASA-TLX study');
+
+    code.value = 'P-MANUAL-04';
+    code.dispatchEvent(new Event('input', { bubbles: true }));
+    await component.updateComplete;
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Start the six ratings'))!
+      .click();
+    await component.updateComplete;
+
+    expect(component.querySelector('.step-label')?.textContent).toContain('Rating 1 of 6');
+    expect(localStorage.getItem(progressStorageKey('config-study-01', 'P-MANUAL-04')))
+      .not.toBeNull();
+    expect(localStorage.getItem(progressStorageKey('config-study-01', 'P-OLD-TAB-01')))
+      .toBeNull();
   });
 
   it('blocks submission and exposes an actionable error when the definition hash is stale', async () => {

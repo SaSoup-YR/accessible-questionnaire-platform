@@ -85,6 +85,12 @@ interface ReviewRatingEdit {
   pendingInputRoute: RatingInputRoute | undefined;
 }
 
+interface TabParticipantBinding {
+  version: 1;
+  linkParticipantCode: string | null;
+  activeParticipantCode: string;
+}
+
 interface SavedSession {
   version: 4;
   instrumentId: string;
@@ -255,6 +261,7 @@ export class AccessibleNasaTlx extends LitElement {
   private savedSessionAnnouncementKey = '';
   private configurationApplied = false;
   private prefilledParticipantCode = '';
+  private invalidParticipantParameter = false;
   private reviewReturnFocusIndex: number | null = null;
   private installedResultSink: InstalledStudyResultSink | null = null;
   private readonly gazeCandidateTracker = new DwellTracker(1000);
@@ -307,10 +314,15 @@ export class AccessibleNasaTlx extends LitElement {
     }
     if (!config) return;
     this.studyConfig = config;
+    const participantParameter = parameters.get('participant');
     const participantCode = readParticipantCodeFromHash(window.location.hash);
     if (participantCode) {
       this.prefilledParticipantCode = participantCode;
       this.participantCode = participantCode;
+    } else if (participantParameter) {
+      this.invalidParticipantParameter = true;
+      this.participantCodeError =
+        'The participant code in this link is invalid. Enter the approved pseudonymous code manually or ask the study conductor for a new link.';
     }
     this.pairOrder = shuffledPairs(this.definition);
     this.applyConfiguredSupport();
@@ -1754,6 +1766,7 @@ export class AccessibleNasaTlx extends LitElement {
 
   private setParticipantCode = (event: Event) => {
     this.participantCode = (event.currentTarget as HTMLInputElement).value.trim();
+    this.invalidParticipantParameter = false;
     this.participantCodeRestoredForTab = false;
     this.participantCodeError =
       this.participantCode && !validParticipantCode(this.participantCode)
@@ -3081,11 +3094,27 @@ export class AccessibleNasaTlx extends LitElement {
     return `accessible-questionnaire-v0.8-tab-participant:${this.studyConfig.configId}`;
   }
 
-  private rememberParticipantCodeForTab() {
+  private currentTabParticipantBindingKey() {
+    if (!this.studyConfig) return null;
+    return `accessible-questionnaire-v0.8-tab-participant-binding:${this.studyConfig.configId}`;
+  }
+
+  private rememberParticipantCodeForTab(committed = false) {
     const storageKey = this.currentTabParticipantCodeKey();
     if (!storageKey || !this.recoveryEnabled || !validParticipantCode(this.participantCode)) return;
     try {
       sessionStorage.setItem(storageKey, this.participantCode);
+      if (committed) {
+        const bindingKey = this.currentTabParticipantBindingKey();
+        if (bindingKey) {
+          const binding: TabParticipantBinding = {
+            version: 1,
+            linkParticipantCode: this.prefilledParticipantCode || null,
+            activeParticipantCode: this.participantCode,
+          };
+          sessionStorage.setItem(bindingKey, JSON.stringify(binding));
+        }
+      }
     } catch {
       // Tab-scoped storage is an optional convenience. Local progress recovery and
       // the participant-code field remain available if the browser blocks it.
@@ -3097,6 +3126,8 @@ export class AccessibleNasaTlx extends LitElement {
     if (!storageKey) return;
     try {
       sessionStorage.removeItem(storageKey);
+      const bindingKey = this.currentTabParticipantBindingKey();
+      if (bindingKey) sessionStorage.removeItem(bindingKey);
     } catch {
       // The browser may block tab-scoped storage.
     }
@@ -3104,8 +3135,40 @@ export class AccessibleNasaTlx extends LitElement {
 
   private restoreParticipantCodeForTab() {
     const storageKey = this.currentTabParticipantCodeKey();
-    if (!storageKey || !this.recoveryEnabled || validParticipantCode(this.participantCode)) return;
+    if (!storageKey || !this.recoveryEnabled || this.invalidParticipantParameter) return;
     try {
+      const bindingKey = this.currentTabParticipantBindingKey();
+      const rawBinding = bindingKey ? sessionStorage.getItem(bindingKey) : null;
+      if (rawBinding) {
+        try {
+          const binding = JSON.parse(rawBinding) as Partial<TabParticipantBinding>;
+          const currentLinkParticipantCode = this.prefilledParticipantCode || null;
+          const validBinding =
+            binding.version === 1 &&
+            (binding.linkParticipantCode === null ||
+              (typeof binding.linkParticipantCode === 'string' &&
+                validParticipantCode(binding.linkParticipantCode))) &&
+            typeof binding.activeParticipantCode === 'string' &&
+            validParticipantCode(binding.activeParticipantCode);
+          if (
+            validBinding &&
+            typeof binding.activeParticipantCode === 'string' &&
+            binding.linkParticipantCode === currentLinkParticipantCode
+          ) {
+            if (this.participantCode !== binding.activeParticipantCode) {
+              this.participantCode = binding.activeParticipantCode;
+              this.participantCodeRestoredForTab = true;
+              this.statusMessage = 'Participant code restored for this tab. Checking for interrupted answers.';
+            }
+            return;
+          }
+        } catch {
+          // Ignore a damaged optional binding and use the safe fallback below.
+        }
+      }
+      // A different valid participant-specific link always starts a new identity
+      // context, even if this tab still contains a binding from an older link.
+      if (validParticipantCode(this.participantCode)) return;
       const savedCode = sessionStorage.getItem(storageKey);
       if (!savedCode || !validParticipantCode(savedCode)) return;
       this.participantCode = savedCode;
@@ -3146,6 +3209,9 @@ export class AccessibleNasaTlx extends LitElement {
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(session));
+      // Bind a manual correction to this exact participant link only after the
+      // corrected identity has successfully saved an in-progress session.
+      this.rememberParticipantCodeForTab(true);
     } catch {
       this.statusMessage = 'Progress could not be saved by this browser.';
       this.announceAutomatic(this.statusMessage);
