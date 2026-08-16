@@ -1,7 +1,7 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "Draft-PR RF-02 correction candidate. The full q9 pull-request verification gate passed at source head 1cf212b86fe473dc478548d5b1dca353070e35f5. This is still not a final release evidence point until main/deployment, synthetic Qualtrics and post-fix manual/AT gates pass.",
+  "releaseStatus": "Draft-PR RF-02 correction candidate. The full q9 pull-request verification gate passed on the current source tree. This is still not a final release evidence point until main/deployment, synthetic Qualtrics and post-fix manual/AT gates pass.",
   "releaseRepository": "SaSoup-YR/accessible-questionnaire-platform",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
@@ -22,7 +22,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "v0.8.0-rc.4",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/technical/release-policy, rendered-browser and cross-browser checks for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). That run belongs to bridge 0.8.8-q8 and is not evidence for q9. The current RF-02 q9 candidate passed the full pull-request verification gate in run 31965466817 at source head 1cf212b86fe473dc478548d5b1dca353070e35f5: 208/208 Vitest tests, 9/9 rendered-browser tests, 3/3 cross-browser support tests, production/standalone/release builds and committed-output synchronization. Post-fix Qualtrics and manual/AT retests remain required. No respondent data are collected by the core evaluation, and none of these checks establish disabled-user benefit, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
+  "evaluationStatus": "Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/technical/release-policy, rendered-browser and cross-browser checks for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). That run belongs to bridge 0.8.8-q8 and is not evidence for q9. The current RF-02 q9 candidate passed the full pull-request verification gate in run 31965666950: automated tests, rendered-browser regression, cross-browser support matrix, production/standalone/release builds, artifact publication and committed-output synchronization all completed successfully. Post-fix Qualtrics and manual/AT retests remain required. No respondent data are collected by the core evaluation, and none of these checks establish disabled-user benefit, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
   "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
   "manualVerification": {
     "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
@@ -104,7 +104,7 @@
     "firstPullRequestGate": "GitHub Actions run 31962088241 failed in Playwright because the e2e fixture and expected wording still used pre-RF-02 names.",
     "followUpAttempt": "GitHub Actions run 31965045942 fixed the stale property and failure heading, but an optional duplicate Waiting for Qualtrics H2/H3 wording change caused a strict heading-locator failure; that optional H2 change was not retained.",
     "preflightGate": "GitHub Actions run 31965265953 passed 208/208 Vitest tests, the rendered-browser accessibility regression, cross-browser support matrix, release build/synchronization and RF-02 wording/q9 scope guards.",
-    "finalPullRequestGate": "GitHub Actions run 31965466817 passed at source head 1cf212b86fe473dc478548d5b1dca353070e35f5: 208/208 Vitest tests, 9/9 rendered-browser tests, 3/3 cross-browser support tests, production/standalone/release builds, artifact publication and committed-output synchronization.",
+    "fullPullRequestGate": "GitHub Actions run 31965666950 passed on the current source tree: automated tests, rendered-browser accessibility regression, cross-browser support matrix, production/standalone/release builds, artifact publication and committed-output synchronization all completed successfully.",
     "requiredBeforeMerge": "Full pull-request verification gate passed; code review and merge authorization remain.",
     "postFixA27Evidence": "Pending deployment, q9 Qualtrics installation and frozen-route retest."
   }
