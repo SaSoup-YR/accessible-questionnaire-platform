@@ -4,7 +4,7 @@ A public research prototype that separates questionnaire definitions from a shar
 study-conductor, participant, accessibility-support, result and UCL Qualtrics
 workflow.
 
-- **[Prepare a study](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.8-q8)**
+- **[Prepare a study](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.9-q9)**
 - **[Open the participant technical demonstration](https://sasoup-yr.github.io/accessible-questionnaire-platform/)**
 
 Use synthetic codes during technical verification. Before real recruitment,
@@ -16,7 +16,7 @@ project's existing approved protocol and data-management plan.
 
 The last reviewed release-record commit is the immutable **`v0.8.0-rc.4`**
 baseline. The current source is an untagged correction candidate paired with
-Qualtrics bridge **`0.8.8-q8`**. It is not a release evidence point until its
+Qualtrics bridge **`0.8.9-q9`**. It is not a release evidence point until its
 real-browser checks and a fresh synthetic Qualtrics row pass. The earlier
 **`v0.8.0-rc.3`** and **`v0.8.0-rc.2`** tags remain unchanged evidence
 baselines.
@@ -81,7 +81,7 @@ post-fix microphone route. `Not 4`, `Agree quickly` and `Strongly` did not selec
 an answer; intentional `4` produced a visible answer proposal and still required
 explicit confirmation. The earlier `0.8.7-q7` Qualtrics normal-submission
 evidence is historical only: the definition-fingerprint field changes the
-`0.8.8-q8` result contract and requires a fresh synthetic accepted row.
+`0.8.9-q9` result contract and requires a fresh synthetic accepted row.
 These checks establish the documented technical workflow, not multilingual
 spoken-label support, universal browser reliability or permission to recruit.
 

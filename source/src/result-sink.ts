@@ -5,7 +5,7 @@ export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-rec
 export const QUALTRICS_PARENT_READY_MESSAGE = 'accessible-questionnaire:qualtrics-parent-ready:v2';
 export const QUALTRICS_CHILD_READY_MESSAGE = 'accessible-questionnaire:qualtrics-child-ready:v2';
 export const QUALTRICS_ADVANCE_FAILED_MESSAGE = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-export const QUALTRICS_BRIDGE_BUILD = '0.8.8-q8';
+export const QUALTRICS_BRIDGE_BUILD = '0.8.9-q9';
 
 export type QualtricsBridgeState = 'connecting' | 'connected' | 'failed';
 
@@ -14,7 +14,12 @@ export interface QualtricsBridgeStateDetail {
   message: string;
 }
 
-export interface ResultSinkReceipt {
+/**
+ * Page-side staging acknowledgement from the approved host bridge.
+ * It proves that the bridge accepted this submission ID for staging.
+ * It does not prove that Qualtrics has durably recorded the response.
+ */
+export interface ResultSinkStagingReceipt {
   accepted: true;
   submissionId: string;
   receiptId?: string;
@@ -22,7 +27,7 @@ export interface ResultSinkReceipt {
 
 export interface ApprovedResultSink {
   name: string;
-  submit(record: StudyResultRecord): Promise<ResultSinkReceipt>;
+  submit(record: StudyResultRecord): Promise<ResultSinkStagingReceipt>;
 }
 
 interface QualtricsReceiptMessage {
@@ -185,7 +190,7 @@ export function createQualtricsParentResultSink(
         ));
       }
 
-      return new Promise<ResultSinkReceipt>((resolve, reject) => {
+      return new Promise<ResultSinkStagingReceipt>((resolve, reject) => {
         let settled = false;
         const finish = (action: () => void) => {
           if (settled) return;
@@ -237,12 +242,12 @@ export async function submitToApprovedResultSink(
   record: StudyResultRecord,
   sink: ApprovedResultSink,
   timeoutMs = 15_000,
-): Promise<ResultSinkReceipt> {
+): Promise<ResultSinkStagingReceipt> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error('The study platform did not confirm receipt in time.')), timeoutMs);
+    timeoutId = setTimeout(() => reject(new Error('The study platform did not acknowledge the staged response in time.')), timeoutMs);
   });
-  let receipt: ResultSinkReceipt;
+  let receipt: ResultSinkStagingReceipt;
   try {
     receipt = await Promise.race([sink.submit(record), timeout]);
   } finally {

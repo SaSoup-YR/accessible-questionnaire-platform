@@ -69,7 +69,7 @@ also completed through that flow. The primary tester subsequently imported and r
 supervisor-supplied German LSG on the synchronized public candidate without an import
 or participant-flow error. This verifies the structured-import path, not German
 spoken-label recognition. The recorded `0.8.7-q7` Qualtrics accepted row is a
-historical baseline only. Bridge `0.8.8-q8` adds the definition fingerprint and
+historical baseline only. Bridge `0.8.9-q9` adds the definition fingerprint and
 must receive a fresh synthetic accepted row before release; the current candidate
 repeated the changed-risk offline warning, reconnect/retry and refresh-recovery paths.
 

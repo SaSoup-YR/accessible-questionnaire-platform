@@ -738,16 +738,19 @@ test('Qualtrics bridge and recording recovery states are rendered explicitly', a
     result,
     submittedRecord: { submissionId: 'fixture-qualtrics-complete' },
     completionSavedLocally: true,
-    completionSavedByHost: true,
+    completionStagedByBridge: true,
     remoteRecordingUnconfirmed: false,
     hostBridgeState: 'connected',
   });
   await expect(page.locator('#complete-heading')).toHaveText('Submitting response');
   await expect(page.getByRole('heading', { name: 'Waiting for Qualtrics', exact: true })).toBeVisible();
+  await expect(page.locator('.save-status')).toContainText(
+    'The survey page received the response data. Keep this page open while Qualtrics continues.',
+  );
   await scan(page, 'Qualtrics submission transition');
 
   await setRenderedState(page, { remoteRecordingUnconfirmed: true });
-  await expect(page.getByRole('heading', { name: 'Qualtrics has not confirmed a recorded response' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Qualtrics did not confirm this response' })).toBeVisible();
   await scan(page, 'Qualtrics recording-unconfirmed recovery');
 });
 

@@ -244,7 +244,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private startedAt = '';
   @state() private submittedRecord: StudyResultRecord | null = null;
   @state() private completionSavedLocally = false;
-  @state() private completionSavedByHost = false;
+  @state() private completionStagedByBridge = false;
   @state() private remoteRecordingUnconfirmed = false;
   @state() private hostSubmissionFailed = false;
   @state() private submittingResult = false;
@@ -1477,7 +1477,7 @@ export class AccessibleNasaTlx extends LitElement {
     return html`
       <section class="panel confirmation" id="question-panel" aria-labelledby="complete-heading">
         <h2 id="complete-heading">${
-          this.studyConfig && this.completionSavedByHost && !this.remoteRecordingUnconfirmed
+          this.studyConfig && this.completionStagedByBridge && !this.remoteRecordingUnconfirmed
             ? 'Submitting response'
             : this.studyConfig
             ? 'Result prepared'
@@ -1489,7 +1489,7 @@ export class AccessibleNasaTlx extends LitElement {
               <strong>${this.result.primaryScore.toFixed(2)}</strong>
               out of ${this.result.scoreMaximum}
             </p>`
-          : html`<p>Your responses have been recorded. The study configuration does not display the calculated score on the participant page.</p>`}
+          : html`<p>Your responses have been prepared. The study configuration does not display the calculated score on the participant page.</p>`}
         ${this.studyConfig
           ? this.remoteRecordingUnconfirmed
             ? html`<div
@@ -1498,22 +1498,22 @@ export class AccessibleNasaTlx extends LitElement {
                 role="alert"
                 tabindex="-1"
               >
-                <h3>Qualtrics has not confirmed a recorded response</h3>
+                <h3>Qualtrics did not confirm this response</h3>
                 <p>
                   The completed answers are still available in the backup on this device, but the
-                  recorded result page did not open. Reconnect to the internet, keep or download
+                  Qualtrics completion page did not open. Reconnect to the internet, keep or download
                   one backup, and use the restored Qualtrics Next button to try the submission again.
                 </p>
-                <p>Tell the study conductor if the recorded result page still does not appear.</p>
+                <p>Tell the study conductor if the Qualtrics completion page still does not appear.</p>
               </div>`
-            : this.completionSavedByHost
+            : this.completionStagedByBridge
             ? html`<div class="save-status">
                 <h3>Waiting for Qualtrics</h3>
-                <p>This page will continue automatically. No action is needed.</p>
+                <p>The survey page received the response data. Keep this page open while Qualtrics continues.</p>
                 ${this.completionSavedLocally
                   ? nothing
                   : html`<p>
-                      This browser could not keep a backup copy. If the recorded result page does not
+                      This browser could not keep a backup copy. If the Qualtrics completion page does not
                       appear, use the JSON or CSV backup button below before closing the page.
                     </p>`}
               </div>`
@@ -1531,7 +1531,7 @@ export class AccessibleNasaTlx extends LitElement {
               </div>`
           : html`<p>No response, audio or webcam video has been uploaded. Demonstration results are not retained after this page is closed.</p>`}
         <p>Support and input-route metadata remain separate from the questionnaire score.</p>
-        ${!this.studyConfig || !this.completionSavedByHost || this.remoteRecordingUnconfirmed
+        ${!this.studyConfig || !this.completionStagedByBridge || this.remoteRecordingUnconfirmed
           ? this.renderCompletionReadAloudControl()
           : nothing}
         ${!this.studyConfig
@@ -1540,7 +1540,7 @@ export class AccessibleNasaTlx extends LitElement {
               <pre>${JSON.stringify(this.submittedRecord, null, 2)}</pre>
             </details>`
           : nothing}
-        ${this.studyConfig && this.completionSavedByHost
+        ${this.studyConfig && this.completionStagedByBridge
           ? html`<aside class="submission-fallback" aria-labelledby="submission-fallback-heading">
               <h3 id="submission-fallback-heading">If this page does not continue</h3>
               <p>
@@ -1568,12 +1568,12 @@ export class AccessibleNasaTlx extends LitElement {
                 : nothing}
             </div>`}
         ${this.studyConfig
-          ? this.completionSavedByHost && !this.remoteRecordingUnconfirmed
+          ? this.completionStagedByBridge && !this.remoteRecordingUnconfirmed
             ? nothing
             : html`<p>
               <strong>Participant:</strong>
               ${this.remoteRecordingUnconfirmed
-                ? 'reconnect to the internet and use the restored Qualtrics Next button. Keep or download a backup until the recorded result page appears.'
+                ? 'reconnect to the internet and use the restored Qualtrics Next button. Keep or download a backup until the Qualtrics completion page appears.'
                 : 'please return the device or completion notice to the study conductor.'}
             </p>`
           : nothing}
@@ -2311,7 +2311,7 @@ export class AccessibleNasaTlx extends LitElement {
       this.completionSavedLocally = this.studyConfig
         ? saveCompletedResult(this.submittedRecord)
         : false;
-      this.completionSavedByHost = false;
+      this.completionStagedByBridge = false;
       this.remoteRecordingUnconfirmed = false;
       this.hostSubmissionFailed = false;
       if (sink) {
@@ -2319,7 +2319,7 @@ export class AccessibleNasaTlx extends LitElement {
         this.statusMessage = `Submitting responses to ${sink.name}.`;
         try {
           await submitToApprovedResultSink(this.submittedRecord, sink);
-          this.completionSavedByHost = true;
+          this.completionStagedByBridge = true;
         } catch (error) {
           this.hostSubmissionFailed = true;
           const detail = error instanceof Error ? error.message : 'The study platform did not accept the response.';
@@ -2350,11 +2350,11 @@ export class AccessibleNasaTlx extends LitElement {
       if (!this.studyConfig || this.completionSavedLocally) this.clearSavedProgress();
       this.stopGazeInputInternal(false);
       this.clearError();
-      // A successful Qualtrics hand-off is a short automatic transition. Do not
+      // A staged Qualtrics hand-off is a short automatic transition. It is not durable confirmation. Do not
       // move focus or start speech that competes with the native page change.
       // The failure callback focuses and announces its actionable alert if the
       // page does not advance.
-      if (!this.completionSavedByHost) this.focusHeading();
+      if (!this.completionStagedByBridge) this.focusHeading();
     } catch (error) {
       this.submittingResult = false;
       this.showError(error instanceof Error ? error.message : 'Responses could not be calculated.');
@@ -2411,7 +2411,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.result = null;
     this.submittedRecord = null;
     this.completionSavedLocally = false;
-    this.completionSavedByHost = false;
+    this.completionStagedByBridge = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
     this.submittingResult = false;
@@ -2435,14 +2435,14 @@ export class AccessibleNasaTlx extends LitElement {
     if (
       this.submittedRecord &&
       this.completionSavedLocally &&
-      !this.completionSavedByHost
+      !this.completionStagedByBridge
     ) {
       removeCompletedResult(this.submittedRecord.submissionId);
     }
     this.result = null;
     this.submittedRecord = null;
     this.completionSavedLocally = false;
-    this.completionSavedByHost = false;
+    this.completionStagedByBridge = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
   }
@@ -2566,8 +2566,8 @@ export class AccessibleNasaTlx extends LitElement {
       return this.statusMessage.trim() ||
         'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. Keep this page open or download one backup before closing it.';
     }
-    if (this.studyConfig && this.completionSavedByHost) {
-      return 'Submitting response. No action is needed.';
+    if (this.studyConfig && this.completionStagedByBridge) {
+      return 'Waiting for Qualtrics. Keep this page open.';
     }
     if (!this.result) return 'Responses calculated.';
     const score = !this.studyConfig || this.studyConfig.showScoreToParticipant
