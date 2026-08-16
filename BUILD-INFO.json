@@ -6,7 +6,7 @@
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
   "builtAt": "2026-08-09T22:18:59Z",
-  "qualtricsBridgeBuild": "0.8.8-q8",
+  "qualtricsBridgeBuild": "0.8.9-q9",
   "verification": {
     "testFilesPassed": 20,
     "testsPassed": 198,
@@ -64,7 +64,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "v0.8.0-rc.4",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "PR CI run 31339674025 passed all 20 unit/component/technical/release-policy files (198 tests), quantified fidelity/safety/reconstruction, real-browser and cross-browser checks, TypeScript, production, standalone and release synchronisation for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). Manual assistive-technology audit cells remain NT and a fresh bridge 0.8.8-q8 synthetic Qualtrics row remains pending. No respondent data are collected by the core evaluation. This is not final-main/deployment evidence or evidence of benefit for disabled users, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
+  "evaluationStatus": "PR CI run 31339674025 passed all 20 unit/component/technical/release-policy files (198 tests), quantified fidelity/safety/reconstruction, real-browser and cross-browser checks, TypeScript, production, standalone and release synchronisation for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). Manual assistive-technology audit cells remain NT and a fresh bridge 0.8.9-q9 synthetic Qualtrics row remains pending. No respondent data are collected by the core evaluation. This is not final-main/deployment evidence or evidence of benefit for disabled users, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
   "prCiEvidence": {
     "run": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025",
     "functionalHead": "882bd5ce0007e89f40fd42762338abea4714a7ca",

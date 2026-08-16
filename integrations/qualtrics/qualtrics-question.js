@@ -13,14 +13,14 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.8-q8';
+  var bridgeBuild = '0.8.9-q9';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
   var recordedSummary = document.getElementById('accessible-questionnaire-recorded-summary');
   var originalLiveParent = liveQuestion && liveQuestion.parentNode;
   var originalLiveNextSibling = liveQuestion && liveQuestion.nextSibling;
-  var acceptedSubmissionId = null;
+  var stagedSubmissionId = null;
   var advancing = false;
   var childConnected = false;
   var completionTimerId = null;
@@ -184,7 +184,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }, childOrigin);
   }
 
-  function sendReceipt(target, accepted, submissionId, error) {
+  // This protocol receipt is a page-side staging acknowledgement only.
+  // It does not prove that Qualtrics has durably recorded the response.
+  function sendStagingReceipt(target, accepted, submissionId, error) {
     target.postMessage({
       type: receiptType,
       accepted: accepted,
@@ -199,7 +201,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (!iframe || !iframe.contentWindow) return;
     iframe.contentWindow.postMessage({
       type: advanceFailedType,
-      submissionId: acceptedSubmissionId || '',
+      submissionId: stagedSubmissionId || '',
       error: message,
       bridgeBuild: bridgeBuild
     }, childOrigin);
@@ -355,8 +357,9 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
 
     /*
-     * Commit marker: write only after every provenance, result and raw-record
-     * field has staged successfully. A partial write must never look accepted.
+     * Staging marker: write only after every provenance, result and raw-record
+     * field has staged successfully. It does not prove durable Qualtrics recording.
+     * A partial write must never look staged successfully.
      */
     setField('AQP_ACCEPTED', 1);
   }
@@ -410,7 +413,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (!message || message.type !== submitType) return;
     var submissionId = message.record && message.record.submissionId;
     if (!childConnected) {
-      sendReceipt(
+      sendStagingReceipt(
         event.source,
         false,
         submissionId || '',
@@ -419,7 +422,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       return;
     }
     if (message.bridgeBuild !== bridgeBuild) {
-      sendReceipt(
+      sendStagingReceipt(
         event.source,
         false,
         submissionId || '',
@@ -428,12 +431,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       return;
     }
 
-    if (acceptedSubmissionId === submissionId) {
-      sendReceipt(event.source, true, submissionId);
+    if (stagedSubmissionId === submissionId) {
+      sendStagingReceipt(event.source, true, submissionId);
       return;
     }
-    if (acceptedSubmissionId || advancing) {
-      sendReceipt(event.source, false, submissionId || '', 'A different response is already being saved.');
+    if (stagedSubmissionId || advancing) {
+      sendStagingReceipt(event.source, false, submissionId || '', 'A different response is already being saved.');
       return;
     }
 
@@ -444,13 +447,13 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     try {
       requireRecord(message.record);
       storeRecord(message.record);
-      acceptedSubmissionId = message.record.submissionId;
+      stagedSubmissionId = message.record.submissionId;
       advancing = true;
       setStatus(
-        'Submitting response. This page will continue automatically.',
+        'Waiting for Qualtrics. Keep this page open.',
         true
       );
-      sendReceipt(event.source, true, acceptedSubmissionId);
+      sendStagingReceipt(event.source, true, stagedSubmissionId);
       // A definite browser-offline state cannot produce a durable Qualtrics
       // response. Show the platform-owned recovery notice immediately instead
       // of waiting for Qualtrics' slower native network-error dialog.
@@ -458,7 +461,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         recoverFailedAdvance('offline');
         return;
       }
-      completionTimerId = window.setTimeout(function completeAcceptedResponse() {
+      completionTimerId = window.setTimeout(function continueStagedResponse() {
         completionTimerId = null;
         question.clickNextButton();
         // If Qualtrics does not unload this question after the native advance, keep
@@ -475,7 +478,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         false
       );
       releaseFullscreenForNativeNavigation();
-      sendReceipt(event.source, false, submissionId || '', detail);
+      sendStagingReceipt(event.source, false, submissionId || '', detail);
       // Staging can fail deterministically — an oversized record fails identically on every
       // retry — so the navigation control is restored. Without it the participant is left on
       // a page with no way to submit and no way to advance.

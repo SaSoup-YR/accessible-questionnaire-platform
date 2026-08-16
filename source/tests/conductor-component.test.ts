@@ -127,9 +127,9 @@ describe('study conductor defaults and guidance', () => {
   it('separates participant identity and starts with optional participant choice for an accessibility evaluation', async () => {
     const component = await renderConductor();
     expect(component.textContent).toContain('This researcher page generates a separate participant page');
-    expect(component.textContent).toContain('Current Qualtrics generator: 0.8.8-q8');
+    expect(component.textContent).toContain('Current Qualtrics generator: 0.8.9-q9');
     expect(component.querySelector<HTMLAnchorElement>(
-      'a[href="study.html?package=0.8.8-q8"]',
+      'a[href="study.html?package=0.8.9-q9"]',
     )).not.toBeNull();
     expect(component.textContent).toContain('P-001');
     expect(inputFor(component, 'Study ID').placeholder).toBe('ACCESS-TECH-01');
@@ -662,7 +662,7 @@ describe('study conductor defaults and guidance', () => {
     expect(questionHtml).toContain('${e://Field/__js_AQP_PRIMARY_SCORE}');
     expect(questionHtml).toContain(participantUrl.replace(/&/g, '&amp;'));
     expect(questionHtml).not.toContain('PASTE_THE_GENERATED_PARTICIPANT_PAGE_URL_HERE');
-    expect(questionHtml).toContain('data-aqp-package-build="0.8.8-q8"');
+    expect(questionHtml).toContain('data-aqp-package-build="0.8.9-q9"');
     expect(questionHtml).toBe(buildQualtricsQuestionHtml(participantUrl));
     expect(questionHtml).toBe(
       readFileSync(
@@ -700,7 +700,7 @@ describe('study conductor defaults and guidance', () => {
     expect(component.textContent).toContain('Optional: End of Survey plain-text message');
     expect(component.textContent).toContain('not required for data collection');
     expect(component.textContent).toContain("Qualtrics' default End of Survey page is acceptable");
-    expect(component.textContent).toContain('Qualtrics bridge 0.8.8-q8');
+    expect(component.textContent).toContain('Qualtrics bridge 0.8.9-q9');
     expect(component.textContent).toContain('__js_AQP_ACCEPTED = 1');
     expect(component.textContent).toContain('participant application must fill the browser viewport');
 

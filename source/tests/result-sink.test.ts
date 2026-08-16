@@ -308,7 +308,7 @@ describe('approved host result sink', () => {
         return new Promise<never>(() => undefined);
       },
     };
-    await expect(submitToApprovedResultSink(record, sink, 5)).rejects.toThrow(/did not confirm receipt in time/i);
+    await expect(submitToApprovedResultSink(record, sink, 5)).rejects.toThrow(/did not acknowledge the staged response in time/i);
   });
 
   it('sends a record only to the configured Qualtrics origin and accepts a matching parent receipt', async () => {
@@ -487,7 +487,7 @@ describe('approved host result sink', () => {
     expect(bridge).toContain('question.showNextButton();');
     expect(bridge).not.toContain('No further action is required.');
     expect(bridge).not.toContain('Your answers have been accepted');
-    expect(bridge).toContain('Submitting response. This page will continue automatically.');
+    expect(bridge).toContain('Waiting for Qualtrics. Keep this page open.');
     expect(bridge).toContain('Qualtrics could not confirm this response.');
     expect(bridge).toContain('Internet connection unavailable.');
     expect(bridge).toContain('sendAdvanceFailure(advanceFailureMessage)');
@@ -829,7 +829,7 @@ describe('approved host result sink', () => {
       'https://sasoup-yr.github.io',
     );
     expect(onlineRuntime.dom.status.textContent).toBe(
-      'Submitting response. This page will continue automatically.',
+      'Waiting for Qualtrics. Keep this page open.',
     );
     expect(onlineRuntime.getLatestTimerDelay()).toBe(800);
     onlineRuntime.clickLatestTimer();
