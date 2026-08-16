@@ -41,32 +41,33 @@ jobs:
               p.write_text(text.replace(old, new), encoding='utf-8')
               print(f'{path}: replaced {count} occurrence(s)')
 
-          # P1: keep the rendered-browser fixture aligned with the RF-02 state rename.
+          # P1: align the rendered-browser fixture with the RF-02 state rename and wording.
+          e2e = 'source/tests/e2e/browser-accessibility.spec.ts'
+          replace(e2e, 'completionSavedByHost: true', 'completionStagedByBridge: true')
           replace(
-              'source/tests/e2e/browser-accessibility.spec.ts',
-              'completionSavedByHost: true',
-              'completionStagedByBridge: true',
-          )
-          replace(
-              'source/tests/e2e/browser-accessibility.spec.ts',
+              e2e,
               "Qualtrics has not confirmed a recorded response",
               "Qualtrics did not confirm this response",
           )
-
-          # P3 accepted because it stays inside RF-02: use the same truthful state vocabulary
-          # for the completion-panel heading and its rendered-browser expectation.
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              "? 'Submitting response'",
-              "? 'Waiting for Qualtrics'",
+          # Keep the existing H2 "Submitting response". The staged-state H3 already says
+          # "Waiting for Qualtrics"; making both headings identical creates duplicate heading
+          # names and is less clear for assistive-technology navigation.
+          marker = "  await expect(page.getByRole('heading', { name: 'Waiting for Qualtrics', exact: true })).toBeVisible();\n"
+          body_assertion = (
+              "  await expect(page.locator('.save-status')).toContainText(\n"
+              "    'The survey page received the response data. Keep this page open while Qualtrics continues.',\n"
+              "  );\n"
           )
-          replace(
-              'source/tests/e2e/browser-accessibility.spec.ts',
-              "toHaveText('Submitting response')",
-              "toHaveText('Waiting for Qualtrics')",
-          )
+          p = Path(e2e)
+          text = p.read_text(encoding='utf-8')
+          if body_assertion not in text:
+              if marker not in text:
+                  raise SystemExit('Could not locate staged-state heading assertion for body assertion')
+              text = text.replace(marker, marker + body_assertion, 1)
+              p.write_text(text, encoding='utf-8')
+              print(f'{e2e}: added truthful staged-body assertion')
 
-          # P2: do not make the historical q8 CI record look as if it tested q9.
+          # P2: separate immutable historical q8 evidence from the current q9 candidate.
           p = Path('BUILD-INFO.json')
           data = json.loads(p.read_text(encoding='utf-8'))
           data['releaseStatus'] = (
@@ -76,10 +77,20 @@ jobs:
               'post-fix manual/AT gates pass.'
           )
           data['builtAt'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
-          verification = data.get('verification', {})
-          verification['evidenceBuild'] = '0.8.8-q8 historical PR evidence'
-          verification['evidenceRun'] = 31339674025
-          data['verification'] = verification
+
+          historical = data.pop('verification', data.get('historicalQ8Verification', {}))
+          historical['evidenceBuild'] = '0.8.8-q8'
+          historical['evidenceRun'] = 31339674025
+          historical['interpretation'] = (
+              'Historical PR evidence only. These counts and browser checks belong to the q8 '
+              'candidate identified by run 31339674025 and must not be read as verification of q9.'
+          )
+          data['historicalQ8Verification'] = historical
+
+          historical_pr = data.pop('prCiEvidence', data.get('historicalQ8PrCiEvidence', {}))
+          historical_pr['evidenceBuild'] = '0.8.8-q8'
+          data['historicalQ8PrCiEvidence'] = historical_pr
+
           data['evaluationStatus'] = (
               'Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/'
               'technical/release-policy, rendered-browser and cross-browser checks for functional '
@@ -94,13 +105,18 @@ jobs:
           data['rf02CandidateStatus'] = {
               'bridgeBuild': '0.8.9-q9',
               'scope': 'RF-02 / A27 truthful pre-confirmation submission state only',
-              'oneShotVerification': (
+              'unitAndBuildGate': (
                   'GitHub Actions run 31961904646 passed 208/208 Vitest tests and release build/'
                   'synchronisation; that run did not include the Playwright rendered-browser gate.'
               ),
               'firstPullRequestGate': (
                   'GitHub Actions run 31962088241 failed in Playwright because the e2e fixture and '
-                  'expected wording still used pre-RF-02 names; this follow-up repairs that test debt.'
+                  'expected wording still used pre-RF-02 names.'
+              ),
+              'followUpAttempt': (
+                  'GitHub Actions run 31965045942 fixed the stale property and failure heading, but '
+                  'an optional duplicate Waiting for Qualtrics H2/H3 wording change caused a strict '
+                  'heading-locator failure; that optional H2 change was not retained.'
               ),
               'requiredBeforeMerge': 'A new full pull-request verification run must pass.',
               'postFixA27Evidence': 'Pending deployment, q9 Qualtrics installation and frozen-route retest.'
