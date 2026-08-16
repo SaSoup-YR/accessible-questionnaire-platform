@@ -1,13 +1,49 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "Draft-PR correction candidate verified by PR CI after missing-fingerprint rejection and UEQ-S public-content removal; not a final release evidence point until main/deployment, synthetic Qualtrics and manual-audit gates pass",
+  "releaseStatus": "Draft-PR RF-02 correction candidate. The q9 one-shot unit/build gate passed, but the repository pull-request verification gate must pass before merge; this is not a final release evidence point until main/deployment, synthetic Qualtrics and post-fix manual/AT gates pass.",
   "releaseRepository": "SaSoup-YR/accessible-questionnaire-platform",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-08-09T22:18:59Z",
+  "builtAt": "2026-08-16T18:40:13Z",
   "qualtricsBridgeBuild": "0.8.9-q9",
-  "verification": {
+  "entryPoints": {
+    "participant": "index.html",
+    "studyConductor": "study.html"
+  },
+  "supportedDefinitions": [
+    "nasa-tlx-weighted@1.0.0",
+    "nasa-tlx-raw@1.0.0",
+    "system-usability-scale@brooke-1996",
+    "researcher-supplied-or-reviewed-import@mean-or-sum-v1 (1-20 shared-scale items)"
+  ],
+  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
+  "claimBoundary": "Bounded shared runner for the documented integer single-choice profile, response structures and allowlisted scorers. The no-code and reviewed-import paths support 1-20 items on one shared integer scale with mean, sum and optional reverse scoring. A questionnaire needing a new scorer or mixed response scales requires code and review. The prototype does not establish permission, psychometric validity, equivalence, full WCAG conformance, general accessibility improvement or disability-group benefit.",
+  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
+  "releaseCandidate": "v0.8.0-rc.4",
+  "previousReleaseCandidate": "v0.8.0-rc.3",
+  "evaluationStatus": "Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/technical/release-policy, rendered-browser and cross-browser checks for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). That run belongs to bridge 0.8.8-q8 and is not evidence for q9. The current RF-02 candidate uses bridge 0.8.9-q9 and requires its own full pull-request gate plus post-fix Qualtrics and manual/AT retests. No respondent data are collected by the core evaluation, and none of these checks establish disabled-user benefit, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
+  "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
+  "manualVerification": {
+    "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
+    "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed at v0.8.0-rc.2 baseline",
+    "normalOnlineSubmissionAndAutomaticHandoff": "passed at v0.8.0-rc.2 baseline",
+    "offlineWarningBackupReconnectAndRetry": "passed at v0.8.0-rc.2 baseline",
+    "reloadInterruptionAndSameDeviceRecovery": "passed at v0.8.0-rc.2 baseline",
+    "phoneAndTabletRecovery": "passed at v0.8.0-rc.2 baseline",
+    "freshQualtricsQsfImportReviewConversionAndParticipantRun": "passed",
+    "freshLimeSurveyLssImportReviewConversionAndParticipantRun": "passed at v0.8.0-rc.3",
+    "realWorldSixGroupLssSelectionAndSpatialPresenceConversion": "passed locally",
+    "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
+    "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
+    "realWorldImportedLssNormalUclQualtricsSubmission20260801": "passed manually on the deployed build; the 0.8.7-q7 Qualtrics bridge and result schema are unchanged by the rc.4 voice and import hardening",
+    "postFixEnglishVoiceMicrophone20260801": "passed bounded primary-tester smoke check; the positive number route produced a visible proposal requiring explicit confirmation, while Not 4, Agree quickly and Strongly produced no answer; ordinary buttons remained available",
+    "postDeploymentOfflineReconnectRetryAndRefreshRecovery20260801": "passed by the primary tester; disconnected submission showed the connection/retry state rather than a false receipt, and reconnect, retry and refresh recovery completed normally",
+    "postDeploymentRealWorldGermanLsgImportAndParticipantRun20260801": "passed by the primary tester using the supervisor-supplied file; this verifies structure import and participant operation, not German spoken-label recognition",
+    "publicPagesConductorParticipantAndRecoverySmoke20260801": "passed on the synchronized public Pages candidate with synthetic data",
+    "twoQualtricsExportRowsAcceptedSchemaInstrumentAnswersAndScore": "passed"
+  },
+  "historicalQ8Verification": {
     "testFilesPassed": 20,
     "testsPassed": 198,
     "axeStructuralScansPassed": 12,
@@ -47,50 +83,27 @@
     "authoredContrastTokenTests": "passed",
     "longImportedLabelResponsiveWrapTests": "passed",
     "publicPagesConductorParticipantAndRecoverySmokeTest": "passed",
-    "highLevelProductionDependencyAudit": "0 vulnerabilities"
+    "highLevelProductionDependencyAudit": "0 vulnerabilities",
+    "evidenceBuild": "0.8.8-q8",
+    "evidenceRun": 31339674025,
+    "interpretation": "Historical PR evidence only. These counts and browser checks belong to the q8 candidate identified by run 31339674025 and must not be read as verification of q9."
   },
-  "entryPoints": {
-    "participant": "index.html",
-    "studyConductor": "study.html"
-  },
-  "supportedDefinitions": [
-    "nasa-tlx-weighted@1.0.0",
-    "nasa-tlx-raw@1.0.0",
-    "system-usability-scale@brooke-1996",
-    "researcher-supplied-or-reviewed-import@mean-or-sum-v1 (1-20 shared-scale items)"
-  ],
-  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
-  "claimBoundary": "Bounded shared runner for the documented integer single-choice profile, response structures and allowlisted scorers. The no-code and reviewed-import paths support 1-20 items on one shared integer scale with mean, sum and optional reverse scoring. A questionnaire needing a new scorer or mixed response scales requires code and review. The prototype does not establish permission, psychometric validity, equivalence, full WCAG conformance, general accessibility improvement or disability-group benefit.",
-  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
-  "releaseCandidate": "v0.8.0-rc.4",
-  "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "PR CI run 31339674025 passed all 20 unit/component/technical/release-policy files (198 tests), quantified fidelity/safety/reconstruction, real-browser and cross-browser checks, TypeScript, production, standalone and release synchronisation for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). Manual assistive-technology audit cells remain NT and a fresh bridge 0.8.9-q9 synthetic Qualtrics row remains pending. No respondent data are collected by the core evaluation. This is not final-main/deployment evidence or evidence of benefit for disabled users, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
-  "prCiEvidence": {
+  "historicalQ8PrCiEvidence": {
     "run": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025",
     "functionalHead": "882bd5ce0007e89f40fd42762338abea4714a7ca",
     "testedPullRequestMergeRevision": "c8eb9ddd9b1ca65614442756663c58efec48b630",
     "renderedEvidenceArtifactId": 9045449132,
     "technicalEvidenceArtifactId": 9045426794,
-    "scope": "Pull-request evidence only; final main, deployment, Qualtrics and manual-audit gates remain."
+    "scope": "Pull-request evidence only; final main, deployment, Qualtrics and manual-audit gates remain.",
+    "evidenceBuild": "0.8.8-q8"
   },
-  "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
-  "manualVerification": {
-    "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
-    "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed at v0.8.0-rc.2 baseline",
-    "normalOnlineSubmissionAndAutomaticHandoff": "passed at v0.8.0-rc.2 baseline",
-    "offlineWarningBackupReconnectAndRetry": "passed at v0.8.0-rc.2 baseline",
-    "reloadInterruptionAndSameDeviceRecovery": "passed at v0.8.0-rc.2 baseline",
-    "phoneAndTabletRecovery": "passed at v0.8.0-rc.2 baseline",
-    "freshQualtricsQsfImportReviewConversionAndParticipantRun": "passed",
-    "freshLimeSurveyLssImportReviewConversionAndParticipantRun": "passed at v0.8.0-rc.3",
-    "realWorldSixGroupLssSelectionAndSpatialPresenceConversion": "passed locally",
-    "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
-    "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
-    "realWorldImportedLssNormalUclQualtricsSubmission20260801": "passed manually on the deployed build; the 0.8.7-q7 Qualtrics bridge and result schema are unchanged by the rc.4 voice and import hardening",
-    "postFixEnglishVoiceMicrophone20260801": "passed bounded primary-tester smoke check; the positive number route produced a visible proposal requiring explicit confirmation, while Not 4, Agree quickly and Strongly produced no answer; ordinary buttons remained available",
-    "postDeploymentOfflineReconnectRetryAndRefreshRecovery20260801": "passed by the primary tester; disconnected submission showed the connection/retry state rather than a false receipt, and reconnect, retry and refresh recovery completed normally",
-    "postDeploymentRealWorldGermanLsgImportAndParticipantRun20260801": "passed by the primary tester using the supervisor-supplied file; this verifies structure import and participant operation, not German spoken-label recognition",
-    "publicPagesConductorParticipantAndRecoverySmoke20260801": "passed on the synchronized public Pages candidate with synthetic data",
-    "twoQualtricsExportRowsAcceptedSchemaInstrumentAnswersAndScore": "passed"
+  "rf02CandidateStatus": {
+    "bridgeBuild": "0.8.9-q9",
+    "scope": "RF-02 / A27 truthful pre-confirmation submission state only",
+    "unitAndBuildGate": "GitHub Actions run 31961904646 passed 208/208 Vitest tests and release build/synchronisation; that run did not include the Playwright rendered-browser gate.",
+    "firstPullRequestGate": "GitHub Actions run 31962088241 failed in Playwright because the e2e fixture and expected wording still used pre-RF-02 names.",
+    "followUpAttempt": "GitHub Actions run 31965045942 fixed the stale property and failure heading, but an optional duplicate Waiting for Qualtrics H2/H3 wording change caused a strict heading-locator failure; that optional H2 change was not retained.",
+    "requiredBeforeMerge": "A new full pull-request verification run must pass.",
+    "postFixA27Evidence": "Pending deployment, q9 Qualtrics installation and frozen-route retest."
   }
 }
