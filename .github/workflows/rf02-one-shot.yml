@@ -40,7 +40,7 @@ jobs:
               p.write_text(text.replace(old, new), encoding='utf-8')
               print(f'{path}: replaced {count} occurrence(s)')
 
-          # Version bump only in active install/build/test material. Historical evidence docs stay unchanged.
+          # q9 identifies the new integration contract. Historical evidence docs stay unchanged.
           active_version_files = [
               'source/src/result-sink.ts',
               'integrations/qualtrics/qualtrics-question.js',
@@ -58,7 +58,7 @@ jobs:
               if p.exists() and '0.8.8-q8' in p.read_text(encoding='utf-8'):
                   replace(path, '0.8.8-q8', '0.8.9-q9')
 
-          # result-sink.ts: make the page-side receipt semantics explicit.
+          # Child-side receipt semantics: this receipt acknowledges staging, not durable recording.
           replace(
               'source/src/result-sink.ts',
               'export interface ResultSinkReceipt {',
@@ -68,25 +68,25 @@ jobs:
           replace('source/src/result-sink.ts', 'ResultSinkReceipt', 'ResultSinkStagingReceipt')
           replace(
               'source/src/result-sink.ts',
-              "The study platform did not confirm receipt in time.",
-              "The study platform did not acknowledge the staged response in time.",
+              'The study platform did not confirm receipt in time.',
+              'The study platform did not acknowledge the staged response in time.',
               1,
           )
 
-          # Parent bridge: keep the wire protocol stable, but stop naming page-side staging as durable acceptance.
+          # Parent-side internal names and status wording. Wire message names stay unchanged for protocol stability.
           replace('integrations/qualtrics/qualtrics-question.js', 'acceptedSubmissionId', 'stagedSubmissionId')
           replace('integrations/qualtrics/qualtrics-question.js', 'sendReceipt', 'sendStagingReceipt')
           replace('integrations/qualtrics/qualtrics-question.js', 'completeAcceptedResponse', 'continueStagedResponse')
           replace(
               'integrations/qualtrics/qualtrics-question.js',
-              "  function sendStagingReceipt(target, accepted, submissionId, error) {",
-              "  // This protocol receipt is a page-side staging acknowledgement only.\n  // It does not prove that Qualtrics has durably recorded the response.\n  function sendStagingReceipt(target, accepted, submissionId, error) {",
+              '  function sendStagingReceipt(target, accepted, submissionId, error) {',
+              '  // This protocol receipt is a page-side staging acknowledgement only.\n  // It does not prove that Qualtrics has durably recorded the response.\n  function sendStagingReceipt(target, accepted, submissionId, error) {',
               1,
           )
           replace(
               'integrations/qualtrics/qualtrics-question.js',
-              "     * Commit marker: write only after every provenance, result and raw-record\n     * field has staged successfully. A partial write must never look accepted.",
-              "     * Staging marker: write only after every provenance, result and raw-record\n     * field has staged successfully. It does not prove durable Qualtrics recording.\n     * A partial write must never look staged successfully.",
+              '     * Commit marker: write only after every provenance, result and raw-record\n     * field has staged successfully. A partial write must never look accepted.',
+              '     * Staging marker: write only after every provenance, result and raw-record\n     * field has staged successfully. It does not prove durable Qualtrics recording.\n     * A partial write must never look staged successfully.',
               1,
           )
           replace(
@@ -96,7 +96,7 @@ jobs:
               1,
           )
 
-          # Participant completion state: bridge staging is not durable host recording.
+          # Participant state and wording: no positive durable-recording claim before the host-owned end page.
           replace('source/src/accessible-nasa-tlx.ts', 'completionSavedByHost', 'completionStagedByBridge')
           replace(
               'source/src/accessible-nasa-tlx.ts',
@@ -104,93 +104,41 @@ jobs:
               'Your responses have been prepared. The study configuration does not display the calculated score on the participant page.',
               1,
           )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              '<h3>Qualtrics has not confirmed a recorded response</h3>',
-              '<h3>Qualtrics did not confirm this response</h3>',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              'recorded result page did not open. Reconnect to the internet, keep or download',
-              'Qualtrics completion page did not open. Reconnect to the internet, keep or download',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              'Tell the study conductor if the recorded result page still does not appear.',
-              'Tell the study conductor if the Qualtrics completion page still does not appear.',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              '<p>This page will continue automatically. No action is needed.</p>',
-              '<p>The survey page received the response data. Keep this page open while Qualtrics continues.</p>',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              'If the recorded result page does not',
-              'If the Qualtrics completion page does not',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              'until the recorded result page appears.',
-              'until the Qualtrics completion page appears.',
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              "return 'Submitting response. No action is needed.';",
-              "return 'Waiting for Qualtrics. Keep this page open.';",
-              1,
-          )
-          replace(
-              'source/src/accessible-nasa-tlx.ts',
-              '// A successful Qualtrics hand-off is a short automatic transition. Do not',
-              '// A staged Qualtrics hand-off is a short automatic transition. It is not durable confirmation. Do not',
-              1,
-          )
+          replace('source/src/accessible-nasa-tlx.ts', '<h3>Qualtrics has not confirmed a recorded response</h3>', '<h3>Qualtrics did not confirm this response</h3>', 1)
+          replace('source/src/accessible-nasa-tlx.ts', 'recorded result page did not open. Reconnect to the internet, keep or download', 'Qualtrics completion page did not open. Reconnect to the internet, keep or download', 1)
+          replace('source/src/accessible-nasa-tlx.ts', 'Tell the study conductor if the recorded result page still does not appear.', 'Tell the study conductor if the Qualtrics completion page still does not appear.', 1)
+          replace('source/src/accessible-nasa-tlx.ts', '<p>This page will continue automatically. No action is needed.</p>', '<p>The survey page received the response data. Keep this page open while Qualtrics continues.</p>', 1)
+          replace('source/src/accessible-nasa-tlx.ts', 'If the recorded result page does not', 'If the Qualtrics completion page does not', 1)
+          replace('source/src/accessible-nasa-tlx.ts', 'until the recorded result page appears.', 'until the Qualtrics completion page appears.', 1)
+          replace('source/src/accessible-nasa-tlx.ts', "return 'Submitting response. No action is needed.';", "return 'Waiting for Qualtrics. Keep this page open.';", 1)
+          replace('source/src/accessible-nasa-tlx.ts', '// A successful Qualtrics hand-off is a short automatic transition. Do not', '// A staged Qualtrics hand-off is a short automatic transition. It is not durable confirmation. Do not', 1)
 
-          # Unit/component expectations: explicitly guard against the pre-fix false-success wording.
-          replace(
-              'source/tests/study-component.test.ts',
-              "expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');",
-              "expect(component.querySelector('.save-status')?.textContent).toContain('Keep this page open');",
-              1,
-          )
-          replace(
-              'source/tests/study-component.test.ts',
-              "expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');",
-              "expect(component.querySelector('.save-status')?.textContent).not.toContain('No action is needed');",
-              1,
-          )
-          marker = "expect(component.textContent).toContain('Download JSON backup');"
+          # Update deterministic tests to the new truthful contract and add an explicit false-success guard.
+          replace('source/tests/study-component.test.ts', "expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');", "expect(component.querySelector('.save-status')?.textContent).toContain('Keep this page open');", 1)
+          replace('source/tests/study-component.test.ts', "expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');", "expect(component.querySelector('.save-status')?.textContent).not.toContain('No action is needed');", 1)
+          replace('source/tests/study-component.test.ts', "'Submitting response. No action is needed.',", "'Waiting for Qualtrics. Keep this page open.',", 1)
+          replace('source/tests/study-component.test.ts', "'Qualtrics has not confirmed a recorded response',", "'Qualtrics did not confirm this response',", 1)
+
           p = Path('source/tests/study-component.test.ts')
           text = p.read_text(encoding='utf-8')
           target = "expect(component.textContent).not.toContain('Your responses have been recorded');"
           if target not in text:
-              pos = text.find(marker, text.find("Waiting for Qualtrics"))
+              marker = "expect(component.textContent).toContain('Download JSON backup');"
+              pos = text.find(marker, text.find('Waiting for Qualtrics'))
               if pos == -1:
                   raise SystemExit('study-component.test.ts: could not locate staged-state assertion block')
-              text = text[:pos] + target + "\n    " + text[pos:]
+              text = text[:pos] + target + '\n    ' + text[pos:]
               p.write_text(text, encoding='utf-8')
               print('study-component.test.ts: added false-success regression assertion')
 
-          replace(
-              'source/tests/result-sink.test.ts',
-              '/did not confirm receipt in time/i',
-              '/did not acknowledge the staged response in time/i',
-              1,
-          )
+          replace('source/tests/result-sink.test.ts', '/did not confirm receipt in time/i', '/did not acknowledge the staged response in time/i', 1)
+          replace('source/tests/result-sink.test.ts', "expect(bridge).toContain('Submitting response. This page will continue automatically.');", "expect(bridge).toContain('Waiting for Qualtrics. Keep this page open.');", 1)
+          replace('source/tests/result-sink.test.ts', "      'Submitting response. This page will continue automatically.',", "      'Waiting for Qualtrics. Keep this page open.',", 1)
 
-          # Strong guard: the participant runner must not contain the pre-fix positive recorded claim.
+          # Strong scope guards.
           participant = Path('source/src/accessible-nasa-tlx.ts').read_text(encoding='utf-8')
           if 'Your responses have been recorded' in participant:
               raise SystemExit('RF-02 guard failed: pre-fix positive recorded claim still present in participant runner')
-
-          # The host-owned end-of-survey message is intentionally allowed to say recorded.
           host_end = Path('integrations/qualtrics/end-of-survey-message.txt').read_text(encoding='utf-8')
           if 'recorded successfully' not in host_end:
               raise SystemExit('RF-02 guard failed: host-owned completion wording was unexpectedly changed')
