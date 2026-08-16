@@ -59,7 +59,7 @@ uploading repository files.
    setting before collecting the verification row.
 4. Put one Text/Graphic question on its own page.
 5. Open the versioned
-   [`study.html?package=0.8.8-q8`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.8-q8)
+   [`study.html?package=0.8.9-q9`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.9-q9)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 6. Generate the configuration.
@@ -77,7 +77,7 @@ uploading repository files.
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
-`0.8.8-q8`. If generated JavaScript shows an earlier value, close that stale tab and
+`0.8.9-q9`. If generated JavaScript shows an earlier value, close that stale tab and
 reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
@@ -97,7 +97,7 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.8-q8` and says the diagnostic fields were staged;
+  connected`, names bridge `0.8.9-q9` and says the diagnostic fields were staged;
 - the participant application fills the browser viewport and exposes one visible
   vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
   create a second scrolling region.
@@ -116,7 +116,7 @@ completed synthetic response whose newly dated Data & Analysis row contains
 preflight. Older rows are not backfilled.
 
 Bridge diagnostics use `__js_AQP_BRIDGE_READY = 1` and
-`__js_AQP_BRIDGE_BUILD = 0.8.8-q8`. `__js_AQP_ACCEPTED` is left unset until a
+`__js_AQP_BRIDGE_BUILD = 0.8.9-q9`. `__js_AQP_ACCEPTED` is left unset until a
 complete result has passed validation. This keeps a connection diagnostic separate
 from an accepted response and prevents a failed or abandoned run from being labelled
 as `AQP_ACCEPTED = 0`. Rows created with older bridge packages keep their original
@@ -124,7 +124,7 @@ values and must be interpreted using that package's documentation.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Bridge `0.8.8-q8` uses a two-way ready handshake with an exact
+listener exists. Bridge `0.8.9-q9` uses a two-way ready handshake with an exact
 package fingerprint and bounded parent retries. It moves the live wrapper to the
 document body, fixes it to the visual viewport, disables outer-page scrolling and
 lets the participant document own the single scrollbar. It no longer depends on

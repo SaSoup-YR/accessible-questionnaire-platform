@@ -615,10 +615,11 @@ describe('study-conductor and participant separation', () => {
     expect(submitted).toHaveLength(1);
     expect(loadCompletedResults()).toHaveLength(1);
     expect(component.querySelector('.save-status')?.textContent).toContain('Waiting for Qualtrics');
-    expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');
-    expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');
+    expect(component.querySelector('.save-status')?.textContent).toContain('Keep this page open');
+    expect(component.querySelector('.save-status')?.textContent).not.toContain('No action is needed');
     expect(component.querySelector('.save-status')?.hasAttribute('role')).toBe(false);
     expect(component.textContent).not.toContain('Scheduled for automatic completion');
+    expect(component.textContent).not.toContain('Your responses have been recorded');
     expect(component.textContent).toContain('Download JSON backup');
     expect(component.textContent).toContain('Download CSV backup');
     expect(component.querySelector('.submission-fallback')?.textContent).toContain(
@@ -628,7 +629,7 @@ describe('study-conductor and participant separation', () => {
       'Wait for the error instructions',
     );
     expect((component as any).currentStepSpeech()).toBe(
-      'Submitting response. No action is needed.',
+      'Waiting for Qualtrics. Keep this page open.',
     );
     expect(
       speak.mock.calls.map(([utterance]) => (utterance as FakeUtterance).text),
@@ -688,7 +689,7 @@ describe('study-conductor and participant separation', () => {
     await component.updateComplete;
 
     expect(component.querySelector('#remote-recording-error')?.textContent).toContain(
-      'Qualtrics has not confirmed a recorded response',
+      'Qualtrics did not confirm this response',
     );
     expect(component.querySelector('#remote-recording-error')?.textContent).toContain(
       'Reconnect to the internet',
