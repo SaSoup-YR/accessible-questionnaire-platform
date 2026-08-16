@@ -1,0 +1,227 @@
+name: One-shot RF-02 repair
+
+on:
+  push:
+    branches:
+      - fix/rf02-truthful-qualtrics-state
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/rf02-truthful-qualtrics-state
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Apply narrow RF-02 patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, expected=None):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if expected is not None and count != expected:
+                  raise SystemExit(f'{path}: expected {expected} matches, found {count}: {old!r}')
+              if count == 0:
+                  raise SystemExit(f'{path}: no match: {old!r}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+              print(f'{path}: replaced {count} occurrence(s)')
+
+          # Version bump only in active install/build/test material. Historical evidence docs stay unchanged.
+          active_version_files = [
+              'source/src/result-sink.ts',
+              'integrations/qualtrics/qualtrics-question.js',
+              'integrations/qualtrics/question-html-template.html',
+              'integrations/qualtrics/README.md',
+              'docs/QUALTRICS-INTEGRATION.md',
+              'README.md',
+              'TESTING.md',
+              'docs/CUSTOM-QUESTIONNAIRE-TEST.md',
+              'source/tests/conductor-component.test.ts',
+              'BUILD-INFO.json',
+          ]
+          for path in active_version_files:
+              p = Path(path)
+              if p.exists() and '0.8.8-q8' in p.read_text(encoding='utf-8'):
+                  replace(path, '0.8.8-q8', '0.8.9-q9')
+
+          # result-sink.ts: make the page-side receipt semantics explicit.
+          replace(
+              'source/src/result-sink.ts',
+              'export interface ResultSinkReceipt {',
+              '/**\n * Page-side staging acknowledgement from the approved host bridge.\n * It proves that the bridge accepted this submission ID for staging.\n * It does not prove that Qualtrics has durably recorded the response.\n */\nexport interface ResultSinkStagingReceipt {',
+              1,
+          )
+          replace('source/src/result-sink.ts', 'ResultSinkReceipt', 'ResultSinkStagingReceipt')
+          replace(
+              'source/src/result-sink.ts',
+              "The study platform did not confirm receipt in time.",
+              "The study platform did not acknowledge the staged response in time.",
+              1,
+          )
+
+          # Parent bridge: keep the wire protocol stable, but stop naming page-side staging as durable acceptance.
+          replace('integrations/qualtrics/qualtrics-question.js', 'acceptedSubmissionId', 'stagedSubmissionId')
+          replace('integrations/qualtrics/qualtrics-question.js', 'sendReceipt', 'sendStagingReceipt')
+          replace('integrations/qualtrics/qualtrics-question.js', 'completeAcceptedResponse', 'continueStagedResponse')
+          replace(
+              'integrations/qualtrics/qualtrics-question.js',
+              "  function sendStagingReceipt(target, accepted, submissionId, error) {",
+              "  // This protocol receipt is a page-side staging acknowledgement only.\n  // It does not prove that Qualtrics has durably recorded the response.\n  function sendStagingReceipt(target, accepted, submissionId, error) {",
+              1,
+          )
+          replace(
+              'integrations/qualtrics/qualtrics-question.js',
+              "     * Commit marker: write only after every provenance, result and raw-record\n     * field has staged successfully. A partial write must never look accepted.",
+              "     * Staging marker: write only after every provenance, result and raw-record\n     * field has staged successfully. It does not prove durable Qualtrics recording.\n     * A partial write must never look staged successfully.",
+              1,
+          )
+          replace(
+              'integrations/qualtrics/qualtrics-question.js',
+              "        'Submitting response. This page will continue automatically.',",
+              "        'Waiting for Qualtrics. Keep this page open.',",
+              1,
+          )
+
+          # Participant completion state: bridge staging is not durable host recording.
+          replace('source/src/accessible-nasa-tlx.ts', 'completionSavedByHost', 'completionStagedByBridge')
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              'Your responses have been recorded. The study configuration does not display the calculated score on the participant page.',
+              'Your responses have been prepared. The study configuration does not display the calculated score on the participant page.',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              '<h3>Qualtrics has not confirmed a recorded response</h3>',
+              '<h3>Qualtrics did not confirm this response</h3>',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              'recorded result page did not open. Reconnect to the internet, keep or download',
+              'Qualtrics completion page did not open. Reconnect to the internet, keep or download',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              'Tell the study conductor if the recorded result page still does not appear.',
+              'Tell the study conductor if the Qualtrics completion page still does not appear.',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              '<p>This page will continue automatically. No action is needed.</p>',
+              '<p>The survey page received the response data. Keep this page open while Qualtrics continues.</p>',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              'If the recorded result page does not',
+              'If the Qualtrics completion page does not',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              'until the recorded result page appears.',
+              'until the Qualtrics completion page appears.',
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              "return 'Submitting response. No action is needed.';",
+              "return 'Waiting for Qualtrics. Keep this page open.';",
+              1,
+          )
+          replace(
+              'source/src/accessible-nasa-tlx.ts',
+              '// A successful Qualtrics hand-off is a short automatic transition. Do not',
+              '// A staged Qualtrics hand-off is a short automatic transition. It is not durable confirmation. Do not',
+              1,
+          )
+
+          # Unit/component expectations: explicitly guard against the pre-fix false-success wording.
+          replace(
+              'source/tests/study-component.test.ts',
+              "expect(component.querySelector('.save-status')?.textContent).toContain('No action is needed');",
+              "expect(component.querySelector('.save-status')?.textContent).toContain('Keep this page open');",
+              1,
+          )
+          replace(
+              'source/tests/study-component.test.ts',
+              "expect(component.querySelector('.save-status')?.textContent).not.toContain('keep this page open');",
+              "expect(component.querySelector('.save-status')?.textContent).not.toContain('No action is needed');",
+              1,
+          )
+          marker = "expect(component.textContent).toContain('Download JSON backup');"
+          p = Path('source/tests/study-component.test.ts')
+          text = p.read_text(encoding='utf-8')
+          target = "expect(component.textContent).not.toContain('Your responses have been recorded');"
+          if target not in text:
+              pos = text.find(marker, text.find("Waiting for Qualtrics"))
+              if pos == -1:
+                  raise SystemExit('study-component.test.ts: could not locate staged-state assertion block')
+              text = text[:pos] + target + "\n    " + text[pos:]
+              p.write_text(text, encoding='utf-8')
+              print('study-component.test.ts: added false-success regression assertion')
+
+          replace(
+              'source/tests/result-sink.test.ts',
+              '/did not confirm receipt in time/i',
+              '/did not acknowledge the staged response in time/i',
+              1,
+          )
+
+          # Strong guard: the participant runner must not contain the pre-fix positive recorded claim.
+          participant = Path('source/src/accessible-nasa-tlx.ts').read_text(encoding='utf-8')
+          if 'Your responses have been recorded' in participant:
+              raise SystemExit('RF-02 guard failed: pre-fix positive recorded claim still present in participant runner')
+
+          # The host-owned end-of-survey message is intentionally allowed to say recorded.
+          host_end = Path('integrations/qualtrics/end-of-survey-message.txt').read_text(encoding='utf-8')
+          if 'recorded successfully' not in host_end:
+              raise SystemExit('RF-02 guard failed: host-owned completion wording was unexpectedly changed')
+          PY
+
+      - name: Install dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run unit and component tests
+        working-directory: source
+        run: npm test
+
+      - name: Build and synchronize release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Check RF-02 scope and active bridge markers
+        run: |
+          echo 'Positive recorded claims in active participant/integration source:'
+          grep -RIn "Your responses have been recorded" source/src integrations/qualtrics/qualtrics-question.js || true
+          echo 'Active q9 markers:'
+          grep -RIn "0.8.9-q9" source/src/result-sink.ts integrations/qualtrics/qualtrics-question.js integrations/qualtrics/question-html-template.html README.md BUILD-INFO.json
+          echo 'Changed files:'
+          git status --short
+
+      - name: Commit the RF-02 repair and remove this one-shot workflow
+        run: |
+          rm .github/workflows/rf02-one-shot.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "RF-02: false success -> truthful staged state; expect A27 post-fix retest"
+          git push origin HEAD:fix/rf02-truthful-qualtrics-state
