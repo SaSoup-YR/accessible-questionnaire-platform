@@ -5,7 +5,7 @@ export const QUALTRICS_RECEIPT_MESSAGE = 'accessible-questionnaire:qualtrics-rec
 export const QUALTRICS_PARENT_READY_MESSAGE = 'accessible-questionnaire:qualtrics-parent-ready:v2';
 export const QUALTRICS_CHILD_READY_MESSAGE = 'accessible-questionnaire:qualtrics-child-ready:v2';
 export const QUALTRICS_ADVANCE_FAILED_MESSAGE = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-export const QUALTRICS_BRIDGE_BUILD = '0.8.9-q9';
+export const QUALTRICS_BRIDGE_BUILD = '0.8.10-q10';
 
 export type QualtricsBridgeState = 'connecting' | 'connected' | 'failed';
 
