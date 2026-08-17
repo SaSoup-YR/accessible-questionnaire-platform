@@ -42,7 +42,6 @@ function completeSusRecord() {
     prototypeVersion: '0.8.0',
     instrumentId: definition.id,
     definitionHash: questionnaireDefinitionHash(definition),
-    questionnaireDefinition: definition,
     studyId: 'A27-Q10',
     studyTitle: 'A27 q10 recovery test',
     taskLabel: 'Complete the fixed SUS route',
