@@ -7,10 +7,13 @@
 - `qualtrics-question.js` belongs in that question's JavaScript editor. It validates
   a Version 4 record, stages `AQP_*` fields with `setJSEmbeddedData`, acknowledges a
   matching submission ID and starts native Qualtrics advancement.
-  Bridge build `0.8.9-q9` keeps the participant iframe hidden until an exact-origin
+  Bridge build `0.8.10-q10` keeps the participant iframe hidden until an exact-origin
   and exact-build handshake succeeds. It moves the live wrapper to a fixed
   full-browser viewport, disables the surrounding Qualtrics scroll and lets the
-  participant document own the single visible scrollbar.
+  participant document own the single visible scrollbar. During post-staging
+  failed-advance recovery it restores the outer layout without re-parenting the
+  already-running participant iframe; full DOM restoration remains in setup,
+  connection, staging-failure and unload paths.
 - `embedded-data-fields.txt` lists the 63 fields to declare near the start of Survey
   Flow. Keep `__js_` in Survey Flow; JavaScript calls intentionally omit it.
 - `end-of-survey-message.txt` is optional ordinary text for a custom End of Survey

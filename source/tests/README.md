@@ -44,6 +44,10 @@ verified release build.
 - `result-sink.test.ts` — exact-origin and exact-build handshakes, full-viewport
   one-scroll presentation, generic 60-field SUS staging, bounded handoff, watchdog
   and failure navigation.
+- `a27-recovery-layout.test.ts` — executes the real Qualtrics bridge in jsdom and
+  checks that post-staging watchdog recovery restores outer layout styles without
+  re-parenting the live participant iframe, while still restoring native Next and
+  sending the advance-failure message.
 - `conductor-component.test.ts` — role separation, three clearly labelled
   questionnaire-addition routes, reviewed QSF conversion, explicit LimeSurvey
   group selection, no-code custom
@@ -54,8 +58,15 @@ verified release build.
 - `focus-style.test.ts` — authored focus, control, selected, gaze and link contrast.
 - `standalone.test.ts` — Version 0.8 single-file packaging and component boot.
 - `webgazer-adapter.test.ts` — secure-context and dwell-state boundaries.
+- `e2e-support/a27-iframe-lifecycle.spec.ts` — real-browser Chromium, Firefox and
+  Playwright WebKit mechanism evidence that moving a connected iframe between DOM
+  parents recreates its child document, whereas the q10-style style-only recovery
+  changes preserve in-memory child state. This supports the repair hypothesis; it
+  is not assistive-technology or Qualtrics-host evidence.
 
 jsdom cannot validate the mobile visual viewport, rendered contrast,
-assistive-technology/browser combinations, speech-service accuracy or webcam gaze
-accuracy. Passing automation is technical evidence and does not establish complete
-WCAG conformance, accessibility benefit or psychometric equivalence.
+assistive-technology/browser combinations, speech-service accuracy, webcam gaze
+accuracy or iframe browsing-context recreation. The rendered Playwright checks add
+browser-engine evidence for selected mechanisms and UI states, but passing automation
+is technical evidence and does not establish complete WCAG conformance,
+accessibility benefit, psychometric equivalence or an A27 manual-audit Pass.

@@ -13,7 +13,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var parentReadyType = 'accessible-questionnaire:qualtrics-parent-ready:v2';
   var childReadyType = 'accessible-questionnaire:qualtrics-child-ready:v2';
   var advanceFailedType = 'accessible-questionnaire:qualtrics-advance-failed:v2';
-  var bridgeBuild = '0.8.9-q9';
+  var bridgeBuild = '0.8.10-q10';
   var iframe = document.getElementById('accessible-questionnaire-frame');
   var status = document.getElementById('accessible-questionnaire-collection-status');
   var liveQuestion = document.getElementById('accessible-questionnaire-live-question');
@@ -124,7 +124,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  function restoreQualtricsQuestionLayout() {
+  function restoreRelaxedLayoutStyles() {
     for (var index = relaxedLayoutStyles.length - 1; index >= 0; index -= 1) {
       var entry = relaxedLayoutStyles[index];
       if (!entry.element || !entry.element.style) continue;
@@ -139,6 +139,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       }
     }
     relaxedLayoutStyles = [];
+  }
+
+  function restoreQualtricsQuestionLayout() {
+    restoreRelaxedLayoutStyles();
     if (liveQuestion && originalLiveParent && liveQuestion.parentNode !== originalLiveParent) {
       if (
         originalLiveNextSibling &&
@@ -152,8 +156,12 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     }
   }
 
-  function releaseFullscreenForNativeNavigation() {
-    restoreQualtricsQuestionLayout();
+  function releaseFullscreenForNativeNavigation(preserveLiveQuestion) {
+    if (preserveLiveQuestion === true) {
+      restoreRelaxedLayoutStyles();
+    } else {
+      restoreQualtricsQuestionLayout();
+    }
     setImportantStyle(liveQuestion, 'position', 'relative');
     setImportantStyle(liveQuestion, 'inset', 'auto');
     setImportantStyle(liveQuestion, 'width', '100%');
@@ -217,7 +225,11 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         'then select Next to try again. You may download a backup before closing.'
       : 'Qualtrics could not confirm this response. Reconnect to the internet, then select Next to try again. ' +
         'Keep this page open or download one backup before closing it.';
-    releaseFullscreenForNativeNavigation();
+    // Keep the already-running participant iframe in the same DOM parent during
+    // post-staging recovery. Moving a live iframe back into the Qualtrics question
+    // container can recreate its browsing context, which would discard the in-memory
+    // completion/recovery state before the advance-failure message can focus it.
+    releaseFullscreenForNativeNavigation(true);
     setImportantStyle(status, 'position', 'sticky');
     setImportantStyle(status, 'top', '0');
     setImportantStyle(status, 'z-index', '2147483001');
