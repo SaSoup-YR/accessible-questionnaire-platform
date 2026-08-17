@@ -1,12 +1,12 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "Draft-PR RF-02 correction candidate. Full q9 pull-request verification has passed for the RF-02 executable tree; the latest verification run after evidence-only BUILD-INFO updates also passed. This is still not a final release evidence point until main/deployment, synthetic Qualtrics and post-fix manual/AT gates pass.",
+  "releaseStatus": "Draft PR #70 A27 q10 recovery candidate. The q10 executable tree at head 1bd4ed28d40aa1503f0dc01869f49be5b0910c9c passed the full pull-request verification gate in GitHub Actions run 32036262259. Documentation and browser-mechanism hardening are follow-up evidence work. A27 remains Fail until q10 is installed in the Qualtrics fault-test copy and the frozen R1-R4 manual assistive-technology retest passes.",
   "releaseRepository": "SaSoup-YR/accessible-questionnaire-platform",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-08-16T18:40:13Z",
-  "qualtricsBridgeBuild": "0.8.9-q9",
+  "builtAt": "2026-08-17T14:09:00Z",
+  "qualtricsBridgeBuild": "0.8.10-q10",
   "entryPoints": {
     "participant": "index.html",
     "studyConductor": "study.html"
@@ -22,7 +22,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "v0.8.0-rc.4",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/technical/release-policy, rendered-browser and cross-browser checks for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). That run belongs to bridge 0.8.8-q8 and is not evidence for q9. RF-02 q9 verification is separate: run 31965466817 passed the executable RF-02 tree, run 31965666950 passed after the first evidence-only BUILD-INFO update, and run 31965856205 passed after the next evidence-only BUILD-INFO update. Across these q9 gates, automated tests, rendered-browser regression, cross-browser support matrix, production/standalone/release builds, artifact publication and committed-output synchronization completed successfully. Post-fix Qualtrics and manual/AT retests remain required. No respondent data are collected by the core evaluation, and none of these checks establish disabled-user benefit, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
+  "evaluationStatus": "Historical q8 PR CI evidence: run 31339674025 passed the documented unit/component/technical/release-policy, rendered-browser and cross-browser checks for functional head 882bd5ce0007e89f40fd42762338abea4714a7ca (tested PR merge revision c8eb9ddd9b1ca65614442756663c58efec48b630). That run belongs to bridge 0.8.8-q8 and is not evidence for q9 or q10. RF-02 q9 verification is separate: runs 31965466817, 31965666950 and 31965856205 passed the executable RF-02 tree and evidence-only BUILD-INFO updates. q9 manual A27 fault injection then showed that the premature success mechanism had been removed but the participant iframe returned to the introduction during failed-advance recovery, so the frozen A27 criterion remained Fail. PR #70 q10 addresses only that residual recovery-state mechanism. Its executable head 1bd4ed28d40aa1503f0dc01869f49be5b0910c9c passed run 32036262259, including automated tests, rendered-browser accessibility regression, cross-browser support matrix, production/standalone/release builds, artifact publication and committed-output synchronization. None of these automated checks changes A27 to Pass; q10 Qualtrics installation and frozen R1-R4 manual/AT retests remain required. No respondent data are collected by the core evaluation, and none of these checks establish disabled-user benefit, complete WCAG conformance, psychometric equivalence, multilingual label recognition or permission to recruit.",
   "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
   "manualVerification": {
     "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
@@ -52,7 +52,7 @@
     "exportReconstruction": "passed in PR CI run 31339674025: 8/8 exports and 31/31 item responses, 0 mismatches",
     "renderedChromiumAccessibilityRegression": "passed in PR CI run 31339674025: 12 states x 5 profiles = 60 scans with 0 violations, incomplete checks, overflow failures, target-size failures or missing states",
     "crossBrowserCapabilityMatrix": "passed in PR CI run 31339674025: Chromium, Firefox and Playwright WebKit rendered the smoke route; built-in speech recognition was absent in Firefox and Linux WebKit",
-    "manualAssistiveTechnologyAudit": "protocol v1.0 frozen; NVDA/Firefox, NVDA/Chrome, VoiceOver/Safari and OS voice-control cells not yet tested",
+    "manualAssistiveTechnologyAudit": "protocol v1.0 frozen; this field describes the historical q8 checkpoint only; later pre-fix R1-R4 audit evidence is maintained separately",
     "typescriptBuild": "passed",
     "productionBuild": "passed",
     "standaloneBuild": "passed",
@@ -86,7 +86,7 @@
     "highLevelProductionDependencyAudit": "0 vulnerabilities",
     "evidenceBuild": "0.8.8-q8",
     "evidenceRun": 31339674025,
-    "interpretation": "Historical PR evidence only. These counts and browser checks belong to the q8 candidate identified by run 31339674025 and must not be read as verification of q9."
+    "interpretation": "Historical PR evidence only. These counts and browser checks belong to the q8 candidate identified by run 31339674025 and must not be read as verification of q9 or q10."
   },
   "historicalQ8PrCiEvidence": {
     "run": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025",
@@ -97,7 +97,7 @@
     "scope": "Pull-request evidence only; final main, deployment, Qualtrics and manual-audit gates remain.",
     "evidenceBuild": "0.8.8-q8"
   },
-  "rf02CandidateStatus": {
+  "rf02Q9HistoricalStatus": {
     "bridgeBuild": "0.8.9-q9",
     "scope": "RF-02 / A27 truthful pre-confirmation submission state only",
     "unitAndBuildGate": "GitHub Actions run 31961904646 passed 208/208 Vitest tests and release build/synchronisation; that run did not include the Playwright rendered-browser gate.",
@@ -105,7 +105,18 @@
     "followUpAttempt": "GitHub Actions run 31965045942 fixed the stale property and failure heading, but an optional duplicate Waiting for Qualtrics H2/H3 wording change caused a strict heading-locator failure; that optional H2 change was not retained.",
     "preflightGate": "GitHub Actions run 31965265953 passed 208/208 Vitest tests, the rendered-browser accessibility regression, cross-browser support matrix, release build/synchronization and RF-02 wording/q9 scope guards.",
     "q9PullRequestVerification": "GitHub Actions runs 31965466817, 31965666950 and 31965856205 all completed successfully; the latter two followed evidence-only BUILD-INFO updates. The executable RF-02 product tree was unchanged across those documentation-only commits.",
-    "requiredBeforeMerge": "Full pull-request verification gate passed; code review and merge authorization remain.",
-    "postFixA27Evidence": "Pending deployment, q9 Qualtrics installation and frozen-route retest."
+    "mergeResult": "RF-02 q9 was merged to main as 21e9f767d47dac80e9e666f4bc617a48d11ec04c.",
+    "postFixA27Evidence": "q9 manual fault-injection retest removed the premature pre-confirmation success claim, but the participant iframe reset to the introduction during failed-advance recovery; the frozen A27 criterion therefore remained Fail."
+  },
+  "a27Q10CandidateStatus": {
+    "bridgeBuild": "0.8.10-q10",
+    "baseMain": "21e9f767d47dac80e9e666f4bc617a48d11ec04c",
+    "reviewedExecutableHead": "1bd4ed28d40aa1503f0dc01869f49be5b0910c9c",
+    "scope": "Residual A27 post-staging failed-advance recovery only; A26 and A28 are not claimed fixed.",
+    "repairHypothesis": "The q9 recovery path re-parented the already-running participant iframe into its original Qualtrics DOM parent. q10 separates outer-style restoration from DOM-parent restoration and, only for post-staging failed-advance recovery, keeps the live iframe in its current parent. This is a tested repair hypothesis, not a final A27 result.",
+    "q10PullRequestVerification": "GitHub Actions run 32036262259 completed successfully at executable head 1bd4ed28d40aa1503f0dc01869f49be5b0910c9c, including automated tests, real-browser accessibility regression, cross-browser capability checks, production/standalone/release builds and committed-output synchronization.",
+    "reviewFollowUp": "Before manual retest, the q10 installation documentation and BUILD-INFO identity are aligned to 0.8.10-q10, the A27 retest explicitly records recovery-state retention and restored Next discoverability/operability, and a real-browser iframe lifecycle test is added as mechanism evidence.",
+    "knownScopeFollowUp": "The staging-catch path still performs full iframe re-parenting and belongs to the separate A28 repair family; it is deliberately not changed in PR #70.",
+    "postFixA27Evidence": "Pending q10 Qualtrics installation and frozen R1-R4 fault-injection manual assistive-technology retest. A27 remains Fail until those retained route observations satisfy every frozen pass condition."
   }
 }
