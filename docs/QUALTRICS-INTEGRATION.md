@@ -59,7 +59,7 @@ uploading repository files.
    setting before collecting the verification row.
 4. Put one Text/Graphic question on its own page.
 5. Open the versioned
-   [`study.html?package=0.8.9-q9`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.9-q9)
+   [`study.html?package=0.8.10-q10`](https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.10-q10)
    entry point, choose the questionnaire, select UCL Qualtrics collection,
    paste the preview or active survey URL and complete the study fields.
 6. Generate the configuration.
@@ -77,7 +77,7 @@ uploading repository files.
     Publish**. Draft changes do not update an already active distribution link.
 
 The conductor heading and its Current Qualtrics generator notice must both show
-`0.8.9-q9`. If generated JavaScript shows an earlier value, close that stale tab and
+`0.8.10-q10`. If generated JavaScript shows an earlier value, close that stale tab and
 reopen the versioned link above. Do not paste assets from the stale tab.
 
 The JavaScript uses `setJSEmbeddedData` with names that omit `__js_`; Qualtrics maps
@@ -97,7 +97,7 @@ In Preview before submission:
 - the iframe remains hidden until the exact-origin child handshake succeeds, then
   the configured participant page becomes visible;
 - the status changes from `Connecting the questionnaire` to `The questionnaire is
-  connected`, names bridge `0.8.9-q9` and says the diagnostic fields were staged;
+  connected`, names bridge `0.8.10-q10` and says the diagnostic fields were staged;
 - the participant application fills the browser viewport and exposes one visible
   vertical scrollbar at the browser edge. The surrounding Qualtrics page does not
   create a second scrolling region.
@@ -116,7 +116,7 @@ completed synthetic response whose newly dated Data & Analysis row contains
 preflight. Older rows are not backfilled.
 
 Bridge diagnostics use `__js_AQP_BRIDGE_READY = 1` and
-`__js_AQP_BRIDGE_BUILD = 0.8.9-q9`. `__js_AQP_ACCEPTED` is left unset until a
+`__js_AQP_BRIDGE_BUILD = 0.8.10-q10`. `__js_AQP_ACCEPTED` is left unset until a
 complete result has passed validation. This keeps a connection diagnostic separate
 from an accepted response and prevents a failed or abandoned run from being labelled
 as `AQP_ACCEPTED = 0`. Rows created with older bridge packages keep their original
@@ -124,11 +124,17 @@ values and must be interpreted using that package's documentation.
 
 Qualtrics invokes question JavaScript in `addOnReady`, after the page is displayed.
 The child iframe can therefore finish its first render before the parent message
-listener exists. Bridge `0.8.9-q9` uses a two-way ready handshake with an exact
+listener exists. Bridge `0.8.10-q10` uses a two-way ready handshake with an exact
 package fingerprint and bounded parent retries. It moves the live wrapper to the
 document body, fixes it to the visual viewport, disables outer-page scrolling and
 lets the participant document own the single scrollbar. It no longer depends on
 measuring and copying a changing child height through Qualtrics theme wrappers.
+During post-staging failed-advance recovery, q10 restores the outer page styles but
+keeps the already-running participant iframe in its current DOM parent so that the
+participant completion/recovery state is not intentionally discarded by re-parenting.
+Full DOM restoration remains in the setup, connection, staging-failure and unload
+paths. This is an implementation mechanism; A27 remains a manual route finding until
+the frozen assistive-technology retest is completed.
 
 ## Handoff and data-loss protection
 
@@ -254,11 +260,18 @@ Use non-participant codes such as `TEST-NASA-001` and `TEST-SUS-001`.
    choice to a screen reader. If automatic audio was previously enabled, confirm
    the attempted spoken message and the user-activated replay fallback.
 10. Block or fill site storage. Confirm that submission does not crash, backup
-   buttons remain available and the page does not claim a stored local copy.
+    buttons remain available and the page does not claim a stored local copy.
 11. Stage an invalid or oversized synthetic record. Confirm that Qualtrics navigation
     is restored and the record is not falsely acknowledged.
 12. In a copied synthetic survey, block native advancement. Confirm that the
-    six-second watchdog reports failure and restores Next.
+    six-second watchdog reports failure and restores Next. For the q10 A27 retest,
+    also confirm that the participant remains on the completed recovery state rather
+    than returning to `Before you begin`; the participant-side failure alert is the
+    focused recovery target on screen-reader routes; JSON/CSV backup controls remain
+    present; and the restored native Next control is visible, keyboard-focusable and
+    operable. On the OS voice-control route, record whether Next can be exposed and
+    activated through the platform's target-discovery commands. Record the actual
+    route outcome rather than inferring Pass from the browser-automation checks.
 13. Test voice input with `not low`, `low or high`, `twenty three`, `73` and two
     factor names. None may become a proposal. Test one consistent lower-ranked
     alternative and confirm that it remains an explicit proposal rather than an
