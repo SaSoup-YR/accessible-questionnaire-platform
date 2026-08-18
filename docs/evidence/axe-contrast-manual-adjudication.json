@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "manual adjudication of axe color-contrast incomplete results",
+  "testedRevision": "7a74b2a863b775ce6bb9741756dfd022e9afe627",
+  "sourceRun": 32039156231,
+  "sourceArtifactId": 9291614890,
+  "browser": "Chromium 151.0.7922.34",
+  "automatedSummary": {
+    "scannedStates": 27,
+    "totalStateProfileScans": 135,
+    "violations": 0,
+    "incompleteScans": 13,
+    "incompleteNodeOccurrences": 20,
+    "horizontalOverflowFailures": 0,
+    "targetSizeFailures": 0,
+    "missingRequiredStates": 0,
+    "missingRequiredStateProfiles": 0
+  },
+  "manualRule": "Each color-contrast incomplete was mapped to the exact-main CSS foreground and opaque local background. A conservative 4.5:1 threshold was applied to every occurrence. This resolves only these axe incompletes and is not a complete WCAG conformance claim.",
+  "selectorAdjudications": [
+    {
+      "target": ".gaze-positioning-card > p:nth-child(2)",
+      "occurrences": 4,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Inherited root text colour on opaque .gaze-positioning-card background."
+    },
+    {
+      "target": ".gaze-positioning-tip",
+      "occurrences": 3,
+      "foreground": "#1d2733",
+      "background": "#fff9dc",
+      "contrastRatio": 14.27,
+      "judgement": "PASS",
+      "basis": "Inherited root text colour on explicit .gaze-positioning-tip background."
+    },
+    {
+      "target": ".calibration-point > span",
+      "occurrences": 2,
+      "foreground": "#17202a",
+      "background": "#ffbf47",
+      "contrastRatio": 10.02,
+      "judgement": "PASS",
+      "basis": "The calibration point explicitly declares the foreground and background; the span inherits them."
+    },
+    {
+      "target": "#gaze-calibration-heading",
+      "occurrences": 1,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Heading inherits root text colour inside opaque .gaze-calibration-instructions background."
+    },
+    {
+      "target": ".gaze-calibration-instructions > p:nth-child(2)",
+      "occurrences": 2,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Paragraph inherits root text colour inside opaque .gaze-calibration-instructions background."
+    },
+    {
+      "target": ".gaze-calibration-instructions > p:nth-child(3)",
+      "occurrences": 1,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Paragraph inherits root text colour inside opaque .gaze-calibration-instructions background."
+    },
+    {
+      "target": ".gaze-calibration-instructions > .secondary-button",
+      "occurrences": 1,
+      "foreground": "#003b68",
+      "background": "#ffffff",
+      "contrastRatio": 11.50,
+      "judgement": "PASS",
+      "basis": "Secondary button explicitly declares color #003b68 on background #fff."
+    },
+    {
+      "target": ".gaze-confirm-target",
+      "occurrences": 2,
+      "foreground": "#ffffff",
+      "background": "#005ea5",
+      "contrastRatio": 6.68,
+      "judgement": "PASS",
+      "basis": "Primary button explicitly declares white text on #005ea5. The 0.55rem gaze-progress pseudo-element is confined to the bottom strip of a >=3rem button and is not the text background."
+    },
+    {
+      "target": "aside > p:nth-child(3)",
+      "occurrences": 3,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Confirmation text inherits root colour inside opaque .gaze-confirmation background."
+    },
+    {
+      "target": "p:nth-child(2) > strong",
+      "occurrences": 1,
+      "foreground": "#1d2733",
+      "background": "#ffffff",
+      "contrastRatio": 15.11,
+      "judgement": "PASS",
+      "basis": "Strong text inherits root colour inside opaque .gaze-confirmation background."
+    }
+  ],
+  "manualSummary": {
+    "uniqueSelectors": 10,
+    "nodeOccurrencesAdjudicated": 20,
+    "passes": 20,
+    "failures": 0,
+    "minimumObservedContrastRatio": 6.68
+  }
+}
