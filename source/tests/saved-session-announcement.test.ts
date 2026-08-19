@@ -246,9 +246,9 @@ describe('saved questionnaire recovery announcement', () => {
     expect(component.ratingIndex).toBe(3);
     expect(heading.textContent).toContain('Performance');
     expect(document.activeElement).toBe(heading);
-    expect(component.querySelector('#resume-heading')).toBeNull();
-    expect(component.resumeSummaryVisible).toBe(false);
-    expect(component.interruptionSummaryShown).toBe(false);
+    expect(component.querySelector('#resume-heading')?.textContent).toContain('Welcome back');
+    expect(component.resumeSummaryVisible).toBe(true);
+    expect(component.interruptionSummaryShown).toBe(true);
     expect(component.ratings).toEqual(savedSessionAfterThreeRatings.ratings);
   });
 
