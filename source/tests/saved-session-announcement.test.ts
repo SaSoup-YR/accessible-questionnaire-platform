@@ -230,11 +230,14 @@ describe('saved questionnaire recovery announcement', () => {
     )).toEqual({ stage: 'ratings', ratingIndex: 3 });
   });
 
-  it('resumes three saved ratings directly at the first unanswered item and focuses its heading', async () => {
+  it('resumes three saved ratings through the real Resume control at the first unanswered item', async () => {
     const component = await renderComponent();
     component.savedSession = savedSessionAfterThreeRatings;
+    await component.updateComplete;
 
-    component.restoreSavedSession();
+    const resume = component.querySelector('#resume-saved-questionnaire') as HTMLButtonElement;
+    expect(resume).not.toBeNull();
+    resume.click();
     await component.updateComplete;
     await Promise.resolve();
 
