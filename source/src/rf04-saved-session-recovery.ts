@@ -68,9 +68,82 @@ type InternalQuestionnaireConstructor = CustomElementConstructor & {
 };
 
 const installedMarker = Symbol.for('aqp.rf04.saved-session-recovery.installed');
+const SAFARI_RECOVERY_REFOCUS_DELAY_MS = 80;
 
 function hasOwn(record: Record<string, unknown>, key: string) {
   return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+/**
+ * Keep the R3 workaround scoped to Safari. Chromium/Firefox routes retain the
+ * already-passing single-focus path, while Safari receives one post-render
+ * focus transition after the saved-progress status has settled.
+ */
+export function isSafariUserAgent(userAgent: string) {
+  return (
+    /Safari\//.test(userAgent) &&
+    !/(Chrome|Chromium|CriOS|FxiOS|EdgiOS|OPiOS)\//.test(userAgent)
+  );
+}
+
+function savedSessionStillMatches(
+  component: InternalQuestionnaire,
+  session: SavedSessionLike,
+) {
+  const current = component.savedSession;
+  return Boolean(
+    component.isConnected &&
+    current &&
+    current.savedAt === session.savedAt &&
+    current.configId === session.configId &&
+    current.participantCode === session.participantCode
+  );
+}
+
+function focusRecoveryResume(
+  component: InternalQuestionnaire,
+  resume: HTMLButtonElement,
+) {
+  focusAndReveal(resume, {
+    block: 'center',
+    forceCoordinateScroll: true,
+    onReveal: () => component.requestParentReveal(resume),
+  });
+}
+
+/**
+ * The R3 manual route exposed a Safari/VoiceOver mismatch: the Resume button
+ * drew the expected focus ring after reload, but VoiceOver reported that no
+ * element had keyboard focus. Re-assert focus once after the delayed recovery
+ * status has rendered so Safari receives a fresh native focus transition.
+ *
+ * Do not steal focus if the participant has already moved somewhere else or
+ * resumed the questionnaire during the delay.
+ */
+function reassertSafariRecoveryFocus(
+  component: InternalQuestionnaire,
+  session: SavedSessionLike,
+) {
+  const userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  if (!isSafariUserAgent(userAgent)) return;
+
+  void component.updateComplete.then(() => {
+    window.setTimeout(() => {
+      if (!savedSessionStillMatches(component, session)) return;
+
+      const resume = component.querySelector<HTMLButtonElement>('#resume-saved-questionnaire');
+      if (!resume) return;
+
+      const active = resume.ownerDocument.activeElement;
+      const body = resume.ownerDocument.body;
+      if (active && active !== resume && active !== body) return;
+
+      // If Safari still owns DOM focus on Resume, blur first so the second focus
+      // produces a new accessibility event instead of a no-op focus() call.
+      if (active === resume) resume.blur();
+      focusRecoveryResume(component, resume);
+    }, SAFARI_RECOVERY_REFOCUS_DELAY_MS);
+  });
 }
 
 /**
@@ -192,39 +265,17 @@ export function installRf04SavedSessionRecovery() {
     const message = this.savedSessionOfferSpeech(session);
     this.statusMessage = '';
     void this.updateComplete.then(() => {
-      const current = this.savedSession;
-      if (
-        !current ||
-        current.savedAt !== session.savedAt ||
-        current.configId !== session.configId ||
-        current.participantCode !== session.participantCode
-      ) {
-        return;
-      }
+      if (!savedSessionStillMatches(this, session)) return;
 
       const resume = this.querySelector<HTMLButtonElement>('#resume-saved-questionnaire');
-      if (resume) {
-        focusAndReveal(resume, {
-          block: 'center',
-          forceCoordinateScroll: true,
-          onReveal: () => this.requestParentReveal(resume),
-        });
-      }
+      if (resume) focusRecoveryResume(this, resume);
 
       window.setTimeout(() => {
-        const latest = this.savedSession;
-        if (
-          !this.isConnected ||
-          !latest ||
-          latest.savedAt !== session.savedAt ||
-          latest.configId !== session.configId ||
-          latest.participantCode !== session.participantCode
-        ) {
-          return;
-        }
+        if (!savedSessionStillMatches(this, session)) return;
 
         this.statusMessage = message;
         if (this.audioGuidance) this.speakText(message);
+        reassertSafariRecoveryFocus(this, session);
       }, 650);
     });
   };
