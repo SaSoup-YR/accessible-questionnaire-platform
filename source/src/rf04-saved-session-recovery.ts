@@ -54,9 +54,10 @@ type InternalQuestionnaire = HTMLElement & {
   canAdjustPresentationSupport: boolean;
   updateComplete: Promise<unknown>;
   isConnected: boolean;
+  announceSavedSessionOffer(session: SavedSessionLike): void;
+  restoreSavedSession(): void;
   savedSessionOfferSpeech(session: SavedSessionLike): string;
   applyConfiguredSupport(): void;
-  applySavedRecoveryPresentation(session: SavedSessionLike): void;
   requestParentReveal(element: HTMLElement): void;
   speakText(text: string): void;
   focusHeading(speak?: boolean): void;
