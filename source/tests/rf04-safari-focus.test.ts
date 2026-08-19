@@ -1,3 +1,4 @@
+// Final exact-head trigger: tests are intentionally outside the generated release bundle.
 import { describe, expect, it } from 'vitest';
 import { isSafariUserAgent } from '../src/rf04-saved-session-recovery';
 
