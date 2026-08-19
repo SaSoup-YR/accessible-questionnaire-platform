@@ -54,9 +54,7 @@ type InternalQuestionnaire = HTMLElement & {
   canAdjustPresentationSupport: boolean;
   updateComplete: Promise<unknown>;
   isConnected: boolean;
-  connectedCallback(): void;
   announceSavedSessionOffer(session: SavedSessionLike): void;
-  restoreSavedSession: () => void;
   savedSessionOfferSpeech(session: SavedSessionLike): string;
   applyConfiguredSupport(): void;
   requestParentReveal(element: HTMLElement): void;
@@ -70,7 +68,6 @@ type InternalQuestionnaireConstructor = CustomElementConstructor & {
 };
 
 const installedMarker = Symbol.for('aqp.rf04.saved-session-recovery.installed');
-const instanceMarker = Symbol.for('aqp.rf04.saved-session-recovery.instance');
 
 function hasOwn(record: Record<string, unknown>, key: string) {
   return Object.prototype.hasOwnProperty.call(record, key);
@@ -97,62 +94,73 @@ export function resolveDirectResumePosition(
   return { stage: 'review' };
 }
 
-function restoreSavedSessionDirectly(this: InternalQuestionnaire) {
-  const session = this.savedSession;
+function restoreSavedSessionDirectly(component: InternalQuestionnaire) {
+  const session = component.savedSession;
   if (!session) return;
 
-  this.editingRatingFromReview = false;
-  this.reviewRatingEdit = null;
-  this.reviewReturnFocusIndex = null;
-  this.pairOrder = session.pairOrder;
-  this.pairResponses = session.pairResponses;
-  this.ratings = session.ratings;
-  this.ratingInputRoutes = session.ratingInputRoutes;
-  this.pairInputRoutes = session.pairInputRoutes;
-  this.supportChanges = session.supportChanges;
-  this.startedAt = session.startedAt;
+  component.editingRatingFromReview = false;
+  component.reviewRatingEdit = null;
+  component.reviewReturnFocusIndex = null;
+  component.pairOrder = session.pairOrder;
+  component.pairResponses = session.pairResponses;
+  component.ratings = session.ratings;
+  component.ratingInputRoutes = session.ratingInputRoutes;
+  component.pairInputRoutes = session.pairInputRoutes;
+  component.supportChanges = session.supportChanges;
+  component.startedAt = session.startedAt;
 
-  if (this.canAdjustAllSupport) {
-    this.answerMode = session.support.answerMode;
-    this.showSimpleLanguage = session.support.showSimpleLanguage;
-    this.largeText = session.support.largeText;
-    this.audioGuidance = Boolean(session.support.audioGuidance);
+  if (component.canAdjustAllSupport) {
+    component.answerMode = session.support.answerMode;
+    component.showSimpleLanguage = session.support.showSimpleLanguage;
+    component.largeText = session.support.largeText;
+    component.audioGuidance = Boolean(session.support.audioGuidance);
   } else {
-    this.applyConfiguredSupport();
-    if (this.canAdjustPresentationSupport) {
-      this.largeText = session.support.largeText;
-      this.audioGuidance = Boolean(session.support.audioGuidance);
+    component.applyConfiguredSupport();
+    if (component.canAdjustPresentationSupport) {
+      component.largeText = session.support.largeText;
+      component.audioGuidance = Boolean(session.support.audioGuidance);
     }
   }
 
   const destination = resolveDirectResumePosition(
-    this.dimensions,
-    this.pairOrder,
-    this.ratings,
-    this.pairResponses,
+    component.dimensions,
+    component.pairOrder,
+    component.ratings,
+    component.pairResponses,
   );
-  this.stage = destination.stage;
-  if (destination.ratingIndex !== undefined) this.ratingIndex = destination.ratingIndex;
-  if (destination.pairIndex !== undefined) this.pairIndex = destination.pairIndex;
+  component.stage = destination.stage;
+  if (destination.ratingIndex !== undefined) component.ratingIndex = destination.ratingIndex;
+  if (destination.pairIndex !== undefined) component.pairIndex = destination.pairIndex;
 
-  this.recoveryEnabled = true;
-  this.savedSession = null;
-  this.savedSessionProblem = '';
-  this.savedSessionAnnouncementKey = '';
-  this.resumeSummaryVisible = false;
+  component.recoveryEnabled = true;
+  component.savedSession = null;
+  component.savedSessionProblem = '';
+  component.savedSessionAnnouncementKey = '';
+  component.resumeSummaryVisible = false;
   // A persisted-session reload is distinct from the same-page visibility
   // interruption summary. Do not claim that summary support was shown when
   // direct resume intentionally bypasses it.
-  this.interruptionSummaryShown = false;
-  this.statusMessage = `Saved questionnaire resumed at ${this.currentPositionDescription()}.`;
-  this.focusHeading();
+  component.interruptionSummaryShown = false;
+  component.statusMessage = `Saved questionnaire resumed at ${component.currentPositionDescription()}.`;
+  component.focusHeading();
 }
 
-function patchRecoveryInstance(component: InternalQuestionnaire) {
-  const marked = component as InternalQuestionnaire & Record<PropertyKey, unknown>;
-  if (marked[instanceMarker]) return;
-  component.restoreSavedSession = restoreSavedSessionDirectly.bind(component);
-  marked[instanceMarker] = true;
+function handleResumeClick(event: Event) {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  const resume = target.closest('#resume-saved-questionnaire');
+  if (!resume) return;
+  const component = resume.closest('accessible-nasa-tlx, accessible-questionnaire') as
+    | InternalQuestionnaire
+    | null;
+  if (!component?.savedSession) return;
+
+  // Capture the actual user action before Lit's original click handler. This is
+  // intentionally scoped to the one frozen A15 Resume control; all other
+  // component events keep their existing behaviour.
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  restoreSavedSessionDirectly(component);
 }
 
 /**
@@ -221,18 +229,6 @@ export function installRf04SavedSessionRecovery() {
     });
   };
 
-  const originalConnectedCallback = prototype.connectedCallback;
-  prototype.connectedCallback = function connectedCallback(this: InternalQuestionnaire) {
-    patchRecoveryInstance(this);
-    return originalConnectedCallback.call(this);
-  };
-
-  // main.ts installs this policy immediately after the custom element module is
-  // evaluated. Patch any element that was upgraded during customElements.define
-  // before the first Lit update reaches the saved-session controls.
-  document
-    .querySelectorAll<HTMLElement>('accessible-nasa-tlx, accessible-questionnaire')
-    .forEach((element) => patchRecoveryInstance(element as InternalQuestionnaire));
-
+  document.addEventListener('click', handleResumeClick, true);
   prototype[installedMarker] = true;
 }
