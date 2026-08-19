@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -20,7 +20,7 @@ function configuredSusParticipant(participantCode: string) {
   return `${participantBaseUrl}#${hash.toString()}`;
 }
 
-async function choose(page: Parameters<typeof test>[0] extends never ? never : any, value: number) {
+async function choose(page: Page, value: number) {
   await page.locator(`.rating-option:has(input[value="${value}"])`).click();
 }
 
