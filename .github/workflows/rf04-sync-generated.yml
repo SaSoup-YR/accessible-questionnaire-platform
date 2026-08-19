@@ -1,0 +1,71 @@
+name: RF04 temporary verified release sync
+
+on:
+  push:
+    branches:
+      - agent/fix-rf04-saved-session-recovery
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source
+    steps:
+      - name: Check out RF-04 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf04-saved-session-recovery
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run unit and component tests
+        run: npm test -- --run
+
+      - name: Build production site
+        run: npm run build
+
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run rendered Chromium regression
+        run: npm run test:browser
+
+      - name: Run Chromium Firefox WebKit support regression
+        run: npm run test:browser-support
+
+      - name: Build synchronized release outputs
+        run: npm run build:release
+
+      - name: Commit generated release and remove temporary workflow
+        working-directory: .
+        run: |
+          rm .github/workflows/rf04-sync-generated.yml
+          git add \
+            source/demo/accessible-nasa-tlx-v0.7.html \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
+            questionnaires \
+            .github/workflows/rf04-sync-generated.yml
+          if git diff --cached --quiet; then
+            echo "No generated release changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "sync RF-04 Safari focus repair release"
+          git push origin HEAD:agent/fix-rf04-saved-session-recovery
