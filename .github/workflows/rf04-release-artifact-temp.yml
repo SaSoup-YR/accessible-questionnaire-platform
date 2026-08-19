@@ -1,0 +1,37 @@
+name: RF04 release artifact temporary
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  build-release-artifact:
+    if: github.head_ref == 'agent/fix-rf04-saved-session-recovery'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+      - run: npm ci
+      - run: npm run build:release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf04-generated-deployment-fast
+          path: |
+            source/demo/accessible-nasa-tlx-v0.7.html
+            source/demo/accessible-questionnaire-platform-v0.8.html
+            index.html
+            study.html
+            assets
+            questionnaires
+          if-no-files-found: error
+          retention-days: 1
