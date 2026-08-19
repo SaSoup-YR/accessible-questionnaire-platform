@@ -136,11 +136,11 @@ function restoreSavedSessionDirectly(component: InternalQuestionnaire) {
   component.savedSession = null;
   component.savedSessionProblem = '';
   component.savedSessionAnnouncementKey = '';
-  component.resumeSummaryVisible = false;
-  // A persisted-session reload is distinct from the same-page visibility
-  // interruption summary. Do not claim that summary support was shown when
-  // direct resume intentionally bypasses it.
-  component.interruptionSummaryShown = false;
+  // Preserve the existing contextual return summary, but do not make it a
+  // blocking recovery step. The restored task is already the first unanswered
+  // task and focus is sent to that task's normal heading below.
+  component.resumeSummaryVisible = true;
+  component.interruptionSummaryShown = true;
   component.statusMessage = `Saved questionnaire resumed at ${component.currentPositionDescription()}.`;
   component.focusHeading();
 }
