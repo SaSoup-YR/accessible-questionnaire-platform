@@ -1,7 +1,7 @@
 {
   "prototype": "Accessible Questionnaire Platform",
   "version": "0.8.0",
-  "releaseStatus": "Evidence-frozen q10 technical candidate. Executed source main 7a74b2a863b775ce6bb9741756dfd022e9afe627 passed main push verification run 32039156231 and was deployed to GitHub Pages. The previously retained q10 A27 R1–R4 targeted manual fault-injection retest is Pass. This BUILD-INFO update is evidence/documentation only and does not change product logic.",
+  "releaseStatus": "RF-04 targeted saved-session recovery repair candidate on top of the evidence-frozen q10 technical baseline. Five of six historical RF-04 A14/A15 failure cells have targeted post-fix closure evidence; R3-A14 remains Fail on VoiceOver + Safari. The ineffective Safari-only delayed refocus follow-up was removed. The retained participant runtime was resynchronized at 53ca17d0fcc3d502e6561997d3c3a48719475a2a and returns to the first manually tested RF-04 implementation.",
   "releaseRepository": "SaSoup-YR/accessible-questionnaire-platform",
   "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
   "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
@@ -22,7 +22,7 @@
   "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
   "releaseCandidate": "v0.8.0-rc.4",
   "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "Exact-main q10 source 7a74b2a863b775ce6bb9741756dfd022e9afe627 passed push run 32039156231. Quantified artifact 9291578791 reports 8 cases, 31 items and 234 field comparisons with 0 mismatches; 12 adversarial inputs with 0 silently altered; and 8/8 export reconstruction with 0 mismatches. Rendered artifact 9291614890 reports 27 states x 5 profiles = 135 scans, 0 axe violations, 13 color-contrast incomplete scan results involving 20 node occurrences, 0 overflow failures, 0 target-size failures and no missing state/profile rows. The 20 incomplete node occurrences were manually adjudicated against exact-main CSS and all met a conservative 4.5:1 threshold (minimum 6.68:1); see docs/evidence/axe-contrast-manual-adjudication.json. Previously retained q10 A27 fault-injection evidence records R1 NVDA+Firefox=P, R2 NVDA+Chrome=P, R3 VoiceOver+Safari=P and R4 Voice Access+Chrome=P, so the targeted A27 trajectory is q8 F -> q9 F -> q10 P. These are bounded technical findings and do not establish disabled-user benefit, complete WCAG conformance or psychometric equivalence.",
+  "evaluationStatus": "The broad q10 technical baseline remains the exact-main evidence frozen at executed source 7a74b2a863b775ce6bb9741756dfd022e9afe627: run 32039156231 passed; quantified artifact 9291578791 reported 8 cases, 31 items and 234 field comparisons with 0 mismatches, 12 adversarial inputs with 0 silently altered, and 8/8 export reconstruction with 0 mismatches; rendered artifact 9291614890 reported 27 states x 5 profiles = 135 scans with 0 axe violations and the retained manual contrast adjudication minimum 6.68:1. RF-04 was then evaluated as a targeted repair family without rewriting q8: five of six historical A14/A15 RF-04 failures closed on targeted post-fix manual retest, while R3-A14 remained Fail on VoiceOver + Safari. The final retained RF-04 participant runtime matches the first manually tested repair implementation and was resynchronized at 53ca17d0fcc3d502e6561997d3c3a48719475a2a. Standard verification run 32314041841 passed at evidence head b4b8c731096160d9ff45e3a78cfbcd0a481df53b with quantified artifact 9387436383 and rendered artifact 9387490253. These are bounded technical findings and do not establish disabled-user benefit, complete WCAG conformance or psychometric equivalence.",
   "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
   "manualVerification": {
     "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
@@ -41,7 +41,8 @@
     "postDeploymentRealWorldGermanLsgImportAndParticipantRun20260801": "passed by the primary tester; structure only, not German spoken-label recognition",
     "publicPagesConductorParticipantAndRecoverySmoke20260801": "passed on synchronized public Pages candidate with synthetic data",
     "q10A27R1R4TargetedRetest20260817": "passed: R1 NVDA+Firefox, R2 NVDA+Chrome, R3 VoiceOver+Safari and R4 Voice Access+Chrome all P under the frozen A27 rule",
-    "q10A27HostRows20260817": "passed: six synthetic q10 rows accepted, score 50.00, reconstructable raw record, consistent definition hash/submission identifiers"
+    "q10A27HostRows20260817": "passed: six synthetic q10 rows accepted, score 50.00, reconstructable raw record, consistent definition hash/submission identifiers",
+    "rf04PostFixRecovery20260820": "targeted closure 5/6 historical RF-04 failures: R1-A14 P, R1-A15 P, R3-A14 F, R3-A15 P, R4-A14 P, R4-A15 P. R2 was retained as regression only. Historical q8 remains unchanged."
   },
   "historicalQ8Verification": {
     "evidenceBuild": "0.8.8-q8",
@@ -116,5 +117,24 @@
       "message": "Deploy verified main 7a74b2a863b775ce6bb9741756dfd022e9afe627"
     },
     "narrativeRecord": "docs/FINAL-EVIDENCE-FREEZE-2026-08-18.md"
+  },
+  "rf04FinalStatus": {
+    "date": "2026-08-20",
+    "scope": "RF-04 saved-session recovery A14/A15 targeted repair only",
+    "historicalQ8FailureCells": 6,
+    "targetedClosedCells": 5,
+    "remainingFailure": "R3-A14 VoiceOver + Safari recovery focus",
+    "firstManualTestedRepairHead": "652b612eb38b62a327586bb94dad58ed437ba07e",
+    "retainedRecoverySourceBlob": "b757ecd928c6ec6573bd43b08949394e14d4a636",
+    "runtimeSyncCommit": "53ca17d0fcc3d502e6561997d3c3a48719475a2a",
+    "rootIndexBlob": "5768b821f05fc2aae4b64dc2e7f4798cd1de7461",
+    "participantAsset": "assets/participant-Ms9X-S-W.js",
+    "verificationHead": "b4b8c731096160d9ff45e3a78cfbcd0a481df53b",
+    "verificationRun": 32314041841,
+    "verificationConclusion": "success",
+    "quantifiedTechnicalArtifactId": 9387436383,
+    "renderedAccessibilityArtifactId": 9387490253,
+    "manualEvidenceRecord": "docs/evidence/RF04-POSTFIX-MANUAL-AUDIT-2026-08-20.md",
+    "safariOnlyFollowUp": "A delayed Safari blur/refocus workaround passed automation but did not close R3-A14 in repeated manual VoiceOver + Safari testing; it was removed before final RF-04 closure."
   }
 }
