@@ -2,10 +2,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 import {
+  installRf04SavedSessionRecovery,
+  resolveDirectResumePosition,
+} from '../src/rf04-saved-session-recovery';
+import {
   buildQuestionnairePairs,
   getQuestionnaireDefinition,
 } from '../src/questionnaire-definition';
 import { progressStorageKey } from '../src/study';
+
+installRf04SavedSessionRecovery();
 
 const nasaTlx = getQuestionnaireDefinition('nasa-tlx-weighted')!;
 const savedSession = {
@@ -31,6 +37,13 @@ const savedSession = {
     largeText: false,
     audioGuidance: true,
   },
+} as const;
+
+const savedSessionAfterThreeRatings = {
+  ...savedSession,
+  savedAt: savedSession.savedAt + 1,
+  ratingIndex: 2,
+  ratings: { mental: 40, physical: 25, temporal: 60 },
 } as const;
 
 async function renderComponent() {
@@ -59,7 +72,7 @@ afterEach(() => {
 });
 
 describe('saved questionnaire recovery announcement', () => {
-  it('loads a real saved session after refresh and automatically sends the exact message to opted-in audio', async () => {
+  it('loads a real saved session after refresh and focuses Resume while preserving the exact message', async () => {
     localStorage.setItem(
       progressStorageKey('demo-config', 'DEMO'),
       JSON.stringify(savedSession),
@@ -74,7 +87,7 @@ describe('saved questionnaire recovery announcement', () => {
     await vi.advanceTimersByTimeAsync(650);
 
     expect(component.querySelector('#saved-session-offer')).not.toBeNull();
-    expect(document.activeElement).toBe(component.querySelector('#saved-session-offer'));
+    expect(document.activeElement).toBe(component.querySelector('#resume-saved-questionnaire'));
     expect(speakText).toHaveBeenCalledWith(
       'Saved questionnaire found. 2 of 21 responses are saved in this browser. Resume saved questionnaire. Erase saved answers.',
     );
@@ -186,7 +199,7 @@ describe('saved questionnaire recovery announcement', () => {
     expect(localStorage.getItem(currentKey)).toBeNull();
   });
 
-  it('focuses the saved-session region and exposes the exact saved count and choices', async () => {
+  it('focuses Resume and exposes the exact saved count and choices', async () => {
     const component = await renderComponent();
     component.savedSession = savedSession;
     component.announceSavedSessionOffer(savedSession);
@@ -195,7 +208,7 @@ describe('saved questionnaire recovery announcement', () => {
 
     const offer = component.querySelector('#saved-session-offer') as HTMLElement;
     const resume = component.querySelector('#resume-saved-questionnaire') as HTMLButtonElement;
-    expect(document.activeElement).toBe(offer);
+    expect(document.activeElement).toBe(resume);
     expect(offer.getAttribute('aria-describedby')).toBe(
       'saved-session-count saved-session-actions',
     );
@@ -206,6 +219,34 @@ describe('saved questionnaire recovery announcement', () => {
     expect(component.querySelector('#saved-session-actions')?.textContent?.trim()).toBe(
       'Resume saved questionnaire. Erase saved answers.',
     );
+  });
+
+  it('resolves direct recovery to the first unanswered rating instead of the saved page index', () => {
+    expect(resolveDirectResumePosition(
+      nasaTlx.items,
+      buildQuestionnairePairs(nasaTlx),
+      savedSessionAfterThreeRatings.ratings,
+      {},
+    )).toEqual({ stage: 'ratings', ratingIndex: 3 });
+  });
+
+  it('resumes three saved ratings directly at the first unanswered item and focuses its heading', async () => {
+    const component = await renderComponent();
+    component.savedSession = savedSessionAfterThreeRatings;
+
+    component.restoreSavedSession();
+    await component.updateComplete;
+    await Promise.resolve();
+
+    const heading = component.querySelector('#rating-heading') as HTMLElement;
+    expect(component.stage).toBe('ratings');
+    expect(component.ratingIndex).toBe(3);
+    expect(heading.textContent).toContain('Performance');
+    expect(document.activeElement).toBe(heading);
+    expect(component.querySelector('#resume-heading')).toBeNull();
+    expect(component.resumeSummaryVisible).toBe(false);
+    expect(component.interruptionSummaryShown).toBe(false);
+    expect(component.ratings).toEqual(savedSessionAfterThreeRatings.ratings);
   });
 
   it('creates a delayed live-region change and attempts built-in speech only after prior opt-in', async () => {
