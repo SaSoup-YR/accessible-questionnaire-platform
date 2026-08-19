@@ -24,6 +24,7 @@ async function choose(page: Page, value: number) {
   await page.locator(`.rating-option:has(input[value="${value}"])`).click();
 }
 
+// This rendered regression follows the same saved-answer boundary that drives frozen A14/A15.
 test('RF-04 reload focuses Resume and Resume continues at the first unanswered SUS item', async ({ page }) => {
   const participantCode = 'E2E-RF04-01';
   await page.goto(configuredSusParticipant(participantCode));
