@@ -1,37 +1,59 @@
-name: RF04 release artifact temporary
+name: RF04 release synchronization temporary
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-release-artifact:
+  sync-generated-release:
     if: github.head_ref == 'agent/fix-rf04-saved-session-recovery'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: source
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out the exact PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: source/package-lock.json
-      - run: npm ci
-      - run: npm run build:release
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rf04-generated-deployment-fast
-          path: |
-            source/demo/accessible-nasa-tlx-v0.7.html
-            source/demo/accessible-questionnaire-platform-v0.8.html
-            index.html
-            study.html
-            assets
-            questionnaires
-          if-no-files-found: error
-          retention-days: 1
+
+      - name: Build deterministic release outputs
+        run: |
+          cd source
+          npm ci
+          npm run build:release
+
+      - name: Restore normal verification workflow and remove this temporary workflow
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- .github/workflows/verify.yml
+          git rm .github/workflows/rf04-release-artifact-temp.yml
+
+      - name: Commit only deterministic generated release outputs and workflow cleanup
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git add \
+            source/demo/accessible-nasa-tlx-v0.7.html \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
+            questionnaires \
+            .github/workflows/verify.yml
+          if git diff --cached --quiet; then
+            echo "No generated release synchronization was needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync RF-04 generated release outputs"
+          git push origin "HEAD:${HEAD_BRANCH}"
