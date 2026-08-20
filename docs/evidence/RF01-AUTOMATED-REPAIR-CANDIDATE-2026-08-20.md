@@ -1,6 +1,6 @@
 # RF-01 / A26 automated repair candidate — 20 August 2026
 
-Status: **automated repair verified; post-fix manual audit recorded; R3 VoiceOver/Safari remains Fail; clean-connect smoke pending**
+Status: **automated repair verified; post-fix manual adjudication complete; R3 VoiceOver/Safari remains Fail; clean-connect smoke passed on all four routes**
 
 ## Identity
 
@@ -41,23 +41,38 @@ Canonical workflow run `32403350892` completed successfully on exact runtime hea
 
 This is automated technical evidence only. It does not replace the frozen A26 assistive-technology observations.
 
-## Post-fix manual result
+## Post-fix manual adjudication
 
 See `docs/evidence/RF01-POSTFIX-MANUAL-AUDIT-2026-08-20.md`.
 
 Forced wrong-origin route:
 
-- R1 NVDA + Firefox: Connecting and later blocking alert were automatically announced; no participant AQP Start and no false connected claim — forced-failure path passes.
-- R2 NVDA + Chrome: Connecting and later blocking alert were automatically announced; no participant AQP Start and no false connected claim — forced-failure path passes.
-- R3 VoiceOver + Safari: visible Connecting was **not** automatically announced (`[no announcement]`), although the later failure alert was announced and gating remained safe — **A26 remains Fail on R3**.
-- R4 Windows Voice Access + Chrome: voice-control target/gating behavior passes; Voice Access is not treated as evidence of screen-reader live-region speech.
+- **R1 NVDA + Firefox: P** — Connecting and later blocking alert were automatically announced; no participant AQP Start and no false connected claim.
+- **R2 NVDA + Chrome: P** — Connecting and later blocking alert were automatically announced; no participant AQP Start and no false connected claim.
+- **R3 VoiceOver + Safari: F** — visible Connecting was **not** automatically announced (`[no announcement]`), although the later failure alert was announced and gating remained safe.
+- **R4 Windows Voice Access + Chrome: P** — voice-control target/gating behavior passed; Voice Access is not treated as evidence of screen-reader live-region speech, while retained source/automation verifies the role transition.
 
 Two non-retained R3 diagnostics (1000 ms delay and a Safari urgency shim) also failed to produce an automatic Connecting announcement. No further timing/urgency tuning is retained because it did not establish a working route and would risk changing correct semantics merely to force speech.
 
-## Remaining gate
+## Clean normal-connection smoke
 
-Restore the normal child origin and run one short clean smoke on R1–R4:
+After restoring the normal child origin, the short route
 
 `connected visible -> participant AQP Start available -> Start opens item 1`
 
-No questionnaire completion/submission is required for this smoke. R3-A26 remains F even if that smoke passes. Historical q8 is never rewritten.
+passed on **R1, R2, R3 and R4**.
+
+This confirms that normal connection is restored and usable on all required routes. It does not erase the R3 A26 failure because the frozen forced-route Connecting status remained silent in VoiceOver + Safari.
+
+## Closure boundary
+
+Post-fix A26 adjudication is therefore:
+
+- R1-A26: **P**
+- R2-A26: **P**
+- R3-A26: **F**
+- R4-A26: **P**
+
+RF-01 is **partially repaired rather than universally closed**. The retained implementation fixes the blocking failure alert semantics and safe connection gating, and works on the two NVDA routes and the voice-control route, but one route-specific VoiceOver + Safari Connecting-status announcement failure remains documented.
+
+Historical q8 is never rewritten, and no claim is made for universal accessibility, usability, disabled-user benefit or complete WCAG conformance.
