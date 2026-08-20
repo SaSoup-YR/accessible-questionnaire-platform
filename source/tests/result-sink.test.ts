@@ -894,7 +894,8 @@ describe('approved host result sink', () => {
     const runtime = createQualtricsSubmissionRuntime(incompleteRecord);
 
     expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');
-    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+    expect(runtime.showNextButton).not.toHaveBeenCalled();
+    expect(runtime.dom.statusAttributes['data-severity']).toBe('error');
     expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: QUALTRICS_RECEIPT_MESSAGE,
@@ -915,8 +916,10 @@ describe('approved host result sink', () => {
 
     expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_RAW_05', expect.any(String));
     expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');
-    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+    expect(runtime.showNextButton).not.toHaveBeenCalled();
     expect(runtime.dom.status.textContent).toContain('Injected raw-field staging failure');
+    expect(runtime.dom.status.textContent).toContain('Retry, Change, JSON or CSV');
+    expect(runtime.dom.statusAttributes['data-severity']).toBe('error');
     expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: QUALTRICS_RECEIPT_MESSAGE,
@@ -928,7 +931,7 @@ describe('approved host result sink', () => {
     );
   });
 
-  it('restores Qualtrics navigation when an invalid record cannot be staged', () => {
+  it('preserves the live participant recovery route and blocks native Next when staging fails', () => {
     const bridge = readFileSync(
       resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
       'utf8',
@@ -986,8 +989,10 @@ describe('approved host result sink', () => {
       },
     } as unknown as MessageEvent);
 
-    expect(showNextButton).toHaveBeenCalledOnce();
-    expect(dom.status.textContent).toContain('Return to the questionnaire and try again');
+    expect(showNextButton).not.toHaveBeenCalled();
+    expect(dom.status.textContent).toContain('The response was not staged');
+    expect(dom.status.textContent).toContain('Retry, Change, JSON or CSV');
+    expect(dom.statusAttributes['data-severity']).toBe('error');
     expect(dom.bodyStyle.overflow).toBe('');
     expect(dom.documentElementStyle.overflow).toBe('');
     expect(dom.liveStyle.position).toBe('relative');

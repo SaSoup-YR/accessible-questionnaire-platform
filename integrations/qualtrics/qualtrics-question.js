@@ -485,16 +485,21 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
       var detail = error && error.message ? error.message : 'Qualtrics could not stage the response.';
       setStatus(
         detail +
-        ' Return to the questionnaire and try again. If it keeps failing, use the download' +
-        ' button on the questionnaire and tell the study conductor.',
-        false
+        ' The response was not staged. Keep the questionnaire open and use its Retry, Change, JSON or CSV recovery actions.',
+        false,
+        'error'
       );
-      releaseFullscreenForNativeNavigation();
+      // Preserve the live participant iframe and its review/recovery state. Reparenting
+      // the iframe here can recreate its browsing context and replace the actionable
+      // staging failure with a generic saved-session offer.
+      releaseFullscreenForNativeNavigation(true);
+      setImportantStyle(status, 'position', 'sticky');
+      setImportantStyle(status, 'top', '0');
+      setImportantStyle(status, 'z-index', '2147483001');
       sendStagingReceipt(event.source, false, submissionId || '', detail);
-      // Staging can fail deterministically — an oversized record fails identically on every
-      // retry — so the navigation control is restored. Without it the participant is left on
-      // a page with no way to submit and no way to advance.
-      question.showNextButton();
+      // Do not expose native Qualtrics Next as a bypass while staging is unresolved.
+      // The participant can retry from the still-live AQP review screen. A27's
+      // post-staging advance-failure path remains separate and still restores Next.
     }
   }
 
