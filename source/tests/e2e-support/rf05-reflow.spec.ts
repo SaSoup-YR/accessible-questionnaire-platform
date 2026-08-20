@@ -41,7 +41,11 @@ async function chooseRating50(page: Page) {
   const value50 = page.locator('.rating-option input[value="50"]');
   await expect(allRatings).toHaveCount(21);
   await expect(value50).toHaveCount(1);
-  await value50.check();
+  // This test is about reflow, not pointer hit-testing. Activate the native
+  // input through DOM click so the component follows its normal change path
+  // without Playwright being blocked by the styled label content above it.
+  await value50.evaluate((element: HTMLInputElement) => element.click());
+  await expect(value50).toBeChecked();
 }
 
 test('RF-05 ordinary participant states reflow at 320 CSS px', async ({ page, browserName }) => {
@@ -77,7 +81,9 @@ test('RF-05 ordinary participant states reflow at 320 CSS px', async ({ page, br
   await expect(pairwise).toBeVisible();
   await expectNoDocumentHorizontalOverflow(page, `${browserName}: pairwise choices`);
 
-  await pairwise.locator('.choice-card input').first().check();
+  const firstPair = pairwise.locator('.choice-card input').first();
+  await firstPair.evaluate((element: HTMLInputElement) => element.click());
+  await expect(firstPair).toBeChecked();
   await expect(pairwise.locator('.choice-card').first()).toContainText('Selected');
   await expectNoDocumentHorizontalOverflow(page, `${browserName}: selected pairwise choice`);
 });
