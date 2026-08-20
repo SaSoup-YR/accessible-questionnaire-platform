@@ -33,14 +33,19 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Apply bounded RF-03 repair
+      - name: Apply bounded RF-03 repair and regression updates
         shell: python
         run: |
           from pathlib import Path
 
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one {label} replacement, found {count}: {old[:100]!r}')
+              return text.replace(old, new, 1)
+
           component_path = Path('source/src/accessible-nasa-tlx.ts')
           text = component_path.read_text()
-
           replacements = [
           (
           """  @state() private remoteRecordingUnconfirmed = false;\n  @state() private hostSubmissionFailed = false;\n  @state() private submittingResult = false;""",
@@ -70,22 +75,46 @@ jobs:
           """    this.remoteRecordingUnconfirmed = false;\n    this.hostSubmissionFailed = false;\n  }\n\n  private toggleReadAloud""",
           """    this.remoteRecordingUnconfirmed = false;\n    this.hostSubmissionFailed = false;\n    this.browserStorageFailed = false;\n  }\n\n  private toggleReadAloud"""
           )]
-
           for old, new in replacements:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'Expected exactly one component replacement, found {count}: {old[:90]!r}')
-              text = text.replace(old, new, 1)
+              text = replace_once(text, old, new, 'component')
           component_path.write_text(text)
 
           integration_path = Path('integrations/qualtrics/qualtrics-question.js')
           integration = integration_path.read_text()
           old = """      setStatus(\n        detail +\n        ' Return to the questionnaire and try again. If it keeps failing, use the download' +\n        ' button on the questionnaire and tell the study conductor.',\n        false\n      );\n      releaseFullscreenForNativeNavigation();\n      sendStagingReceipt(event.source, false, submissionId || '', detail);\n      // Staging can fail deterministically — an oversized record fails identically on every\n      // retry — so the navigation control is restored. Without it the participant is left on\n      // a page with no way to submit and no way to advance.\n      question.showNextButton();"""
           new = """      setStatus(\n        detail +\n        ' The response was not staged. Keep the questionnaire open and use its Retry, Change, JSON or CSV recovery actions.',\n        false,\n        'error'\n      );\n      // Preserve the live participant iframe and its review/recovery state. Reparenting\n      // the iframe here can recreate its browsing context and replace the actionable\n      // staging failure with a generic saved-session offer.\n      releaseFullscreenForNativeNavigation(true);\n      setImportantStyle(status, 'position', 'sticky');\n      setImportantStyle(status, 'top', '0');\n      setImportantStyle(status, 'z-index', '2147483001');\n      sendStagingReceipt(event.source, false, submissionId || '', detail);\n      // Do not expose native Qualtrics Next as a bypass while staging is unresolved.\n      // The participant can retry from the still-live AQP review screen. A27's\n      // post-staging advance-failure path remains separate and still restores Next."""
-          count = integration.count(old)
-          if count != 1:
-              raise SystemExit(f'Expected exactly one Qualtrics staging replacement, found {count}')
-          integration_path.write_text(integration.replace(old, new, 1))
+          integration = replace_once(integration, old, new, 'Qualtrics staging')
+          integration_path.write_text(integration)
+
+          sink_test_path = Path('source/tests/result-sink.test.ts')
+          tests = sink_test_path.read_text()
+          old = """    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');\n    expect(runtime.showNextButton).toHaveBeenCalledOnce();\n    expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith("""
+          new = """    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');\n    expect(runtime.showNextButton).not.toHaveBeenCalled();\n    expect(runtime.dom.statusAttributes['data-severity']).toBe('error');\n    expect(runtime.frameWindow.postMessage).toHaveBeenCalledWith("""
+          tests = replace_once(tests, old, new, 'invalid-record navigation gate')
+
+          old = """    expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_RAW_05', expect.any(String));\n    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');\n    expect(runtime.showNextButton).toHaveBeenCalledOnce();\n    expect(runtime.dom.status.textContent).toContain('Injected raw-field staging failure');"""
+          new = """    expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_RAW_05', expect.any(String));\n    expect(runtime.setJSEmbeddedData).not.toHaveBeenCalledWith('AQP_ACCEPTED', '1');\n    expect(runtime.showNextButton).not.toHaveBeenCalled();\n    expect(runtime.dom.status.textContent).toContain('Injected raw-field staging failure');\n    expect(runtime.dom.status.textContent).toContain('Retry, Change, JSON or CSV');\n    expect(runtime.dom.statusAttributes['data-severity']).toBe('error');"""
+          tests = replace_once(tests, old, new, 'partial-staging navigation gate')
+
+          old = """  it('restores Qualtrics navigation when an invalid record cannot be staged', () => {"""
+          new = """  it('preserves the live participant recovery route and blocks native Next when staging fails', () => {"""
+          tests = replace_once(tests, old, new, 'staging policy test title')
+
+          old = """    expect(showNextButton).toHaveBeenCalledOnce();\n    expect(dom.status.textContent).toContain('Return to the questionnaire and try again');\n    expect(dom.bodyStyle.overflow).toBe('');"""
+          new = """    expect(showNextButton).not.toHaveBeenCalled();\n    expect(dom.status.textContent).toContain('The response was not staged');\n    expect(dom.status.textContent).toContain('Retry, Change, JSON or CSV');\n    expect(dom.statusAttributes['data-severity']).toBe('error');\n    expect(dom.bodyStyle.overflow).toBe('');"""
+          tests = replace_once(tests, old, new, 'live recovery gate')
+          sink_test_path.write_text(tests)
+
+          component_test_path = Path('source/tests/study-component.test.ts')
+          component_tests = component_test_path.read_text()
+          old = """    expect(\n      [...component.querySelectorAll<HTMLButtonElement>('button')]\n        .some((button) => button.textContent?.includes('Calculate and submit')),\n    ).toBe(true);"""
+          new = """    expect(\n      [...component.querySelectorAll<HTMLButtonElement>('button')]\n        .some((button) => button.textContent?.trim() === 'Retry submission'),\n    ).toBe(true);\n    expect(\n      [...component.querySelectorAll<HTMLButtonElement>('button')]\n        .some((button) => button.textContent?.includes('Change item 1 answer')),\n    ).toBe(true);"""
+          component_tests = replace_once(component_tests, old, new, 'host-failure retry label')
+
+          old = """  it('keeps the in-progress recovery copy and download buttons if localStorage is full', async () => {\n    const component = await renderConfiguredComponent();\n    window.accessibleNasaTlxResultSink = {\n      name: 'UCL approved test platform',\n      async submit(record) {\n        return {\n          accepted: true,\n          submissionId: record.submissionId,\n          receiptId: 'receipt-storage-full',\n        };\n      },\n    };\n    await completeQuestionnaire(component);\n    const progressKey = Object.keys(localStorage).find((key) => key.includes('-progress:'));\n    expect(progressKey).toBeTruthy();\n    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {\n      throw new DOMException('Quota exceeded', 'QuotaExceededError');\n    });\n\n    [...component.querySelectorAll<HTMLButtonElement>('button')]\n      .find((button) => button.textContent?.includes('Calculate and submit'))!\n      .click();\n    await new Promise((resolve) => setTimeout(resolve, 0));\n    await component.updateComplete;\n\n    expect(setItem).toHaveBeenCalled();\n    expect(loadCompletedResults()).toEqual([]);\n    expect(component.querySelector('.save-status')?.textContent).toContain(\n      'could not keep a backup copy',\n    );\n    expect(component.textContent).toContain('Download JSON backup');\n    expect(component.textContent).toContain('Download CSV backup');\n    expect(localStorage.getItem(progressKey!)).not.toBeNull();\n  });"""
+          new = """  it('keeps review, recovery actions and the in-progress copy if completed-record storage fails', async () => {\n    const component = await renderConfiguredComponent();\n    const submit = vi.fn(async (record: StudyResultRecord) => ({\n      accepted: true as const,\n      submissionId: record.submissionId,\n      receiptId: 'receipt-storage-full',\n    }));\n    window.accessibleNasaTlxResultSink = {\n      name: 'UCL approved test platform',\n      submit,\n    };\n    await completeQuestionnaire(component);\n    const progressKey = Object.keys(localStorage).find((key) => key.includes('-progress:'));\n    expect(progressKey).toBeTruthy();\n    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {\n      throw new DOMException('Quota exceeded', 'QuotaExceededError');\n    });\n\n    [...component.querySelectorAll<HTMLButtonElement>('button')]\n      .find((button) => button.textContent?.includes('Calculate and submit'))!\n      .click();\n    await new Promise((resolve) => setTimeout(resolve, 0));\n    await component.updateComplete;\n\n    expect(setItem).toHaveBeenCalled();\n    expect(submit).not.toHaveBeenCalled();\n    expect(loadCompletedResults()).toEqual([]);\n    expect(component.querySelector('#review-heading')).not.toBeNull();\n    expect(component.querySelector('#complete-heading')).toBeNull();\n    expect(component.querySelector('#error-summary')?.textContent).toContain(\n      'The browser could not save the completed record',\n    );\n    expect(component.querySelector('#error-summary')?.textContent).toContain(\n      'study platform has not been contacted',\n    );\n    expect(document.activeElement).toBe(component.querySelector('#error-summary'));\n    expect(component.querySelector('.submission-recovery')?.textContent).toContain(\n      'The browser could not save the completed record',\n    );\n    expect(component.textContent).toContain('Retry saving and submitting responses');\n    expect(component.textContent).toContain('Change item 1 answer');\n    expect(component.textContent).toContain('Download JSON backup');\n    expect(component.textContent).toContain('Download CSV backup');\n    expect(localStorage.getItem(progressKey!)).not.toBeNull();\n\n    setItem.mockRestore();\n    [...component.querySelectorAll<HTMLButtonElement>('button')]\n      .find((button) => button.textContent?.trim() === 'Retry saving and submitting responses')!\n      .click();\n    await new Promise((resolve) => setTimeout(resolve, 0));\n    await component.updateComplete;\n\n    expect(submit).toHaveBeenCalledOnce();\n    expect(component.querySelector('#complete-heading')).not.toBeNull();\n  });"""
+          component_tests = replace_once(component_tests, old, new, 'storage-failure recovery test')
+          component_test_path.write_text(component_tests)
 
       - name: Install and verify repair
         working-directory: source
@@ -103,6 +132,8 @@ jobs:
             .github/workflows/rf03-patch-and-sync.yml \
             source/src/accessible-nasa-tlx.ts \
             integrations/qualtrics/qualtrics-question.js \
+            source/tests/result-sink.test.ts \
+            source/tests/study-component.test.ts \
             source/demo/accessible-questionnaire-platform-v0.8.html \
             source/demo/accessible-nasa-tlx-v0.7.html \
             index.html study.html assets questionnaires
