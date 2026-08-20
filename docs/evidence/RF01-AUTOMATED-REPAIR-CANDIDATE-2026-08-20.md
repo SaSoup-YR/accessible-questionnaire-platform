@@ -1,53 +1,53 @@
 # RF-01 / A26 automated repair candidate — 20 August 2026
 
-Status: **implementation and repository-wide automated verification complete; manual A26 adjudication still required**
+Status: **revised implementation and generated release are synchronized; canonical repository-wide verification is being rerun; manual A26 adjudication remains required**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf01-qualtrics-connection-alert`.
-- Verified runtime head before this evidence-only documentation update: `7356aa2b2ec74f7db7080523128a6e5f3ea3356f`.
-- Final canonical verification run for that runtime head: `32394900756` — **success**.
+- Revised runtime head before this evidence-only documentation update: `93bd12a8cdec4b6a486d4460edf5ebb2dbf44b7b`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - RF-01 contains four historical A26 failures: R1, R2, R3 and R4.
 
-## Retained implementation
+## Why the implementation was revised again
 
-`integrations/qualtrics/qualtrics-question.js` now uses state-dependent semantics on the single collection-status element:
+The first RF-01 repair correctly changed blocking connection failure to alert semantics and restored normal status semantics after connection. Repository-wide automation passed on runtime head `7356aa2b2ec74f7db7080523128a6e5f3ea3356f` in canonical run `32394900756`.
 
-- normal informational states: `role="status"`;
-- quiet connected/waiting states: `role="status"` with `aria-live="off"` when intentionally quiet;
-- blocking errors: `role="alert"`, `data-severity="error"`, `aria-live="assertive"`;
-- later informational calls restore `role="status"` rather than leaving the shared element stuck as an alert.
+The subsequent R1 manual observation exposed a narrower problem that automation could not establish: the initial visible **Connecting** message was not automatically spoken by NVDA. Therefore the earlier automated pass is retained as evidence for the state-dependent DOM semantics, but it is not treated as proof that the initial status update is exposed by the real NVDA + Firefox route.
 
-The A26 8-second missing-connection timeout explicitly enters the error path. Other blocking package/connection setup failures also enter the same error path. Initial Connecting remains informational.
+## Revised Connecting live-region implementation
 
-Implementation commit: `dc54eeab892ded977140e7710746dc4ba6b3eedd`.
+`integrations/qualtrics/qualtrics-question.js` now primes the collection-status element before the Connecting message occurs:
+
+- the existing element is explicitly established as `role="status"`, `aria-live="polite"`, `aria-atomic="true"`, informational and non-quiet;
+- any static fallback text is cleared;
+- the runtime Connecting message is inserted on a later task (50 ms) after the live region exists;
+- if the verified child connection arrives first, the delayed Connecting callback is suppressed so it cannot overwrite the connected state;
+- blocking connection failure remains `role="alert"`, `aria-live="assertive"`, `aria-atomic="true"`, `data-severity="error"`;
+- verified connected/waiting informational states return to or remain `role="status"` rather than staying as alerts.
+
+This design follows the relevant live-region principle: the status container must exist with its live-region semantics before the status message is inserted. It is still a technical implementation hypothesis until the required real AT routes are manually observed.
 
 ## Automated guard
 
-New test: `source/tests/rf01-qualtrics-connection-alert.test.ts`.
+`source/tests/rf01-qualtrics-connection-alert.test.ts` now checks both timing and state:
 
-It checks:
+1. immediately after bridge initialisation, the status container is primed and empty with `role=status`, polite live semantics and `aria-atomic=true`;
+2. the 50 ms callback inserts the Connecting message while preserving informational status semantics;
+3. the deterministic 8-second missing-connection path becomes an assertive alert, contains no false connected claim and keeps the participant iframe unrevealed;
+4. a verified child handshake uses normal status semantics, reveals the participant iframe, and prevents the delayed Connecting callback from overwriting the connected state.
 
-1. Connecting is `role=status`, polite/informational, with participant iframe still hidden;
-2. a deterministic missing bridge timeout becomes `role=alert`, assertive/error, with no connected claim and participant iframe still unrevealed;
-3. a verified child handshake leaves/restores `role=status`, quiet connected semantics and reveals the participant iframe.
+Existing RF-03/A27/A28 and repository-wide accessibility/browser tests remain in the canonical verification gate.
 
-Existing RF-03/A27/A28 tests remain part of the repository-wide verification gate.
+## Generated-release synchronization
 
-## Final automated verification
+The revised source changes alter the study-conductor bundle. Generated deployment output was therefore regenerated by CI rather than hand-edited. Runtime head `93bd12a8cdec4b6a486d4460edf5ebb2dbf44b7b` contains the regenerated release output and restores the canonical `.github/workflows/verify.yml`; the temporary write-enabled synchronization workflow is not retained in the PR file diff.
 
-Canonical workflow run `32394900756` completed successfully on runtime head `7356aa2b2ec74f7db7080523128a6e5f3ea3356f` after the canonical verification workflow had been restored. It recorded:
-
-- 22 test files / 213 automated tests passed, including both focused RF-01 tests;
-- 12/12 rendered-browser regression tests passed;
-- 9/9 Chromium/Firefox/WebKit support tests passed;
-- production, standalone and release builds passed;
-- the generated-release freshness gate passed, proving the committed deployment files matched the source-generated outputs.
-
-This is automated technical evidence only. It does not replace the frozen A26 assistive-technology observations.
+A fresh canonical repository-wide run is required after this synchronization. Its final run ID and result should be recorded in the PR evidence before manual closure.
 
 ## Evidence boundary
 
-This implementation and automation do **not** reclassify A26. R1-A26, R2-A26, R3-A26 and R4-A26 remain historical F until the same wrong-child-origin post-fix route is manually rerun with NVDA+Firefox, NVDA+Chrome, VoiceOver+Safari and Windows Voice Access+Chrome, followed by the required clean connect -> connected -> Start smoke.
+Neither the revised code nor automated tests reclassify A26. R1-A26, R2-A26, R3-A26 and R4-A26 remain historical F until the frozen post-fix routes are manually rerun with NVDA + Firefox, NVDA + Chrome, VoiceOver + Safari and Windows Voice Access + Chrome, followed by the required clean connect -> connected -> Start smoke.
+
+In particular, a passing unit or browser test can establish the implemented DOM state/timing contract; only the real assistive-technology observation can establish whether the status or alert was actually exposed on that named route.
