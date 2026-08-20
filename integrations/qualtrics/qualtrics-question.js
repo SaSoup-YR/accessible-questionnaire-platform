@@ -39,11 +39,13 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
   function setStatus(message, quiet, severity) {
     if (!status) return;
+    var isError = severity === 'error';
     status.textContent = message;
     if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', isError ? 'alert' : 'status');
       status.setAttribute('data-quiet', quiet ? 'true' : 'false');
-      status.setAttribute('data-severity', severity === 'error' ? 'error' : 'information');
-      status.setAttribute('aria-live', quiet ? 'off' : 'polite');
+      status.setAttribute('data-severity', isError ? 'error' : 'information');
+      status.setAttribute('aria-live', quiet ? 'off' : (isError ? 'assertive' : 'polite'));
     }
   }
 
@@ -384,7 +386,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         setStatus(
           'The generated questionnaire HTML, JavaScript and participant page do not use the same bridge version. ' +
           'Do not collect a response. Regenerate and replace the complete package.',
-          false
+          false,
+          'error'
         );
         releaseFullscreenForNativeNavigation();
         question.showNextButton();
@@ -399,7 +402,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         setStatus(
           diagnosticDetail +
           ' Do not collect a response. Check the Survey Flow fields and question JavaScript.',
-          false
+          false,
+          'error'
         );
         releaseFullscreenForNativeNavigation();
         question.showNextButton();
@@ -513,7 +517,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   if (!iframe || !iframe.contentWindow || !liveQuestion) {
     setStatus(
       'The accessible questionnaire package is incomplete. The study conductor must replace the complete generated HTML and JavaScript.',
-      false
+      false,
+      'error'
     );
     // Keep the native navigation available on a misconfigured test page instead of
     // trapping the researcher or participant. This path must fail the synthetic
@@ -528,7 +533,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setStatus(
       'The questionnaire HTML and JavaScript versions do not match. Expected package ' +
       bridgeBuild + '. Do not collect a response. Replace both generated blocks together.',
-      false
+      false,
+      'error'
     );
     releaseFullscreenForNativeNavigation();
     question.showNextButton();
@@ -553,7 +559,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setStatus(
       'The questionnaire connection did not start. Do not collect a real response. ' +
       'Regenerate and replace the complete HTML and JavaScript, then test again.',
-      false
+      false,
+      'error'
     );
     releaseFullscreenForNativeNavigation();
     question.showNextButton();
