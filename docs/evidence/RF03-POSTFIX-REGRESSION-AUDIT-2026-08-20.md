@@ -55,12 +55,12 @@ Fault: only the `question.clickNextButton();` line inside `continueStagedRespons
 
 Observed retained evidence:
 
-- R1 NVDA + Firefox: **failure-state regression passed.** NVDA announced submission to Qualtrics, then `Qualtrics could not confirm this response...`, followed by the participant-side `Qualtrics did not confirm this response` heading/alert. Completed result and JSON/CSV recovery remained visible. No premature recorded-success wording is present in the retained log.
-- R2 NVDA + Chrome: **failure-state regression passed.** Same truthful failure announcement and retained recovery state/backup controls. No premature recorded-success wording is present in the retained log.
+- R1 NVDA + Firefox: **failure-state regression passed.** NVDA announced submission to Qualtrics, then `Qualtrics could not confirm this response...`, followed by the participant-side `Qualtrics did not confirm this response` heading/alert. Completed result and JSON/CSV recovery remained visible. No premature recorded-success wording is present in the retained log. The uploaded RF-03 regression record does not separately preserve a post-failure native-Next activation/End-of-Survey observation, so that final operability sub-check is not inferred.
+- R2 NVDA + Chrome: **failure-state regression passed.** Same truthful failure announcement and retained recovery state/backup controls. No premature recorded-success wording is present in the retained log. The uploaded RF-03 regression record does not separately preserve a post-failure native-Next activation/End-of-Survey observation, so that final operability sub-check is not inferred.
 - R3 VoiceOver + Safari: visible waiting state and visible post-watchdog failure/recovery state were captured, but **the named VoiceOver route cannot be validly adjudicated** because the VoiceOver/mouse environment malfunction was present. Do not classify R3-A27 regression P or F from visual evidence alone.
 - R4 Windows Voice Access + Chrome: waiting and post-watchdog failure/recovery states were captured and Voice Access successfully activated `Calculate and submit responses`. The retained evidence file does not contain a documented post-failure `Click Next page` command/End-of-Survey observation for this RF-03 regression run, so final R4-A27 manual regression closure is **pending documentation/confirmation of actual Next usability** rather than inferred from visibility.
 
-A27 conclusion: **R1/R2 failure-state behavior preserved; R3 pending due AT environment malfunction; R4 final native-Next operability evidence pending.**
+A27 conclusion: **R1/R2 failure-state behavior preserved; R1/R2 native-Next actual-use sub-check not separately retained; R3 pending due AT environment malfunction; R4 final native-Next actual-use evidence pending.**
 
 ## VoiceOver environment incident
 
@@ -75,6 +75,6 @@ RF-03 remains **Draft / unmerged**. Current manual regression status:
 - A18: 4/4 P regression.
 - A25: 4/4 P regression.
 - A26: R1/R2/R4 known historical F retained with no new RF-03 regression observed; R3 environment-limited/pending.
-- A27: R1/R2 failure-state regression preserved; R3 environment-limited/pending; R4 native-Next actual-use evidence pending.
+- A27: R1/R2 failure-state regression preserved but native-Next actual-use not separately retained; R3 environment-limited/pending; R4 native-Next actual-use evidence pending.
 
-Do not mark RF-03 merge-complete until the remaining R3 environment issue is resolved or explicitly bounded, and R4 A27 Next operability is confirmed from retained/manual evidence.
+Do not mark RF-03 merge-complete until the remaining R3 environment issue is resolved or explicitly bounded, and A27 native-Next operability is confirmed from retained/manual evidence.
