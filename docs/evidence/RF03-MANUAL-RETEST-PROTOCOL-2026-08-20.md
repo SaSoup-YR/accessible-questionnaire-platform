@@ -1,6 +1,6 @@
 # RF-03 / A28 manual post-fix retest protocol — 20 August 2026
 
-Status: **frozen before manual adjudication**
+Status: **frozen before manual adjudication; A28 adjudication completed separately**
 
 ## Purpose
 
@@ -122,3 +122,9 @@ Before manual testing, the historical q8 A28 status remains:
 - R4-A28 = F
 
 Only a post-fix manual record may change these targeted statuses. Even if all four later pass, the original q8 matrix remains unchanged and must be reported as historical baseline plus separate post-fix closure evidence.
+
+## Post-A28 regression environment incident
+
+During the later A26/A27 regression work, the R3 Mac environment became unstable: with VoiceOver enabled, the auditor reported pointer/mouse interaction conflict that persisted after restarting the Mac. This happened after the retained R3 A18/A25 evidence had already been collected.
+
+Do not replace R3 with Safari-without-VoiceOver. Any R3 A26/A27 regression observation made while this AT environment is unstable must be recorded as environment-limited/pending rather than silently adjudicated. See `docs/evidence/RF03-POSTFIX-REGRESSION-AUDIT-2026-08-20.md`.
