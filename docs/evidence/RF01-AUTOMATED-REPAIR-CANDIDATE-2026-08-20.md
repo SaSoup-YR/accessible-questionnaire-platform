@@ -1,11 +1,13 @@
 # RF-01 / A26 automated repair candidate — 20 August 2026
 
-Status: **implementation candidate ready for automated verification; manual A26 adjudication still required**
+Status: **implementation and repository-wide automated verification complete; manual A26 adjudication still required**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf01-qualtrics-connection-alert`.
+- Verified runtime head before this evidence-only documentation update: `7356aa2b2ec74f7db7080523128a6e5f3ea3356f`.
+- Final canonical verification run for that runtime head: `32394900756` — **success**.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - RF-01 contains four historical A26 failures: R1, R2, R3 and R4.
 
@@ -33,6 +35,18 @@ It checks:
 3. a verified child handshake leaves/restores `role=status`, quiet connected semantics and reveals the participant iframe.
 
 Existing RF-03/A27/A28 tests remain part of the repository-wide verification gate.
+
+## Final automated verification
+
+Canonical workflow run `32394900756` completed successfully on runtime head `7356aa2b2ec74f7db7080523128a6e5f3ea3356f` after the canonical verification workflow had been restored. It recorded:
+
+- 22 test files / 213 automated tests passed, including both focused RF-01 tests;
+- 12/12 rendered-browser regression tests passed;
+- 9/9 Chromium/Firefox/WebKit support tests passed;
+- production, standalone and release builds passed;
+- the generated-release freshness gate passed, proving the committed deployment files matched the source-generated outputs.
+
+This is automated technical evidence only. It does not replace the frozen A26 assistive-technology observations.
 
 ## Evidence boundary
 
