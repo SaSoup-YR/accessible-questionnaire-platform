@@ -776,21 +776,24 @@ describe('study-conductor and participant separation', () => {
     ).toBe(true);
     expect(
       [...component.querySelectorAll<HTMLButtonElement>('button')]
-        .some((button) => button.textContent?.includes('Calculate and submit')),
+        .some((button) => button.textContent?.trim() === 'Retry submission'),
+    ).toBe(true);
+    expect(
+      [...component.querySelectorAll<HTMLButtonElement>('button')]
+        .some((button) => button.textContent?.includes('Change item 1 answer')),
     ).toBe(true);
   });
 
-  it('keeps the in-progress recovery copy and download buttons if localStorage is full', async () => {
+  it('keeps review, recovery actions and the in-progress copy if completed-record storage fails', async () => {
     const component = await renderConfiguredComponent();
+    const submit = vi.fn(async (record: StudyResultRecord) => ({
+      accepted: true as const,
+      submissionId: record.submissionId,
+      receiptId: 'receipt-storage-full',
+    }));
     window.accessibleNasaTlxResultSink = {
       name: 'UCL approved test platform',
-      async submit(record) {
-        return {
-          accepted: true,
-          submissionId: record.submissionId,
-          receiptId: 'receipt-storage-full',
-        };
-      },
+      submit,
     };
     await completeQuestionnaire(component);
     const progressKey = Object.keys(localStorage).find((key) => key.includes('-progress:'));
@@ -806,13 +809,35 @@ describe('study-conductor and participant separation', () => {
     await component.updateComplete;
 
     expect(setItem).toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
     expect(loadCompletedResults()).toEqual([]);
-    expect(component.querySelector('.save-status')?.textContent).toContain(
-      'could not keep a backup copy',
+    expect(component.querySelector('#review-heading')).not.toBeNull();
+    expect(component.querySelector('#complete-heading')).toBeNull();
+    expect(component.querySelector('#error-summary')?.textContent).toContain(
+      'The browser could not save the completed record',
     );
+    expect(component.querySelector('#error-summary')?.textContent).toContain(
+      'study platform has not been contacted',
+    );
+    expect(document.activeElement).toBe(component.querySelector('#error-summary'));
+    expect(component.querySelector('.submission-recovery')?.textContent).toContain(
+      'The browser could not save the completed record',
+    );
+    expect(component.textContent).toContain('Retry saving and submitting responses');
+    expect(component.textContent).toContain('Change item 1 answer');
     expect(component.textContent).toContain('Download JSON backup');
     expect(component.textContent).toContain('Download CSV backup');
     expect(localStorage.getItem(progressKey!)).not.toBeNull();
+
+    setItem.mockRestore();
+    [...component.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.trim() === 'Retry saving and submitting responses')!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await component.updateComplete;
+
+    expect(submit).toHaveBeenCalledOnce();
+    expect(component.querySelector('#complete-heading')).not.toBeNull();
   });
 
   it('removes a stale failed-attempt backup when an answer is edited before retry', async () => {

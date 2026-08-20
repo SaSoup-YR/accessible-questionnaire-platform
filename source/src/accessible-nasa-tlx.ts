@@ -247,6 +247,7 @@ export class AccessibleNasaTlx extends LitElement {
   @state() private completionStagedByBridge = false;
   @state() private remoteRecordingUnconfirmed = false;
   @state() private hostSubmissionFailed = false;
+  @state() private browserStorageFailed = false;
   @state() private submittingResult = false;
   @state() private hostBridgeState: QualtricsBridgeState | 'not-required' = 'not-required';
   @state() private hostBridgeMessage = '';
@@ -1358,18 +1359,23 @@ export class AccessibleNasaTlx extends LitElement {
         <h2 id="review-heading">Review your responses</h2>
         <p>Check every response before calculating the ${this.definition.scoring.scoreName.toLowerCase()}.</p>
 
-        ${this.hostSubmissionFailed && this.submittedRecord
+        ${(this.hostSubmissionFailed || this.browserStorageFailed) && this.submittedRecord
           ? html`
               <section class="submission-recovery" aria-labelledby="submission-recovery-heading">
-                <h3 id="submission-recovery-heading">The study platform has not confirmed this response</h3>
+                <h3 id="submission-recovery-heading">
+                  ${this.browserStorageFailed
+                    ? 'The browser could not save the completed record'
+                    : 'The study platform has not confirmed this response'}
+                </h3>
                 <p>
-                  Your answers remain available on this page. You can retry submission, return to an answer,
-                  or save a backup now.
+                  ${this.browserStorageFailed
+                    ? 'The study platform has not been contacted. Your answers remain reviewable on this page. Retry saving, change an answer, or download a backup before leaving.'
+                    : 'Your answers remain reviewable on this page. Retry submission, change an answer, or download a backup before leaving.'}
                 </p>
                 ${this.completionSavedLocally
                   ? html`<p>A complete backup is also stored in this browser on this device.</p>`
                   : html`<p>
-                      This browser could not store a backup. Download JSON or CSV before leaving this page.
+                      This browser could not store a completed backup. Download JSON or CSV before leaving this page.
                     </p>`}
                 <div class="button-row compact">
                   <button class="secondary-button large-answer-button" type="button" @click=${this.downloadResultJson}>
@@ -1460,11 +1466,21 @@ export class AccessibleNasaTlx extends LitElement {
             class="primary-button large-answer-button"
             type="button"
             data-gaze-target
-            data-gaze-label="Calculate and submit responses"
+            data-gaze-label=${this.browserStorageFailed
+              ? 'Retry saving and submitting responses'
+              : this.hostSubmissionFailed
+              ? 'Retry submission'
+              : 'Calculate and submit responses'}
             ?disabled=${this.submittingResult}
             @click=${this.submitResponses}
           >
-            ${this.submittingResult ? 'Submitting responses…' : 'Calculate and submit responses'}
+            ${this.submittingResult
+              ? 'Submitting responses…'
+              : this.browserStorageFailed
+              ? 'Retry saving and submitting responses'
+              : this.hostSubmissionFailed
+              ? 'Retry submission'
+              : 'Calculate and submit responses'}
           </button>
         </div>
       </section>
@@ -2314,6 +2330,14 @@ export class AccessibleNasaTlx extends LitElement {
       this.completionStagedByBridge = false;
       this.remoteRecordingUnconfirmed = false;
       this.hostSubmissionFailed = false;
+      this.browserStorageFailed = false;
+      if (this.studyConfig && !this.completionSavedLocally) {
+        this.browserStorageFailed = true;
+        this.showError(
+          'The browser could not save the completed record. The study platform has not been contacted. Your answers remain reviewable. Retry saving, change an answer, or download a JSON or CSV backup before leaving this page.',
+        );
+        return;
+      }
       if (sink) {
         this.submittingResult = true;
         this.statusMessage = `Submitting responses to ${sink.name}.`;
@@ -2322,6 +2346,7 @@ export class AccessibleNasaTlx extends LitElement {
           this.completionStagedByBridge = true;
         } catch (error) {
           this.hostSubmissionFailed = true;
+          this.browserStorageFailed = false;
           const detail = error instanceof Error ? error.message : 'The study platform did not accept the response.';
           this.showError(
             `${detail} Your answers remain on this page. Retry submission, return to an answer, or use a backup button below.`,
@@ -2414,6 +2439,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.completionStagedByBridge = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
+    this.browserStorageFailed = false;
     this.submittingResult = false;
     this.startedAt = '';
     this.participantCodeError = '';
@@ -2445,6 +2471,7 @@ export class AccessibleNasaTlx extends LitElement {
     this.completionStagedByBridge = false;
     this.remoteRecordingUnconfirmed = false;
     this.hostSubmissionFailed = false;
+    this.browserStorageFailed = false;
   }
 
   private toggleReadAloud = () => {
