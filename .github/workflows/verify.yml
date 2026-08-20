@@ -8,7 +8,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   AQP_WORKFLOW_EVENT: ${{ github.event_name }}
@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -93,19 +95,26 @@ jobs:
       - name: Build production, standalone and release outputs
         run: npm run build:release
 
-      - name: Publish generated release candidate for RF-01 sync
-        uses: actions/upload-artifact@v4
-        with:
-          name: rf01-generated-release
-          path: |
-            index.html
-            study.html
-            assets
-            questionnaires
-            source/demo/accessible-nasa-tlx-v0.7.html
-            source/demo/accessible-questionnaire-platform-v0.8.html
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated RF-01 release outputs to the PR branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git add \
+            demo/accessible-nasa-tlx-v0.7.html \
+            demo/accessible-questionnaire-platform-v0.8.html \
+            ../index.html \
+            ../study.html \
+            ../assets \
+            ../questionnaires
+          if git diff --cached --quiet; then
+            echo "Generated release files are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync RF-01 generated release"
+          git push origin HEAD:"$PR_BRANCH"
 
       - name: Confirm the committed deployment files are current
         run: >-
