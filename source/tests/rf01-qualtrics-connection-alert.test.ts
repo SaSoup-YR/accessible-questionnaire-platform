@@ -140,16 +140,25 @@ function createRuntime() {
 }
 
 describe('RF-01 Qualtrics connection semantics', () => {
-  it('keeps Connecting as a status and exposes a missing bridge as an alert without enabling the participant runner', () => {
+  it('primes a live status before announcing Connecting and exposes a missing bridge as an alert without enabling the participant runner', () => {
     const runtime = createRuntime();
 
-    expect(runtime.status.textContent).toContain('Connecting questionnaire package');
+    expect(runtime.status.textContent).toBe('');
     expect(runtime.statusAttributes.role).toBe('status');
     expect(runtime.statusAttributes['aria-live']).toBe('polite');
+    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
     expect(runtime.statusAttributes['data-severity']).toBe('information');
     expect(runtime.hideNextButton).toHaveBeenCalledOnce();
     expect(runtime.showNextButton).not.toHaveBeenCalled();
     expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
+
+    runtime.timers.find(({ delay }) => delay === 50)!.callback();
+
+    expect(runtime.status.textContent).toContain('Connecting questionnaire package');
+    expect(runtime.statusAttributes.role).toBe('status');
+    expect(runtime.statusAttributes['aria-live']).toBe('polite');
+    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
+    expect(runtime.statusAttributes['data-severity']).toBe('information');
 
     runtime.timers.find(({ delay }) => delay === 8000)!.callback();
 
@@ -157,12 +166,13 @@ describe('RF-01 Qualtrics connection semantics', () => {
     expect(runtime.status.textContent).not.toContain('questionnaire is connected');
     expect(runtime.statusAttributes.role).toBe('alert');
     expect(runtime.statusAttributes['aria-live']).toBe('assertive');
+    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
     expect(runtime.statusAttributes['data-severity']).toBe('error');
     expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
     expect(runtime.showNextButton).toHaveBeenCalledOnce();
   });
 
-  it('keeps a verified normal connection on status semantics and reveals the participant runner', () => {
+  it('keeps a verified normal connection on status semantics and prevents a delayed Connecting message from overwriting it', () => {
     const runtime = createRuntime();
 
     runtime.receiveMessage({
@@ -178,9 +188,17 @@ describe('RF-01 Qualtrics connection semantics', () => {
     expect(runtime.status.textContent).toContain('questionnaire is connected');
     expect(runtime.statusAttributes.role).toBe('status');
     expect(runtime.statusAttributes['aria-live']).toBe('off');
+    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
     expect(runtime.statusAttributes['data-severity']).toBe('information');
     expect(runtime.iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
     expect(runtime.showNextButton).not.toHaveBeenCalled();
     expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_READY', '1');
+
+    runtime.timers.find(({ delay }) => delay === 50)!.callback();
+
+    expect(runtime.status.textContent).toContain('questionnaire is connected');
+    expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
+    expect(runtime.statusAttributes.role).toBe('status');
+    expect(runtime.statusAttributes['aria-live']).toBe('off');
   });
 });
