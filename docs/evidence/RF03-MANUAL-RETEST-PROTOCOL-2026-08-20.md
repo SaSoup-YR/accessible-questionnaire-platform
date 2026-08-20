@@ -10,6 +10,18 @@ The repair candidate is PR #73. The participant runtime was last changed in `b7f
 
 If participant or Qualtrics runtime code changes after this point, bind the manual retest to the new exact revision and rerun affected evidence.
 
+## Manual preview fixture
+
+For manual A28 testing before PR #73 is merged, an isolated GitHub Pages wrapper is available at:
+
+`https://sasoup-yr.github.io/accessible-questionnaire-platform/rf03-a28-preview.html`
+
+The preview wrapper was added to `gh-pages` in commit `59a784b7cdbda2922dafabf6257d9cac68aaebc1`. It does not replace the production root page. It loads the RF-03 generated participant bundle `assets/participant-CKS_Pywj.js` from PR #73 exact head `20b687182215d30a216498f627968fb00253d314`; the participant runtime itself was last changed in `b7f215f99d2df2b59008a71c79c6d202c9297f39`.
+
+When using the existing approved Qualtrics fixture, preserve the existing encoded `#study=...` configuration and participant parameter. Replace only the base URL before `#study=` with the preview URL above. This preserves the real Qualtrics `parentOrigin` encoded in the existing study configuration while testing the RF-03 participant runtime on the required `https://sasoup-yr.github.io` origin.
+
+The preview is a bounded manual-test fixture, not evidence that PR #73 has been merged or deployed to the production root.
+
 ## Frozen routes
 
 - R1 — NVDA + Firefox on Windows.
