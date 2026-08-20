@@ -37,11 +37,11 @@ async function expectNoDocumentHorizontalOverflow(page: Page, state: string) {
 }
 
 async function chooseRating50(page: Page) {
-  const input = page.locator('.rating-option input').filter({ has: page.locator('xpath=..') });
+  const allRatings = page.locator('.rating-option input');
   const value50 = page.locator('.rating-option input[value="50"]');
+  await expect(allRatings).toHaveCount(21);
   await expect(value50).toHaveCount(1);
   await value50.check();
-  await expect(input).toHaveCount(21);
 }
 
 test('RF-05 ordinary participant states reflow at 320 CSS px', async ({ page, browserName }) => {
