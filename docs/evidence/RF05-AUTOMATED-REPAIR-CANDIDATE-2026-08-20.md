@@ -1,12 +1,14 @@
 # RF-05 / A22 automated repair candidate — 20 August 2026
 
-Status: **implementation and generated release synchronized; final canonical verification pending; manual A22 adjudication required**
+Status: **implementation, generated release and canonical automated verification complete; manual A22 adjudication required**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf05-320px-reflow`.
-- Synchronized runtime head before this evidence-only commit: `ab395646755e52bd693131ef1d225acf2aa58ee9`.
+- Synchronized runtime head: `ab395646755e52bd693131ef1d225acf2aa58ee9`.
+- Canonical verified evidence head: `2bd39f10ddf36ab0b20d6c8aebe432304304a950` (documentation-only relative to the synchronized runtime).
+- Final canonical workflow run: `32414034649` — **success**.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - RF-05 maps to frozen **A22** with two historical failures: R1-A22 and R4-A22.
 
@@ -19,7 +21,7 @@ The frozen q8 evidence identified narrow-view reflow failures rather than missin
 
 The repair is therefore scoped to participant layout and does not alter questionnaire wording, answer values, scoring, storage, collection, recovery or assistive-technology announcement logic.
 
-## Retained implementation candidate
+## Retained implementation
 
 `source/src/rf05-reflow.css`, imported after the existing participant stylesheet, adds a narrow-view reflow guard that:
 
@@ -47,19 +49,19 @@ At a 320 × 900 CSS-pixel viewport, with a reserved vertical-scrollbar gutter to
 
 It runs in Chromium, Firefox and WebKit and reports overflowing elements if document-level overflow exceeds one CSS pixel. The state setup uses native DOM click only to reach the relevant rendered states; this test is measuring reflow rather than pointer hit-testing.
 
-## Verification so far
+## Final automated verification
 
-Pre-synchronization canonical run `32413524257` on source head `442264a8fbddf1f830c588013f187526494788c3` established that:
+Canonical run `32414034649` completed successfully on evidence head `2bd39f10ddf36ab0b20d6c8aebe432304304a950`, which contains the synchronized runtime unchanged from `ab395646755e52bd693131ef1d225acf2aa58ee9` plus this evidence file. It recorded:
 
-- locked dependency installation and 211 existing Vitest tests passed;
+- npm locked install: 0 vulnerabilities;
+- **21/21** Vitest files and **211/211** tests passed;
 - production build passed;
-- 12/12 existing rendered-browser accessibility regression tests passed;
-- the cross-browser support matrix passed, including the three new RF-05 reflow cases in Chromium, Firefox and WebKit;
-- production / standalone / release generation passed.
+- **12/12** existing rendered-browser accessibility regression tests passed;
+- **12/12** cross-browser support tests passed, including the new RF-05 320px reflow test in Chromium, Firefox and WebKit;
+- production / standalone / release generation passed;
+- generated-release freshness passed, proving committed deployment output matches the source-generated output.
 
-That run failed only at the final generated-release freshness gate, as expected after adding a new participant stylesheet. CI then regenerated and committed the deployment output at runtime head `ab395646755e52bd693131ef1d225acf2aa58ee9`.
-
-A fresh canonical read-only workflow run must pass on the synchronized runtime/evidence head before automated verification is considered complete.
+The earlier run `32413524257` is retained as diagnostic history: it established the same source/browser behavior but failed only because the newly generated deployment files had not yet been committed. It is not the final verification run.
 
 ## Evidence boundary and manual gate
 
