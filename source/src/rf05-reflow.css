@@ -1,0 +1,70 @@
+/*
+ * RF-05 / A22 narrow-view reflow guard.
+ *
+ * The frozen q8 audit found document-level horizontal scrolling at 320 CSS px
+ * in an expanded voice panel (R1) and response choices (R4). These rules remove
+ * min-content pressure and allow text/status badges to wrap. They deliberately
+ * do not hide or clip horizontal overflow: the content itself must reflow.
+ */
+
+body {
+  min-width: 0;
+}
+
+.app-shell,
+.panel,
+.voice-input,
+.voice-input-content,
+.choice-fieldset,
+.rating-fieldset,
+.choice-card,
+.toggle-card,
+.choice-card > span,
+.toggle-card > span,
+.rating-anchors,
+.rating-anchors > span {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.voice-input-content,
+.choice-card > span:not(.selected-marker),
+.toggle-card > span,
+.rating-anchors > span,
+.selected-marker {
+  overflow-wrap: anywhere;
+}
+
+.choice-card > span:not(.selected-marker),
+.toggle-card > span {
+  flex: 1 1 10rem;
+}
+
+.rating-anchors {
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.selected-marker {
+  white-space: normal;
+}
+
+@media (max-width: 700px) {
+  .choice-card,
+  .toggle-card {
+    flex-wrap: wrap;
+  }
+
+  .voice-input-content {
+    padding-inline: 0.75rem;
+  }
+
+  .choice-fieldset,
+  .rating-fieldset {
+    padding-inline: 0.75rem;
+  }
+
+  .explanation-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
