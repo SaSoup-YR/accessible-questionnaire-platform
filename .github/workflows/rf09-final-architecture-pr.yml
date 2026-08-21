@@ -1,0 +1,90 @@
+name: RF-09 one-time final architecture via PR
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.number == 77
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out RF-09 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf09-support-setting-feedback
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Separate setting status from browser TTS
+        shell: python
+        run: |
+          from pathlib import Path
+
+          source = Path('source/src/accessible-nasa-tlx.ts')
+          text = source.read_text(encoding='utf-8')
+          old = '''    if (this.audioGuidance) {
+              this.speakText(
+                'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.',
+              );
+            }
+            else this.stopReading();
+            this.persistProgress();'''.replace('              ', '      ').replace('            ', '    ')
+          new = '''    // Enabling browser text-to-speech is a state change, not a reason to
+    // use that same optional audio channel to announce its own activation.
+    // RF-09 exposes the setting result through the dedicated AT status
+    // channel; subsequent questionnaire feedback still uses browser TTS.
+    if (!this.audioGuidance) this.stopReading();
+    this.persistProgress();'''
+          if text.count(old) != 1:
+              print('Expected block was:')
+              print(repr(old))
+              raise SystemExit(f'Expected one audio-guidance self-confirmation block, found {text.count(old)}')
+          source.write_text(text.replace(old, new), encoding='utf-8')
+
+          test = Path('source/tests/rf09-support-setting-feedback.test.ts')
+          test_text = test.read_text(encoding='utf-8')
+          old_expectation = '    expect(cancel).toHaveBeenCalledTimes(1);\n    expect(state.speaking).toBe(false);'
+          new_expectation = '    expect(cancel).not.toHaveBeenCalled();\n    expect(state.speaking).toBe(false);'
+          if test_text.count(old_expectation) != 1:
+              raise SystemExit(f'Expected one audio-on cancel expectation, found {test_text.count(old_expectation)}')
+          test.write_text(test_text.replace(old_expectation, new_expectation), encoding='utf-8')
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run unit and component tests
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Generate production, standalone and release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Commit final architecture and synchronized release
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/rf09-final-architecture-pr.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          CHANGED="$(git diff --cached --name-only)"
+          printf '%s\n' "$CHANGED"
+          test -n "$CHANGED"
+          if printf '%s\n' "$CHANGED" | grep -Ev '^(.github/workflows/rf09-final-architecture-pr.yml|source/src/accessible-nasa-tlx.ts|source/tests/rf09-support-setting-feedback.test.ts|assets/|index.html$|study.html$|questionnaires/|source/demo/)' | grep -q .; then
+            echo 'Unexpected path changed during RF-09 final architecture application.' >&2
+            exit 1
+          fi
+          git diff --cached --check
+          git commit -m '[rf09-final] Separate setting status from browser TTS'
+          git push origin HEAD:agent/fix-rf09-support-setting-feedback
