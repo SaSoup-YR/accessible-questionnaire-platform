@@ -7,25 +7,33 @@ async function activateLabelWithoutMovingExistingFocus(input: Locator) {
   await expect(input).toBeFocused();
 }
 
-async function expectSupportAnnouncement(page: Page, message: string) {
+async function expectSupportAnnouncement(
+  page: Page,
+  message: string,
+  legacyStatusBefore: string,
+) {
   const regions = page.locator('[data-rf09-support-announcement]');
   await expect(regions).toHaveCount(2);
   await expect.poll(async () =>
     (await regions.allTextContents()).map((text) => text.trim()).filter(Boolean),
   ).toEqual([message]);
 
-  // The older component-wide live region is cleared for these setting messages,
-  // so the alternating role=status pair is the only screen-reader channel.
-  await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toBeEmpty();
+  // The older component-wide live region is not mutated by these setting
+  // changes, so the alternating role=status pair is the sole new AT message.
+  await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(legacyStatusBefore);
   await expect(page.locator('[data-aqp-announcement-priority="assertive"]')).toBeEmpty();
 }
 
-async function expectNoSupportAnnouncement(page: Page) {
+async function expectNoSupportAnnouncement(
+  page: Page,
+  legacyStatusBefore: string,
+) {
   const regions = page.locator('[data-rf09-support-announcement]');
   await expect(regions).toHaveCount(2);
   await expect.poll(async () =>
     (await regions.allTextContents()).map((text) => text.trim()).filter(Boolean),
   ).toEqual([]);
+  await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(legacyStatusBefore);
 }
 
 test('RF-09 support settings expose unique text labels and one non-focus-moving status path', async ({ page, browserName }) => {
@@ -35,6 +43,8 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   const answer = page.locator('.rating-option input[value="50"]');
   await answer.evaluate((element: HTMLInputElement) => element.click());
   await expect(answer).toBeChecked();
+  const legacyStatusBefore =
+    (await page.locator('main > p.sr-only[aria-live="polite"]').textContent())?.trim() ?? '';
 
   const toolbar = page.locator('.support-toolbar');
   await toolbar.locator('summary').click();
@@ -55,13 +65,13 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   await expect(feedback).toBeVisible();
   await expect(feedback).toHaveText('Large text selected.');
   await expect(answer).toBeChecked();
-  await expectSupportAnnouncement(page, 'Large text selected.');
+  await expectSupportAnnouncement(page, 'Large text selected.', legacyStatusBefore);
 
   await activateLabelWithoutMovingExistingFocus(standard);
   await expect(standard).toBeChecked();
   await expect(feedback).toHaveText('Standard text selected.');
   await expect(answer).toBeChecked();
-  await expectSupportAnnouncement(page, 'Standard text selected.');
+  await expectSupportAnnouncement(page, 'Standard text selected.', legacyStatusBefore);
 
   const recovery = toolbar.locator('input[id$="-recovery"]');
   await activateLabelWithoutMovingExistingFocus(recovery);
@@ -73,6 +83,7 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   await expectSupportAnnouncement(
     page,
     'Interruption recovery is on. Incomplete answers will be stored in this browser.',
+    legacyStatusBefore,
   );
 
   await activateLabelWithoutMovingExistingFocus(recovery);
@@ -84,6 +95,7 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   await expectSupportAnnouncement(
     page,
     'Interruption recovery is off. The saved in-progress copy has been removed.',
+    legacyStatusBefore,
   );
 
   const audio = toolbar.locator('input[id$="-audio"]');
@@ -94,7 +106,7 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
     'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.',
   );
   await expect(answer).toBeChecked();
-  await expectNoSupportAnnouncement(page);
+  await expectNoSupportAnnouncement(page, legacyStatusBefore);
 
   await activateLabelWithoutMovingExistingFocus(audio);
   await expect(audio).not.toBeChecked();
@@ -105,6 +117,7 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   await expectSupportAnnouncement(
     page,
     'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
+    legacyStatusBefore,
   );
 
   await expect(feedback).not.toBeFocused();
