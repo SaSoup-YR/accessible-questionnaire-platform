@@ -1,13 +1,16 @@
 # RF-09 / A33 successor candidate — 21 August 2026
 
-Status: **external research and source/test implementation complete; generated-release synchronization, canonical CI and manual R3/R4 evidence pending**
+Status: **external research, source/test implementation, generated-release synchronization and immutable preview complete; final canonical read-only CI and manual R3/R4 evidence pending**
 
 ## Audit identity and evidence boundary
 
 - Branch: `agent/fix-rf09-support-setting-feedback`.
 - Stacked base: final retained RF-06 head `e45a59d25e2188f194484c8dadd877cdbdf80ea1`.
 - First RF-09 immutable runtime: `d3af4889c4479a41d54f9c6d4754694f2e0233ed` at `/rf09-preview/`.
-- Current successor source/test work follows the first candidate's manual failure and is not yet a post-fix Pass.
+- Successor synchronized runtime and immutable preview source: `98b8cd63b345f7e16e9fe24ada63f31db06c71f3`.
+- Successor immutable preview path: `/rf09-arianotify-preview/`.
+- Generated synchronization/publish run: `32498618077` — **success**.
+- The synchronization workflow restored the canonical read-only workflow before committing. A fresh canonical run on this evidence-only successor is required before manual testing is credited.
 - Frozen q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - The post-fix unresolved count remains **10** until a new immutable R3/R4 route test satisfies the complete A33 rule.
 
@@ -84,7 +87,7 @@ Source identity used by AQP:
 - File: `arianotify-polyfill.js`
 - Licence: MIT, Copyright (c) 2024 GitHub
 
-The vendored adaptation is `source/src/vendor/github-arianotify-polyfill.ts`. The source mechanism is retained; AQP adds only TypeScript/module wrapping, project comments and a defensive `CSS.supports` availability check for non-browser test environments. The full attribution is in `THIRD_PARTY_NOTICES.md`.
+The vendored adaptation is `source/src/vendor/github-arianotify-polyfill.ts`. The production mechanism is retained; AQP adds TypeScript/module wrapping, project comments and a defensive `CSS.supports` availability check for non-browser test environments. A licence-preserving `@license` header remains in generated bundles, and the complete notice is in `THIRD_PARTY_NOTICES.md`.
 
 ### 6. WebKit implementation status
 
@@ -133,9 +136,9 @@ The successor adds no focus or scroll call and does not modify:
 - Qualtrics collection;
 - RF-06 speech-recognition logic.
 
-## Automated evidence required
+## Automated evidence
 
-Focused component and cross-browser tests must prove:
+Focused component and cross-browser tests verify:
 
 - unique `Standard text` / `Large text` visible and programmatic names;
 - `aria-controls` relationship to the visible result;
@@ -147,7 +150,11 @@ Focused component and cross-browser tests must prove:
 - unchanged older component status and no assertive output;
 - Chromium, Firefox and WebKit rendered mechanism coverage.
 
-The vendored fallback also retains its scoped-region creation, queue, 250 ms delay and repeated-message handling from the commit-pinned upstream source.
+The vendored fallback retains its scoped-region creation, queue, 250 ms delay and repeated-message handling from the commit-pinned upstream source.
+
+Run `32498195613` on the successor source/evidence state passed unit/component tests, production build, rendered-browser accessibility checks, the Chromium/Firefox/WebKit support matrix and release generation. It failed only the expected generated-release freshness step before the new bundle was committed. The later licence-header change did not alter executable control flow; synchronization run `32498618077` reran the locked unit/component suite and release generation before committing runtime `98b8cd63b345f7e16e9fe24ada63f31db06c71f3` and publishing the immutable preview.
+
+A final canonical read-only run must pass on the synchronized runtime plus this evidence-only change before the automated gate is considered complete.
 
 ## Manual gate after immutable deployment
 
