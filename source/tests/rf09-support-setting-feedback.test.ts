@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/rf09-support-setting-feedback';
+import { ensureAccessibilityAnnouncer } from '../src/accessibility-announcer';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
 const AUDIO_ON_MESSAGE =
@@ -68,6 +69,7 @@ beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
   sessionStorage.clear();
+  ensureAccessibilityAnnouncer();
 });
 
 afterEach(() => {
