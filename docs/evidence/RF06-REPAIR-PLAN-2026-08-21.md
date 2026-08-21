@@ -1,12 +1,14 @@
 # RF-06 speech-listening lifecycle repair evidence — 21 August 2026
 
-Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained as an interoperability failure; two component-local R3-A13 candidates failed; one final production-announcer candidate awaits a focused Safari/VoiceOver retest**
+Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained as an interoperability failure; two component-local R3-A13 candidates failed; final production-announcer candidate verified automatically and awaiting one focused Safari/VoiceOver retest**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
 - Production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
+- Evidence-only head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
+- Final canonical read-only run: `32478383479` — **success**.
 - Immutable preview path: `/rf06-announcer-preview/`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
@@ -76,7 +78,21 @@ The final candidate adopts the shared production pattern rather than adding anot
 - ordinary Listening and manual Stop continue through the existing polite component status and are not promoted to assertive urgency;
 - focus is not moved and no questionnaire answer changes.
 
-Focused tests establish the DOM mechanism, message routing, one-child-per-error behaviour, seven-second cleanup, returned Start route and answer invariance. Repository unit, rendered-browser and cross-browser gates passed before generated-release synchronisation; the synchronized runtime is awaiting a fresh canonical read-only run on this evidence-only head.
+Focused tests establish the DOM mechanism, message routing, one-child-per-error behaviour, seven-second cleanup, returned Start route and answer invariance.
+
+## Final automated verification
+
+Canonical run `32478383479` completed successfully on evidence head `656c112e85c4be449ee9b94becc8c7e2508460ec`, with the product runtime unchanged from `050fff9a811198d5c6348cb56e1feb50c889b898`. It recorded:
+
+- npm audit: **0 vulnerabilities**;
+- **22/22** Vitest files and **215/215** tests passed, including RF-06 **4/4**;
+- production TypeScript/Vite build passed;
+- rendered-browser accessibility regression: **12/12 passed**;
+- cross-browser support matrix: **9/9 passed** across Chromium, Firefox and WebKit;
+- production, standalone and release builds passed;
+- generated-release freshness passed.
+
+## Final manual gate
 
 One focused Safari/VoiceOver silent-attempt retest is required. If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
 
