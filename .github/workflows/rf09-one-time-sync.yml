@@ -1,0 +1,83 @@
+name: RF-09 one-time release sync
+
+on:
+  push:
+    branches:
+      - agent/fix-rf09-support-setting-feedback
+    paths:
+      - '.github/workflows/rf09-one-time-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact RF-09 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf09-support-setting-feedback
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Re-run unit and component tests before generation
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Generate production, standalone and release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Commit synchronized release and remove this temporary workflow
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/rf09-one-time-sync.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Expected generated-release changes were not produced.' >&2
+            exit 1
+          fi
+          git commit -m '[rf09-sync-complete] Synchronize RF-09 speech-start failover release'
+          RUNTIME_SHA="$(git rev-parse HEAD)"
+          echo "runtime_sha=${RUNTIME_SHA}" >> "$GITHUB_OUTPUT"
+          git push origin HEAD:agent/fix-rf09-support-setting-feedback
+
+      - name: Publish a new immutable RF-09 preview without touching earlier evidence
+        shell: bash
+        env:
+          RUNTIME_SHA: ${{ steps.runtime.outputs.runtime_sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          git worktree add /tmp/aqp-gh-pages origin/gh-pages
+          PREVIEW=/tmp/aqp-gh-pages/rf09-speech-failover-preview
+          if [ -e "$PREVIEW" ]; then
+            echo 'Refusing to overwrite the existing RF-09 speech-failover preview.' >&2
+            exit 1
+          fi
+          mkdir -p "$PREVIEW"
+          cp source/demo/accessible-questionnaire-platform-v0.8.html "$PREVIEW/index.html"
+          printf '%s\n' "$RUNTIME_SHA" > "$PREVIEW/SOURCE-SHA.txt"
+          cd /tmp/aqp-gh-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add rf09-speech-failover-preview
+          git diff --cached --check
+          git commit -m "Publish immutable RF-09 speech-failover preview ${RUNTIME_SHA}"
+          git push origin HEAD:gh-pages
