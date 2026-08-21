@@ -67,9 +67,9 @@ test('RF-08 smiley choices keep native names and expose real on-screen radio tar
 
   // Pointer/native-radio activation must still use the existing response path.
   const middle = group.locator('.smiley-option input[value="50"]');
-  const middleCard = middle.locator('xpath=ancestor::label[contains(@class,"smiley-option")]');
   await middle.check();
   await expect(middle).toBeChecked();
+  const middleCard = middle.locator('xpath=ancestor::label[contains(@class,"smiley-option")]');
   await expect(middleCard).toContainText('Selected');
 
   const precise = page.locator('.precision-scale');
