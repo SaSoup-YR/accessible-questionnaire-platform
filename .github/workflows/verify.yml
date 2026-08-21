@@ -8,7 +8,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   AQP_WORKFLOW_EVENT: ${{ github.event_name }}
@@ -92,29 +92,6 @@ jobs:
 
       - name: Build production, standalone and release outputs
         run: npm run build:release
-
-      - name: Publish RF-06 manual-test preview
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'agent/fix-rf06-speech-listening-lifecycle'
-        working-directory: .
-        env:
-          PREVIEW_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          cp source/demo/accessible-questionnaire-platform-v0.8.html /tmp/rf06-preview.html
-          git fetch origin gh-pages
-          git worktree add /tmp/aqp-gh-pages origin/gh-pages
-          mkdir -p /tmp/aqp-gh-pages/rf06-preview
-          cp /tmp/rf06-preview.html /tmp/aqp-gh-pages/rf06-preview/index.html
-          printf '%s\n' "$PREVIEW_SOURCE_SHA" > /tmp/aqp-gh-pages/rf06-preview/SOURCE-SHA.txt
-          cd /tmp/aqp-gh-pages
-          git add rf06-preview/index.html rf06-preview/SOURCE-SHA.txt
-          if git diff --cached --quiet; then
-            echo "RF-06 preview already current."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Publish RF-06 preview ${PREVIEW_SOURCE_SHA}"
-          git push origin HEAD:gh-pages
 
       - name: Confirm the committed deployment files are current
         run: >-
