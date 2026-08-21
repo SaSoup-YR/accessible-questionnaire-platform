@@ -1,0 +1,73 @@
+name: Temporary sync and publish RF-09 v2 candidate
+
+on:
+  push:
+    branches:
+      - agent/fix-rf09-support-setting-feedback
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the RF-09 branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf09-support-setting-feedback
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Verify repository and RF-09 tests
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Generate production, standalone and release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Commit synchronized generated output and remove this temporary workflow
+        id: sync
+        run: |
+          git rm .github/workflows/rf09-v2-sync.yml
+          git add -A -- \
+            source/demo/accessible-nasa-tlx-v0.7.html \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
+            questionnaires
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync RF-09 v2 generated release"
+          git push origin HEAD:agent/fix-rf09-support-setting-feedback
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish immutable RF-09 v2 preview
+        env:
+          SOURCE_SHA: ${{ steps.sync.outputs.source_sha }}
+        run: |
+          git fetch origin gh-pages
+          git worktree add /tmp/aqp-gh-pages origin/gh-pages
+          rm -rf /tmp/aqp-gh-pages/rf09-v2-preview
+          mkdir -p /tmp/aqp-gh-pages/rf09-v2-preview
+          cp index.html study.html /tmp/aqp-gh-pages/rf09-v2-preview/
+          cp -R assets questionnaires /tmp/aqp-gh-pages/rf09-v2-preview/
+          printf '%s\n' "$SOURCE_SHA" > /tmp/aqp-gh-pages/rf09-v2-preview/SOURCE-SHA.txt
+          cd /tmp/aqp-gh-pages
+          git add -A rf09-v2-preview
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish RF-09 v2 preview $SOURCE_SHA"
+          git push origin HEAD:gh-pages
