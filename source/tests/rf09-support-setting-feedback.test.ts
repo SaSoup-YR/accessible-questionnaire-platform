@@ -273,7 +273,7 @@ describe('RF-09 support-setting feedback', () => {
     expect(document.activeElement).toBe(audio);
     expect(answer.checked).toBe(true);
     expect(spoken).toEqual([]);
-    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel).not.toHaveBeenCalled();
     expect(state.speaking).toBe(false);
     expect(feedback(component).textContent?.trim()).toBe(AUDIO_ON_MESSAGE);
 
