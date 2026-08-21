@@ -1,25 +1,25 @@
 name: Temporary apply RF-06 speech lifecycle patch
 
 on:
-  push:
-    branches:
-      - agent/fix-rf06-speech-listening-lifecycle
+  pull_request:
+    types: [synchronize]
 
 permissions:
   contents: write
 
 env:
-  AQP_BASE_SHA: c9685f95d97cf45ab517911c91eba0cdc454e2b3
-  AQP_HEAD_BRANCH: agent/fix-rf06-speech-listening-lifecycle
+  AQP_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+  AQP_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
 
 jobs:
   apply-rf06:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Check out RF-06 branch
+      - name: Check out PR head
         uses: actions/checkout@v4
         with:
-          ref: agent/fix-rf06-speech-listening-lifecycle
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Use Node.js
