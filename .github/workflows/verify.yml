@@ -93,6 +93,21 @@ jobs:
       - name: Build production, standalone and release outputs
         run: npm run build:release
 
+      - name: Publish generated release output for exact synchronization
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-release-output
+          path: |
+            source/demo/accessible-nasa-tlx-v0.7.html
+            source/demo/accessible-questionnaire-platform-v0.8.html
+            index.html
+            study.html
+            assets
+            questionnaires
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Confirm the committed deployment files are current
         run: >-
           git diff --exit-code --
