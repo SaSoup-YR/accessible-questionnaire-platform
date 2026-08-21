@@ -21,7 +21,9 @@ jobs:
           fetch-depth: 5
 
       - name: Apply the bounded component integration
-        run: python ../scripts/rf07-on-device-integration.py
+        run: |
+          python ../scripts/rf07-on-device-integration.py
+          python ../scripts/rf07-on-device-synchronous-fallback.py
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -42,6 +44,7 @@ jobs:
       - name: Remove one-time integration scaffolding and check formatting
         run: |
           rm ../scripts/rf07-on-device-integration.py
+          rm ../scripts/rf07-on-device-synchronous-fallback.py
           rm ../.github/workflows/rf07-on-device-integrate.yml
           git diff --check
 
@@ -54,6 +57,7 @@ jobs:
           git add -A \
             ../.github/workflows/rf07-on-device-integrate.yml \
             ../scripts/rf07-on-device-integration.py \
+            ../scripts/rf07-on-device-synchronous-fallback.py \
             src/accessible-nasa-tlx.ts \
             demo/accessible-nasa-tlx-v0.7.html \
             demo/accessible-questionnaire-platform-v0.8.html \
