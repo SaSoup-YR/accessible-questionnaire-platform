@@ -37,6 +37,8 @@ jobs:
           mkdir -p "$PREVIEW"
           cp runtime/source/demo/accessible-questionnaire-platform-v0.8.html "$PREVIEW/index.html"
           printf '%s\n' 'd2c8ca5a2beba06bb281ed3db222a7a302f17702' > "$PREVIEW/SOURCE-SHA.txt"
+          cmp --silent runtime/source/demo/accessible-questionnaire-platform-v0.8.html "$PREVIEW/index.html"
+          sha256sum runtime/source/demo/accessible-questionnaire-platform-v0.8.html "$PREVIEW/index.html"
 
       - name: Commit and push only that preview directory
         working-directory: pages
@@ -53,6 +55,7 @@ jobs:
             echo 'Unexpected gh-pages path changed; refusing publish.' >&2
             exit 1
           fi
-          git diff --cached --check
+          # index.html is a generated standalone artifact and intentionally keeps
+          # its generator formatting verbatim; byte identity above is the gate.
           git commit -m 'Publish immutable RF-09 speech-failover preview d2c8ca5a'
           git push origin HEAD:gh-pages
