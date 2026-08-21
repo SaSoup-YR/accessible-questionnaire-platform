@@ -4,18 +4,17 @@ import '../src/rf09-support-setting-feedback';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
 const SUPPORT_NOTIFICATION_REQUEST_DELAY_MS = 400;
-const BUILT_IN_SPEECH_START_GRACE_MS = 800;
 const POLYFILL_LIVE_REGION_DELAY_MS = 250;
 const AUDIO_ON_MESSAGE =
   'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
+const AUDIO_OFF_MESSAGE =
+  'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.';
 
 type NotificationRecord = {
   target: Element;
   message: string;
   priority: string | undefined;
 };
-
-type SpeechMode = 'started' | 'pending';
 
 async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
@@ -74,7 +73,7 @@ function installAriaNotifySpy() {
   return records;
 }
 
-function installSpeechSynthesis(mode: SpeechMode = 'started') {
+function installSpeechSynthesis() {
   const spoken: string[] = [];
   const state = {
     speaking: false,
@@ -114,13 +113,8 @@ function installSpeechSynthesis(mode: SpeechMode = 'started') {
       }),
       speak: (utterance: FakeUtterance) => {
         spoken.push(utterance.text);
-        if (mode === 'started') {
-          state.speaking = true;
-          state.pending = false;
-        } else {
-          state.speaking = false;
-          state.pending = true;
-        }
+        state.speaking = true;
+        state.pending = false;
       },
       getVoices: () => [],
     },
@@ -259,9 +253,9 @@ describe('RF-09 support-setting feedback', () => {
     await finishFallbackAnnouncement();
   });
 
-  it('keeps built-in speech as the sole AQP channel when speech actually starts, then notifies audio-off once', async () => {
+  it('uses ariaNotify, not browser speech, for audio-on itself and keeps future automatic audio enabled', async () => {
     vi.useFakeTimers();
-    const { spoken, cancel, state } = installSpeechSynthesis('started');
+    const { spoken, cancel, state } = installSpeechSynthesis();
     const notifications = installAriaNotifySpy();
     const component = await renderComponent();
     await startRatings(component);
@@ -278,71 +272,66 @@ describe('RF-09 support-setting feedback', () => {
     expect(audio.checked).toBe(true);
     expect(document.activeElement).toBe(audio);
     expect(answer.checked).toBe(true);
-    expect(spoken.at(-1)).toBe(AUDIO_ON_MESSAGE);
-    expect(state.speaking).toBe(true);
+    expect(spoken).toEqual([]);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(state.speaking).toBe(false);
     expect(feedback(component).textContent?.trim()).toBe(AUDIO_ON_MESSAGE);
 
-    await vi.advanceTimersByTimeAsync(
-      BUILT_IN_SPEECH_START_GRACE_MS + POLYFILL_LIVE_REGION_DELAY_MS,
-    );
-    expect(notifications).toEqual([]);
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      target: audio,
+      message: AUDIO_ON_MESSAGE,
+      priority: 'normal',
+    });
+    await finishFallbackAnnouncement();
 
+    const nextAnswer = component.querySelector<HTMLInputElement>('.rating-option input[value="75"]')!;
+    nextAnswer.click();
+    await component.updateComplete;
+    expect(nextAnswer.checked).toBe(true);
+    expect(spoken.at(-1)).toBe('Mental Demand, 75, selected.');
+    expect(state.speaking).toBe(true);
+    expect(notifications).toHaveLength(1);
+  });
+
+  it('cancels active AQP speech and uses one ariaNotify result when audio is turned off', async () => {
+    vi.useFakeTimers();
+    const { spoken, cancel, state } = installSpeechSynthesis();
+    const notifications = installAriaNotifySpy();
+    const component = await renderComponent();
+    await startRatings(component);
+
+    const audio = supportInput(component, 'audio');
+    audio.closest('label')!.click();
+    await component.updateComplete;
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    await finishFallbackAnnouncement();
+    expect(audio.checked).toBe(true);
+
+    const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
+    answer.click();
+    await component.updateComplete;
+    expect(spoken.at(-1)).toBe('Mental Demand, 50, selected.');
+    expect(state.speaking).toBe(true);
+
+    const cancelsBeforeOff = cancel.mock.calls.length;
+    audio.focus();
     audio.closest('label')!.click();
     await component.updateComplete;
 
     expect(audio.checked).toBe(false);
     expect(document.activeElement).toBe(audio);
     expect(answer.checked).toBe(true);
-    expect(cancel).toHaveBeenCalled();
-    expect(feedback(component).textContent?.trim()).toBe(
-      'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
-    );
+    expect(cancel.mock.calls.length).toBe(cancelsBeforeOff + 1);
+    expect(state.speaking).toBe(false);
+    expect(feedback(component).textContent?.trim()).toBe(AUDIO_OFF_MESSAGE);
 
     await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
-    expect(notifications).toHaveLength(1);
-    expect(notifications[0]).toMatchObject({
+    expect(notifications).toHaveLength(2);
+    expect(notifications[1]).toMatchObject({
       target: audio,
-      message: 'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
-      priority: 'normal',
-    });
-    await finishFallbackAnnouncement();
-  });
-
-  it('falls back to ariaNotify when built-in speech is queued but never actually starts', async () => {
-    vi.useFakeTimers();
-    const { spoken, cancel, state } = installSpeechSynthesis('pending');
-    const notifications = installAriaNotifySpy();
-    const component = await renderComponent();
-    await startRatings(component);
-
-    const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
-    answer.click();
-    await component.updateComplete;
-
-    const audio = supportInput(component, 'audio');
-    audio.focus();
-    audio.closest('label')!.click();
-    await component.updateComplete;
-
-    expect(audio.checked).toBe(true);
-    expect(document.activeElement).toBe(audio);
-    expect(answer.checked).toBe(true);
-    expect(spoken.at(-1)).toBe(AUDIO_ON_MESSAGE);
-    expect(state.speaking).toBe(false);
-    expect(state.pending).toBe(true);
-    expect(feedback(component).textContent?.trim()).toBe(AUDIO_ON_MESSAGE);
-
-    await vi.advanceTimersByTimeAsync(BUILT_IN_SPEECH_START_GRACE_MS - 1);
-    expect(notifications).toEqual([]);
-    expect(cancel).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(cancel).toHaveBeenCalledTimes(1);
-    expect(state.pending).toBe(false);
-    expect(notifications).toHaveLength(1);
-    expect(notifications[0]).toMatchObject({
-      target: audio,
-      message: AUDIO_ON_MESSAGE,
+      message: AUDIO_OFF_MESSAGE,
       priority: 'normal',
     });
     await finishFallbackAnnouncement();
