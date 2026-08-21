@@ -1,12 +1,13 @@
 # RF-06 speech-listening lifecycle repair evidence — 21 August 2026
 
-Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained as an interoperability failure; the previous R3-A13 candidate failed and one final standards-aligned alert candidate awaits a focused Safari/VoiceOver retest**
+Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained as an interoperability failure; two component-local R3-A13 candidates failed; one final production-announcer candidate awaits a focused Safari/VoiceOver retest**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
-- Final A13 alert-candidate runtime: `434729b55b8746e684129dab81a00518dbb42532`.
+- Production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
+- Immutable preview path: `/rf06-announcer-preview/`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -40,35 +41,45 @@ The manual run announced `Listening for one answer.`, exposed an operable Stop c
 
 ### R3-A10 — VoiceOver + Safari — **P**
 
-The second-round Safari preview produced an actual VoiceOver announcement of `Listening for one answer.` while the AQP panel visibly remained in Listening and exposed **Stop voice input**. Manual Stop then produced `Voice input stopped. No answer was changed. Try again, or use a visible answer button.` Safari's separate microphone-capture announcement did not suppress those later AQP status messages.
+The Safari preview produced an actual VoiceOver announcement of `Listening for one answer.` while the AQP panel visibly remained in Listening and exposed **Stop voice input**. Manual Stop then produced `Voice input stopped. No answer was changed. Try again, or use a visible answer button.` Safari's separate microphone-capture announcement did not suppress those later AQP status messages.
 
 ### R4-A10 — Windows Voice Access + Chrome — **F retained**
 
 The manual route reproduced a concurrent-recogniser race. While AQP Web Speech recognition was listening, the same spoken control command intended for Windows Voice Access was also consumed by the in-page recogniser. The visible Stop control therefore could not be shown to be reliably voice-operable through Voice Access while AQP recognition remained active.
 
-This is bounded to **simultaneous Windows Voice Access + in-page Web Speech recognition** on the tested route. It is not a general failure of Voice Access with ordinary questionnaire controls. Microsoft documents that Voice Access in Listening mode listens to spoken input and describes switching between speech-access solutions without having both listen at once. The Web Speech API controls only the page's recogniser and provides no standard API for suspending Windows Voice Access. No further recogniser-side command-parsing workaround is credited.
+This is bounded to **simultaneous Windows Voice Access + in-page Web Speech recognition** on the tested route. It is not a general failure of Voice Access with ordinary questionnaire controls. Microsoft's Voice Access guidance describes switching between speech-access solutions without having both listen at once. The Web Speech API controls only the page's recogniser and provides no standard API for suspending Windows Voice Access. No further recogniser-side command-parsing workaround is credited.
 
-### R3-A13 — VoiceOver + Safari — **previous candidate F**
+## R3-A13 candidate history
 
-During the silent attempt, VoiceOver announced Safari's `Current tab stopped capturing sound` and then ended. It did **not** announce the AQP recovery beginning `No speech was detected...`. The visible message and automated DOM assertions do not substitute for an actual AT announcement, so that candidate fails frozen A13.
+### Component-local polite status — **F**
 
-## Final bounded A13 alert candidate
+During the silent attempt, VoiceOver announced Safari's `Current tab stopped capturing sound` and then ended. It did not announce the AQP recovery beginning `No speech was detected...`.
 
-The final candidate does not add another timing delay. Instead it keeps ordinary Listening and manual Stop in the existing polite `role=status` region and routes **only no-speech/time-limit recovery errors** to a second, pre-existing empty `role=alert` region. Both live-region containers exist before the recovery text is inserted.
+### Component-local pre-existing `role=alert` — **F**
 
-This follows W3C technique ARIA19, which identifies `role=alert` or an error live region as a sufficient technique for notifying assistive technologies when an error is injected, while preserving `role=status` for ordinary non-error application state. The candidate therefore does not promote Listening or successful/manual status information to alert urgency.
+The next candidate routed only no-speech recovery to a pre-existing empty alert node inside the voice component. The exact silent-attempt retest again produced Safari's capture-stop message but no AQP recovery announcement. Visible text and automated DOM assertions cannot override this real-AT result.
 
-Focused automated tests verify that:
+## Final production-announcer candidate
 
-- Listening and manual Stop remain in the status region;
-- the alert container is present and initially empty;
-- watchdog, native end and native `no-speech` recovery populate the alert region;
-- no answer is changed and the visible Start route returns.
+The component-local alert was standards-aligned but was not the strongest implementation pattern available in mature open-source accessibility libraries. A source review therefore compared the failed approach with:
 
-The source/release synchronization and preview publication job passed. A fresh canonical read-only workflow run is required on the documentation head, followed by one focused R3 silent-attempt retest.
+- W3C Technique ARIA19, which requires the live/error container to exist before the error is injected;
+- Adobe React Aria's `LiveAnnouncer`, which creates stable body-level polite and assertive logs and appends a fresh child for each announcement;
+- Angular CDK's `LiveAnnouncer`, which centralises announcements in a persistent visually hidden body-level element and separates clearing from later message insertion.
 
-If VoiceOver still announces only Safari's capture-stop message and not the AQP no-speech alert, **R3-A13 remains F and RF-06 stops here**. No further timing or urgency experiments will be pursued.
+The final candidate adopts the shared production pattern rather than adding another arbitrary delay:
+
+- `source/src/accessibility-announcer.ts` creates one visually hidden body-level announcer before speech recognition starts;
+- separate polite and assertive `role=log` channels use `aria-live` plus `aria-relevant=additions`;
+- each no-speech recovery is a newly appended child, retained for seven seconds, rather than a text replacement in a rerendered component subtree;
+- the recovery remains visibly present in the voice panel;
+- ordinary Listening and manual Stop continue through the existing polite component status and are not promoted to assertive urgency;
+- focus is not moved and no questionnaire answer changes.
+
+Focused tests establish the DOM mechanism, message routing, one-child-per-error behaviour, seven-second cleanup, returned Start route and answer invariance. Repository unit, rendered-browser and cross-browser gates passed before generated-release synchronisation; the synchronized runtime is awaiting a fresh canonical read-only run on this evidence-only head.
+
+One focused Safari/VoiceOver silent-attempt retest is required. If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
 
 ## Audit boundary
 
-Historical q8 is never rewritten. Post-fix evidence closes R2-A10 and R3-A10 separately, retains R4-A10 as a tested interoperability limitation and may close R3-A13 only if the final alert candidate is actually announced by VoiceOver in Safari.
+Historical q8 is never rewritten. Post-fix evidence closes R2-A10 and R3-A10 separately, retains R4-A10 as a tested interoperability limitation and may close R3-A13 only if the production-announcer message is actually announced by VoiceOver in Safari.
