@@ -1,5 +1,9 @@
 import { html, nothing } from 'lit';
 import { AccessibleNasaTlx } from './accessible-nasa-tlx';
+import {
+  announceForAssistiveTechnology,
+  ensureAccessibilityAnnouncer,
+} from './accessibility-announcer';
 import type { QuestionnaireItem } from './questionnaire-definition';
 
 type VoiceContext = 'rating' | 'pair';
@@ -55,7 +59,7 @@ type InternalComponent = {
   __rf06VoiceWatchdogTimerId?: number | null;
   __rf06ListeningAnnouncementTimerId?: number | null;
   __rf06VoiceNoticeTimerId?: number | null;
-  __rf06MessageChannel?: 'status' | 'alert';
+  __rf06MessageChannel?: 'status' | 'error';
 };
 
 const VOICE_LISTENING_WATCHDOG_MS = 15_000;
@@ -86,14 +90,12 @@ function clearLifecycleTimers(component: InternalComponent) {
   clearTimer(component, '__rf06VoiceNoticeTimerId');
 }
 
-
 function scheduleListeningAnnouncement(component: InternalComponent, recognition: RecognitionLike) {
   clearTimer(component, '__rf06ListeningAnnouncementTimerId');
   component.__rf06MessageChannel = 'status';
   // Safari/VoiceOver can speak its own microphone-capture notice at the same
-  // instant recognition starts. Keep the already-present live region empty,
-  // then create a separate content mutation after that browser notice so the
-  // AQP Listening state has its own opportunity to be announced.
+  // instant recognition starts. Keep the already-present status region empty,
+  // then create a separate content mutation after that browser notice.
   component.voiceMessage = '';
   component.__rf06ListeningAnnouncementTimerId = window.setTimeout(() => {
     component.__rf06ListeningAnnouncementTimerId = null;
@@ -104,16 +106,22 @@ function scheduleListeningAnnouncement(component: InternalComponent, recognition
 
 function scheduleNoSpeechNotice(component: InternalComponent, message: string) {
   clearTimer(component, '__rf06VoiceNoticeTimerId');
-  component.__rf06MessageChannel = 'alert';
-  // Separate the AQP recovery message from Safari's own "stopped capturing
-  // sound" announcement. This keeps the error as a genuine later live-region
-  // mutation instead of competing with the browser notification.
+  component.__rf06MessageChannel = 'error';
   component.voiceState = 'error';
   component.voiceMessage = '';
+
   component.__rf06VoiceNoticeTimerId = window.setTimeout(() => {
     component.__rf06VoiceNoticeTimerId = null;
     if (component.recognition || component.voiceState !== 'error') return;
+
+    // Keep the visible recovery text in the component, but make the AT
+    // notification through the stable page-level announcer. This follows the
+    // production patterns used by React Aria and Angular CDK: the live region
+    // exists before the event and a fresh child is appended for each message.
     component.showVoiceNotice(message);
+    void component.updateComplete.then(() => {
+      announceForAssistiveTechnology(message, 'assertive');
+    });
   }, VOICE_LIVE_REGION_DELAY_MS);
 }
 
@@ -136,6 +144,8 @@ function stopVoiceInput(component: InternalComponent) {
  * while the frozen audit remains tied to a small, reviewable diff.
  */
 export function installRf06SpeechLifecycle() {
+  ensureAccessibilityAnnouncer();
+
   const prototype = AccessibleNasaTlx.prototype as unknown as InternalComponent;
   if (prototype.__rf06Installed) return;
   prototype.__rf06Installed = true;
@@ -156,8 +166,8 @@ export function installRf06SpeechLifecycle() {
       context === 'rating'
         ? this.ratingVoicePrompt(first)
         : `Say “${first.name}” or “${second!.name}”.`;
-    const voiceMessageIsAlert =
-      this.__rf06MessageChannel === 'alert' && Boolean(this.voiceMessage);
+    const voiceMessageIsError =
+      this.__rf06MessageChannel === 'error' && Boolean(this.voiceMessage);
 
     return html`
       <details class="voice-input" .open=${this.voiceState !== 'idle'}>
@@ -199,10 +209,10 @@ export function installRf06SpeechLifecycle() {
               </p>`
             : nothing}
           <p class="voice-status" role="status" aria-live="polite" aria-atomic="true">
-            ${voiceMessageIsAlert ? '' : this.voiceMessage}
+            ${voiceMessageIsError ? '' : this.voiceMessage}
           </p>
-          <p class="voice-alert" role="alert" aria-atomic="true">
-            ${voiceMessageIsAlert ? this.voiceMessage : ''}
+          <p class="voice-error" ?hidden=${!voiceMessageIsError}>
+            ${voiceMessageIsError ? this.voiceMessage : ''}
           </p>
           ${activeForContext && this.pendingVoiceAnswer
             ? html`
@@ -247,6 +257,7 @@ export function installRf06SpeechLifecycle() {
     second?: QuestionnaireItem,
     allowContextualHints = true,
   ) {
+    ensureAccessibilityAnnouncer();
     clearLifecycleTimers(this);
     originalStartVoiceInput.call(this, context, first, second, allowContextualHints);
 
