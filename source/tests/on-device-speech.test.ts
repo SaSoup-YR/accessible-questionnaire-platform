@@ -65,7 +65,8 @@ describe('RF-07 on-device speech route preparation', () => {
   });
 
   it('installs a downloadable dictation pack after explicit Start but does not start recognition', async () => {
-    const available = vi.fn(async () => 'downloadable' as const);
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) =>
+      'downloadable' as const);
     const install = vi.fn(async (options: SpeechRecognitionAvailabilityOptions) => {
       expect(options).toEqual({
         langs: ['en-US'],
@@ -95,8 +96,9 @@ describe('RF-07 on-device speech route preparation', () => {
   });
 
   it('does not issue a duplicate install while a dictation pack is downloading', async () => {
-    const available = vi.fn(async () => 'downloading' as const);
-    const install = vi.fn(async () => true);
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) =>
+      'downloading' as const);
+    const install = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) => true);
     const target = recognition();
 
     const result = await preparePreferredSpeechRecognitionRoute(
@@ -115,7 +117,7 @@ describe('RF-07 on-device speech route preparation', () => {
   });
 
   it('does not silently downgrade to a quality-less command pack', async () => {
-    const available = vi.fn(async () => {
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) => {
       throw new TypeError('quality is not implemented');
     });
     const target = recognition();
@@ -138,7 +140,7 @@ describe('RF-07 on-device speech route preparation', () => {
   it('continues to en-GB when en-US dictation installation fails', async () => {
     const available = vi.fn(async (options: SpeechRecognitionAvailabilityOptions) =>
       options.langs[0] === 'en-US' ? 'downloadable' as const : 'available' as const);
-    const install = vi.fn(async () => false);
+    const install = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) => false);
     const target = recognition();
 
     const result = await preparePreferredSpeechRecognitionRoute(
@@ -159,7 +161,7 @@ describe('RF-07 on-device speech route preparation', () => {
   it('continues to en-GB when the en-US install call throws', async () => {
     const available = vi.fn(async (options: SpeechRecognitionAvailabilityOptions) =>
       options.langs[0] === 'en-US' ? 'downloadable' as const : 'available' as const);
-    const install = vi.fn(async () => {
+    const install = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) => {
       throw new DOMException('installation blocked', 'NotAllowedError');
     });
     const target = recognition();
@@ -174,7 +176,8 @@ describe('RF-07 on-device speech route preparation', () => {
   });
 
   it('falls back to remote en-GB when no dictation-capable local model exists', async () => {
-    const available = vi.fn(async () => 'unavailable' as const);
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) =>
+      'unavailable' as const);
     const target = recognition();
 
     const result = await preparePreferredSpeechRecognitionRoute(
@@ -194,7 +197,7 @@ describe('RF-07 on-device speech route preparation', () => {
   });
 
   it('falls back safely when the static API is blocked or throws', async () => {
-    const available = vi.fn(async () => {
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) => {
       throw new DOMException('blocked', 'NotAllowedError');
     });
     const target = recognition();
@@ -218,7 +221,8 @@ describe('RF-07 on-device speech route preparation', () => {
     expect(absent.mode).toBe('remote');
     expect(targetWithoutProperty.lang).toBe('en-GB');
 
-    const available = vi.fn(async () => 'available' as const);
+    const available = vi.fn(async (_options: SpeechRecognitionAvailabilityOptions) =>
+      'available' as const);
     const target = recognition();
     const disabled = await preparePreferredSpeechRecognitionRoute(
       { available },
