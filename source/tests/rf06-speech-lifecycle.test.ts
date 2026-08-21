@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../src/accessible-nasa-tlx';
+import '../src/rf06-speech-lifecycle';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
 interface FakeRecognitionInstance {
