@@ -54,6 +54,11 @@ import {
   parseRatingAlternatives,
 } from './voice-input';
 import {
+  preparePreferredSpeechRecognitionRoute,
+  type OnDeviceSpeechRecognitionProvider,
+  type PreparedSpeechRecognitionRoute,
+} from './on-device-speech';
+import {
   DwellTracker,
   WEBGAZER_FACE_MESH_URL,
   WEBGAZER_VERSION,
@@ -145,6 +150,7 @@ interface SpeechRecognitionEventLike extends Event {
 
 interface SpeechRecognitionLike {
   lang: string;
+  processLocally?: boolean;
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
@@ -156,7 +162,8 @@ interface SpeechRecognitionLike {
   stop(): void;
 }
 
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+type SpeechRecognitionConstructor = (new () => SpeechRecognitionLike) &
+  OnDeviceSpeechRecognitionProvider;
 type SpeechRecognitionPhraseConstructor = new (
   phrase: string,
   boost?: number,
@@ -2862,22 +2869,62 @@ export class AccessibleNasaTlx extends LitElement {
     this.webgazer = null;
   }
 
-  private startVoiceInput(
+  private async startVoiceInput(
     context: 'rating' | 'pair',
     first: TlxDimension,
     second?: TlxDimension,
     allowContextualHints = true,
+    allowOnDevice = true,
   ) {
     this.stopReading();
     const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!Constructor) return;
     this.releaseRecognition();
     this.pendingVoiceAnswer = null;
-    this.voiceMessage = 'Listening for one answer.';
+    this.voiceMessage = 'Preparing voice input.';
     this.voiceState = 'listening';
     const recognition = new Constructor();
     this.recognition = recognition;
-    recognition.lang = 'en-GB';
+
+    // The new local-language methods are specified on the unprefixed
+    // constructor. A prefixed-only implementation keeps the established remote
+    // route rather than being treated as local-capable.
+    const onDeviceProvider = Constructor === window.SpeechRecognition
+      ? Constructor
+      : undefined;
+    let route: PreparedSpeechRecognitionRoute;
+    if (
+      allowOnDevice &&
+      onDeviceProvider?.available &&
+      'processLocally' in recognition
+    ) {
+      route = await preparePreferredSpeechRecognitionRoute(
+        onDeviceProvider,
+        recognition,
+        true,
+      );
+    } else {
+      // Preserve the established synchronous path for prefixed browsers and
+      // existing recognizers without the new static local-language API. This
+      // avoids changing focus, status and event timing on unaffected routes.
+      recognition.lang = 'en-GB';
+      if ('processLocally' in recognition) recognition.processLocally = false;
+      route = {
+        action: 'start',
+        mode: 'remote',
+        lang: 'en-GB',
+        message: 'Listening for one answer using the browser speech service.',
+      };
+    }
+    if (this.recognition !== recognition) return;
+    if (route.action === 'wait') {
+      this.releaseRecognition(recognition);
+      this.showVoiceNotice(route.message);
+      return;
+    }
+    this.voiceMessage = route.message;
+    const localRoute = route.mode === 'local';
+
     recognition.continuous = false;
     recognition.interimResults = false;
     const contextualHintsApplied = allowContextualHints
@@ -2967,9 +3014,28 @@ export class AccessibleNasaTlx extends LitElement {
       // Some browsers expose SpeechRecognitionPhrase and the `phrases`
       // property but reject contextual biasing only when recognition starts.
       // Retry once without the experimental hints so their failure cannot
-      // remove the established plain Web Speech route.
+      // remove the established speech route.
       if (event.error === 'phrases-not-supported' && contextualHintsApplied) {
-        this.startVoiceInput(context, first, second, false);
+        void this.startVoiceInput(
+          context,
+          first,
+          second,
+          false,
+          allowOnDevice,
+        );
+        return;
+      }
+      // A browser may report a pack as available and still reject local start.
+      // Retry exactly once through the established remote en-GB route rather
+      // than looping or weakening the parser.
+      if (event.error === 'language-not-supported' && localRoute && allowOnDevice) {
+        void this.startVoiceInput(
+          context,
+          first,
+          second,
+          allowContextualHints,
+          false,
+        );
         return;
       }
       this.showVoiceNotice(this.voiceRecognitionErrorMessage(event.error));
