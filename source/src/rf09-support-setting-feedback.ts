@@ -1,29 +1,34 @@
 import { html } from 'lit';
+import './vendor/github-arianotify-polyfill';
 import { AccessibleNasaTlx } from './accessible-nasa-tlx';
 
 type SupportContext = 'intro' | 'toolbar';
 type SupportScope = 'all' | 'presentation-only';
-type AnnouncementSlot = 0 | 1;
+type NotificationPriority = 'normal' | 'high';
+
+type AriaNotifyingInput = HTMLInputElement & {
+  ariaNotify?: (
+    message: string,
+    options?: { priority?: NotificationPriority },
+  ) => void;
+};
 
 type InternalComponent = HTMLElement & {
   audioGuidance: boolean;
-  statusMessage: string;
   updateComplete: Promise<unknown>;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
   requestUpdate(): void;
   __rf09SupportStatusMessage?: string;
-  __rf09SupportAnnouncementMessage?: string;
-  __rf09SupportAnnouncementSlot?: AnnouncementSlot;
-  __rf09SupportAnnouncementGeneration?: number;
-  __rf09SupportAnnouncementTimerId?: number | null;
+  __rf09NotificationGeneration?: number;
+  __rf09NotificationTimerId?: number | null;
 };
 
-// The first candidate used a 100 ms body-level role=log mutation. The real
-// VoiceOver/Safari re-test exposed only the native selected/checked state. Keep
-// the status regions present from the initial render, then wait for the native
-// control announcement to settle before updating one alternating role=status
-// region. This remains timely while avoiding a collision with the control state.
-const SUPPORT_ANNOUNCEMENT_DELAY_MS = 650;
+// GitHub's production ARIA Notification polyfill waits 250 ms after creating
+// its scoped live region. Request the notification 400 ms after the native
+// radio/checkbox state change so the fallback message mutation occurs at about
+// 650 ms. That separates it from VoiceOver's immediate selected/checked speech
+// while remaining well within the frozen requirement for timely feedback.
+const SUPPORT_NOTIFICATION_REQUEST_DELAY_MS = 400;
 const LARGE_TEXT_MESSAGE = 'Large text selected.';
 const STANDARD_TEXT_MESSAGE = 'Standard text selected.';
 const RECOVERY_ON_MESSAGE =
@@ -34,15 +39,6 @@ const AUDIO_ON_MESSAGE =
   'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
 const AUDIO_OFF_MESSAGE =
   'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.';
-
-const SUPPORT_MESSAGES = new Set([
-  LARGE_TEXT_MESSAGE,
-  STANDARD_TEXT_MESSAGE,
-  RECOVERY_ON_MESSAGE,
-  RECOVERY_OFF_MESSAGE,
-  AUDIO_ON_MESSAGE,
-  AUDIO_OFF_MESSAGE,
-]);
 
 function messageForSupportChange(target: HTMLInputElement) {
   if (!target.closest('.support-settings')) return null;
@@ -63,11 +59,14 @@ function messageForSupportChange(target: HTMLInputElement) {
   return null;
 }
 
-function originalHandlerAlreadySpeaks(component: InternalComponent, target: HTMLInputElement) {
+function originalHandlerAlreadySpeaks(
+  component: InternalComponent,
+  target: HTMLInputElement,
+) {
   // The existing component uses browser speech synthesis for setting feedback
-  // whenever automatic audio is on. Do not add a second status-region message
-  // in that state. Turning audio off is different: speech has just stopped, so
-  // the alternating status region becomes the sole AQP announcement channel.
+  // whenever automatic audio is on. Keep one AQP spoken channel: audio-on and
+  // later support changes while audio remains on use that existing speech path.
+  // Turning audio off is different because speech has just been cancelled.
   if (target.id.endsWith('-audio')) return target.checked;
   return component.audioGuidance;
 }
@@ -81,18 +80,33 @@ function replaceStaticLabelText(
   if (!label) return;
 
   const textNode = [...label.childNodes].find(
-    (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === original,
+    (node) =>
+      node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === original,
   );
   const currentText = textNode?.textContent;
   if (currentText) textNode.textContent = currentText.replace(original, replacement);
 
-  // Keep the unique visible wording and the programmatic voice target exactly
-  // aligned. This avoids the observed Voice Access "Which one?" collision with
-  // the separate "Standard 21-value scale" control.
+  // Windows Voice Access uses visible names and partial matches. Keep the
+  // unique visible wording and programmatic name identical so “Standard text”
+  // cannot collide with the separate “Standard 21-value scale” control.
   input.setAttribute('aria-label', replacement);
 }
 
-function ensureUniqueTextSizeLabels(component: InternalComponent) {
+function prepareSupportControls(component: InternalComponent) {
+  for (const region of component.querySelectorAll<HTMLElement>(
+    '[data-rf09-support-setting-region]',
+  )) {
+    const feedback = region.querySelector<HTMLElement>(
+      '[data-rf09-support-feedback]',
+    );
+    if (!feedback?.id) continue;
+    for (const input of region.querySelectorAll<HTMLInputElement>(
+      '.support-settings input',
+    )) {
+      input.setAttribute('aria-controls', feedback.id);
+    }
+  }
+
   for (const standard of component.querySelectorAll<HTMLInputElement>(
     '.text-size-control input[type="radio"][value="standard"]',
   )) {
@@ -105,54 +119,38 @@ function ensureUniqueTextSizeLabels(component: InternalComponent) {
   }
 }
 
-function scheduleSupportAnnouncement(
+function scheduleSupportNotification(
   component: InternalComponent,
   target: HTMLInputElement,
   message: string,
 ) {
   if (
-    component.__rf09SupportAnnouncementTimerId !== null &&
-    component.__rf09SupportAnnouncementTimerId !== undefined
+    component.__rf09NotificationTimerId !== null &&
+    component.__rf09NotificationTimerId !== undefined
   ) {
-    window.clearTimeout(component.__rf09SupportAnnouncementTimerId);
-    component.__rf09SupportAnnouncementTimerId = null;
+    window.clearTimeout(component.__rf09NotificationTimerId);
+    component.__rf09NotificationTimerId = null;
   }
 
-  const generation = (component.__rf09SupportAnnouncementGeneration ?? 0) + 1;
-  component.__rf09SupportAnnouncementGeneration = generation;
-  component.__rf09SupportAnnouncementMessage = '';
-
-  // The established target-level handler has already run. Suppress only its
-  // matching support message in the older global live region so this change has
-  // one AQP status channel rather than two. Unrelated page status is untouched.
-  if (SUPPORT_MESSAGES.has(component.statusMessage)) component.statusMessage = '';
-  component.requestUpdate();
+  const generation = (component.__rf09NotificationGeneration ?? 0) + 1;
+  component.__rf09NotificationGeneration = generation;
 
   if (originalHandlerAlreadySpeaks(component, target)) return;
 
-  void component.updateComplete.then(() => {
+  component.__rf09NotificationTimerId = window.setTimeout(() => {
+    component.__rf09NotificationTimerId = null;
     if (
       !component.isConnected ||
-      component.__rf09SupportAnnouncementGeneration !== generation
+      !target.isConnected ||
+      component.__rf09NotificationGeneration !== generation
     ) {
       return;
     }
 
-    component.__rf09SupportAnnouncementTimerId = window.setTimeout(() => {
-      component.__rf09SupportAnnouncementTimerId = null;
-      if (
-        !component.isConnected ||
-        component.__rf09SupportAnnouncementGeneration !== generation
-      ) {
-        return;
-      }
-
-      component.__rf09SupportAnnouncementSlot =
-        component.__rf09SupportAnnouncementSlot === 0 ? 1 : 0;
-      component.__rf09SupportAnnouncementMessage = message;
-      component.requestUpdate();
-    }, SUPPORT_ANNOUNCEMENT_DELAY_MS);
-  });
+    const notify = (target as AriaNotifyingInput).ariaNotify;
+    if (typeof notify !== 'function') return;
+    notify.call(target, message, { priority: 'normal' });
+  }, SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
 }
 
 function recordSupportFeedback(
@@ -161,7 +159,8 @@ function recordSupportFeedback(
   message: string,
 ) {
   component.__rf09SupportStatusMessage = message;
-  scheduleSupportAnnouncement(component, target, message);
+  component.requestUpdate();
+  scheduleSupportNotification(component, target, message);
 }
 
 function handleSupportChange(component: InternalComponent, event: Event) {
@@ -171,7 +170,8 @@ function handleSupportChange(component: InternalComponent, event: Event) {
   if (!message) return;
 
   // Lit's target-level @change handler runs before this ancestor listener, so
-  // the message is derived from the committed native checked/value state.
+  // wording is derived from the committed native checked/value state rather
+  // than from the attempted action.
   recordSupportFeedback(component, target, message);
 }
 
@@ -181,7 +181,7 @@ let installed = false;
  * Adds one visible and one non-duplicating assistive-technology feedback path
  * for text-size, interruption-recovery and automatic-audio changes. Native
  * radio/checkbox semantics and all existing setting/storage logic remain the
- * source of truth; this module only observes the resulting native change event.
+ * source of truth; this module observes only the committed native change event.
  */
 export function installRf09SupportSettingFeedback() {
   if (installed) return;
@@ -196,34 +196,22 @@ export function installRf09SupportSettingFeedback() {
     scope: SupportScope,
   ) {
     const visibleMessage = this.__rf09SupportStatusMessage ?? '';
-    const announcementMessage = this.__rf09SupportAnnouncementMessage ?? '';
-    const announcementSlot = this.__rf09SupportAnnouncementSlot ?? 0;
+    const feedbackId = `rf09-${context}-support-feedback`;
 
-    // The original static text is not a Lit dynamic part, so normalise it after
-    // each committed render without changing the controls or their event logic.
-    void this.updateComplete.then(() => ensureUniqueTextSizeLabels(this));
+    // Original labels are static Lit text, so normalise them and wire the
+    // advisory result relationship after every committed render without
+    // replacing the controls or their native event paths.
+    void this.updateComplete.then(() => prepareSupportControls(this));
 
     return html`
       <div
         class="rf09-support-setting-region"
+        data-rf09-support-setting-region=${context}
         @change=${(event: Event) => handleSupportChange(this, event)}
       >
         ${originalRenderSupportSettings.call(this, context, scope)}
         <p
-          class="sr-only rf09-support-setting-announcement"
-          data-rf09-support-announcement="0"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >${announcementSlot === 0 ? announcementMessage : ''}</p>
-        <p
-          class="sr-only rf09-support-setting-announcement"
-          data-rf09-support-announcement="1"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >${announcementSlot === 1 ? announcementMessage : ''}</p>
-        <p
+          id=${feedbackId}
           class="support-setting-feedback"
           data-rf09-support-feedback
           ?hidden=${!visibleMessage}
