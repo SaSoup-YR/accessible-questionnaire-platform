@@ -166,20 +166,24 @@ export function buildRatingSpeechHints(
   landmarks: readonly RatingLandmark[],
   includeVisibleLabels = true,
 ) {
-  const hints: string[] = [];
+  const priorityHints: string[] = [];
+  const fallbackHints: string[] = [];
   for (const value of allowedValues) {
     const spoken = Number.isInteger(value) && value >= 0 && value <= 100
       ? integerWords(value)
       : String(value);
-    hints.push(
+
+    // configureVoiceHints deliberately caps the experimental phrase list.
+    // Put every value's exact forms and the matching negation-preservation
+    // cue ahead of convenience wrappers so a long scale cannot starve its
+    // higher values merely because lower values have many synonyms.
+    priorityHints.push(
       String(value),
       spoken,
       `number ${spoken}`,
-      // Contextual biasing is only a probabilistic hint. Bias the frozen
-      // negated safety phrase alongside the affirmative value so the hint list
-      // does not exclusively favour an answer when the participant says
-      // "not <value>". The parser still rejects the negated transcript.
       `not ${spoken}`,
+    );
+    fallbackHints.push(
       `option ${spoken}`,
       `rating ${spoken}`,
       `value ${spoken}`,
@@ -189,22 +193,23 @@ export function buildRatingSpeechHints(
     if (includeVisibleLabels) {
       const label = dimension.responseLabels?.[String(value)];
       if (label?.trim()) {
-        hints.push(label.trim(), `answer ${label.trim()}`, `choose ${label.trim()}`);
+        priorityHints.push(label.trim());
+        fallbackHints.push(`answer ${label.trim()}`, `choose ${label.trim()}`);
       }
     }
   }
   if (includeVisibleLabels) {
-    hints.push(
+    priorityHints.push(
       dimension.lowAnchor,
       dimension.highAnchor,
       ...(dimension.voiceLowAliases ?? []),
       ...(dimension.voiceHighAliases ?? []),
     );
     if (landmarks.length === 5) {
-      hints.push('middle', 'midpoint', `closer to ${dimension.lowAnchor}`, `closer to ${dimension.highAnchor}`);
+      priorityHints.push('middle', 'midpoint', `closer to ${dimension.lowAnchor}`, `closer to ${dimension.highAnchor}`);
     }
   }
-  return [...new Set(hints.map((hint) => hint.trim()).filter(Boolean))];
+  return [...new Set([...priorityHints, ...fallbackHints].map((hint) => hint.trim()).filter(Boolean))];
 }
 
 export function buildPairSpeechHints(

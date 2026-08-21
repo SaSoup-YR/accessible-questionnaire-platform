@@ -59,4 +59,18 @@ describe('RF-07 speech proposal and negation safety', () => {
       value: 4,
     });
   });
+
+  it('keeps every 21-value NASA essential hint ahead of the runtime 120-phrase cap', () => {
+    const definition = getQuestionnaireDefinition('nasa-tlx-raw')!;
+    const item = definition.items[0];
+    const values = buildRatingValues(definition);
+    const applied = buildRatingSpeechHints(item, values, [], true).slice(0, 120);
+
+    expect(applied).toContain('100');
+    expect(applied).toContain('one hundred');
+    expect(applied).toContain('number one hundred');
+    expect(applied).toContain('not one hundred');
+    expect(applied).toContain(item.lowAnchor);
+    expect(applied).toContain(item.highAnchor);
+  });
 });
