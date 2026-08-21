@@ -171,18 +171,26 @@ export function buildRatingSpeechHints(
     const spoken = Number.isInteger(value) && value >= 0 && value <= 100
       ? integerWords(value)
       : String(value);
-
-    // Contextual bias is a hint, not a grammar. Keep the list deliberately
-    // small and symmetric: bias the exact answer forms that the interface asks
-    // for, but also the bounded "not <value>" safety phrase so the recogniser
-    // is not pushed only toward an affirmative answer when the participant is
-    // actually rejecting it. Common wrapper words such as option/rating/value
-    // remain accepted by the parser but are not separately boosted.
-    hints.push(String(value), spoken, `number ${spoken}`, `not ${spoken}`);
-
+    hints.push(
+      String(value),
+      spoken,
+      `number ${spoken}`,
+      // Contextual biasing is only a probabilistic hint. Bias the frozen
+      // negated safety phrase alongside the affirmative value so the hint list
+      // does not exclusively favour an answer when the participant says
+      // "not <value>". The parser still rejects the negated transcript.
+      `not ${spoken}`,
+      `option ${spoken}`,
+      `rating ${spoken}`,
+      `value ${spoken}`,
+      `answer ${spoken}`,
+      `choice ${spoken}`,
+    );
     if (includeVisibleLabels) {
       const label = dimension.responseLabels?.[String(value)];
-      if (label?.trim()) hints.push(label.trim());
+      if (label?.trim()) {
+        hints.push(label.trim(), `answer ${label.trim()}`, `choose ${label.trim()}`);
+      }
     }
   }
   if (includeVisibleLabels) {
