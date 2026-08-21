@@ -10,13 +10,9 @@ type SupportScope = 'all' | 'presentation-only';
 
 type InternalComponent = HTMLElement & {
   audioGuidance: boolean;
-  connectedCallback(): void;
-  disconnectedCallback(): void;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
-  updateComplete: Promise<unknown>;
   requestUpdate(): void;
   __rf09SupportStatusMessage?: string;
-  __rf09SupportChangeHandler?: (event: Event) => void;
 };
 
 const SUPPORT_ANNOUNCEMENT_DELAY_MS = 100;
@@ -64,6 +60,7 @@ function recordSupportFeedback(
   target: HTMLInputElement,
   message: string,
 ) {
+  ensureAccessibilityAnnouncer();
   component.__rf09SupportStatusMessage = message;
   component.requestUpdate();
 
@@ -71,12 +68,23 @@ function recordSupportFeedback(
 
   // Angular CDK and React Aria both use a stable body-level announcer and a
   // non-zero delay/fresh DOM mutation for cross-browser reliability. The AQP
-  // announcer already exists before this interaction; append one polite item
-  // after the native radio/checkbox state announcement has had time to settle.
+  // announcer exists before the delayed message; append one polite item after
+  // the native radio/checkbox state announcement has had time to settle.
   window.setTimeout(() => {
     if (!component.isConnected) return;
     announceForAssistiveTechnology(message, 'polite');
   }, SUPPORT_ANNOUNCEMENT_DELAY_MS);
+}
+
+function handleSupportChange(component: InternalComponent, event: Event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !component.contains(target)) return;
+  const message = messageForSupportChange(target);
+  if (!message) return;
+
+  // Lit's target-level @change handler runs before this ancestor listener, so
+  // the message is derived from the committed native checked/value state.
+  recordSupportFeedback(component, target, message);
 }
 
 let installed = false;
@@ -93,36 +101,7 @@ export function installRf09SupportSettingFeedback() {
   ensureAccessibilityAnnouncer();
 
   const prototype = AccessibleNasaTlx.prototype as unknown as InternalComponent;
-  const originalConnectedCallback = prototype.connectedCallback;
-  const originalDisconnectedCallback = prototype.disconnectedCallback;
   const originalRenderSupportSettings = prototype.renderSupportSettings;
-
-  prototype.connectedCallback = function connectedCallback(this: InternalComponent) {
-    originalConnectedCallback.call(this);
-    ensureAccessibilityAnnouncer();
-
-    if (this.__rf09SupportChangeHandler) return;
-    this.__rf09SupportChangeHandler = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement) || !this.contains(target)) return;
-      const message = messageForSupportChange(target);
-      if (!message) return;
-
-      // Lit's target-level @change handler has already run before the event
-      // bubbles to the component, so the message is derived from the committed
-      // native checked/value state rather than from an intended state.
-      recordSupportFeedback(this, target, message);
-    };
-    this.addEventListener('change', this.__rf09SupportChangeHandler);
-  };
-
-  prototype.disconnectedCallback = function disconnectedCallback(this: InternalComponent) {
-    if (this.__rf09SupportChangeHandler) {
-      this.removeEventListener('change', this.__rf09SupportChangeHandler);
-      this.__rf09SupportChangeHandler = undefined;
-    }
-    originalDisconnectedCallback.call(this);
-  };
 
   prototype.renderSupportSettings = function renderSupportSettings(
     this: InternalComponent,
@@ -131,12 +110,17 @@ export function installRf09SupportSettingFeedback() {
   ) {
     const message = this.__rf09SupportStatusMessage ?? '';
     return html`
-      ${originalRenderSupportSettings.call(this, context, scope)}
-      <p
-        class="support-setting-feedback"
-        data-rf09-support-feedback
-        ?hidden=${!message}
-      >${message}</p>
+      <div
+        class="rf09-support-setting-region"
+        @change=${(event: Event) => handleSupportChange(this, event)}
+      >
+        ${originalRenderSupportSettings.call(this, context, scope)}
+        <p
+          class="support-setting-feedback"
+          data-rf09-support-feedback
+          ?hidden=${!message}
+        >${message}</p>
+      </div>
     `;
   };
 }
