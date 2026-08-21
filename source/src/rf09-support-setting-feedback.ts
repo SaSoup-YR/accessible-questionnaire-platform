@@ -23,12 +23,21 @@ type InternalComponent = HTMLElement & {
   __rf09NotificationTimerId?: number | null;
 };
 
-// GitHub's production ARIA Notification polyfill waits 250 ms after creating
-// its scoped live region. Request the notification 400 ms after the native
-// radio/checkbox state change so the fallback message mutation occurs at about
-// 650 ms. That separates it from VoiceOver's immediate selected/checked speech
-// while remaining well within the frozen requirement for timely feedback.
+// When built-in AQP speech is not expected, keep the already-verified polite
+// notification timing: request ariaNotify 400 ms after the native state change;
+// GitHub's fallback then waits 250 ms before its first live-region mutation.
 const SUPPORT_NOTIFICATION_REQUEST_DELAY_MS = 400;
+
+// Safari/VoiceOver manual evidence showed that speechSynthesis.speak() can be
+// accepted without producing the AQP audio-on confirmation. Do not treat a
+// queued speak() call as proof of audible output. When built-in speech is
+// expected, observe the standard SpeechSynthesis.speaking state for a bounded
+// 800 ms window. If speech actually starts, keep browser speech as the sole AQP
+// channel. If it never starts, cancel any still-pending/paused AQP utterance and
+// fall back to one normal-priority ariaNotify message, avoiding a late duplicate.
+const BUILT_IN_SPEECH_START_GRACE_MS = 800;
+const BUILT_IN_SPEECH_POLL_MS = 50;
+
 const LARGE_TEXT_MESSAGE = 'Large text selected.';
 const STANDARD_TEXT_MESSAGE = 'Standard text selected.';
 const RECOVERY_ON_MESSAGE =
@@ -57,18 +66,6 @@ function messageForSupportChange(target: HTMLInputElement) {
   }
 
   return null;
-}
-
-function originalHandlerAlreadySpeaks(
-  component: InternalComponent,
-  target: HTMLInputElement,
-) {
-  // The existing component uses browser speech synthesis for setting feedback
-  // whenever automatic audio is on. Keep one AQP spoken channel: audio-on and
-  // later support changes while audio remains on use that existing speech path.
-  // Turning audio off is different because speech has just been cancelled.
-  if (target.id.endsWith('-audio')) return target.checked;
-  return component.audioGuidance;
 }
 
 function replaceStaticLabelText(
@@ -119,6 +116,25 @@ function prepareSupportControls(component: InternalComponent) {
   }
 }
 
+function deliverSupportNotification(
+  component: InternalComponent,
+  target: HTMLInputElement,
+  message: string,
+  generation: number,
+) {
+  if (
+    !component.isConnected ||
+    !target.isConnected ||
+    component.__rf09NotificationGeneration !== generation
+  ) {
+    return;
+  }
+
+  const notify = (target as AriaNotifyingInput).ariaNotify;
+  if (typeof notify !== 'function') return;
+  notify.call(target, message, { priority: 'normal' });
+}
+
 function scheduleSupportNotification(
   component: InternalComponent,
   target: HTMLInputElement,
@@ -135,9 +151,17 @@ function scheduleSupportNotification(
   const generation = (component.__rf09NotificationGeneration ?? 0) + 1;
   component.__rf09NotificationGeneration = generation;
 
-  if (originalHandlerAlreadySpeaks(component, target)) return;
+  const browserSpeechExpected = component.audioGuidance;
+  if (!browserSpeechExpected) {
+    component.__rf09NotificationTimerId = window.setTimeout(() => {
+      component.__rf09NotificationTimerId = null;
+      deliverSupportNotification(component, target, message, generation);
+    }, SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    return;
+  }
 
-  component.__rf09NotificationTimerId = window.setTimeout(() => {
+  let waitedMs = 0;
+  const observeBuiltInSpeech = () => {
     component.__rf09NotificationTimerId = null;
     if (
       !component.isConnected ||
@@ -147,10 +171,33 @@ function scheduleSupportNotification(
       return;
     }
 
-    const notify = (target as AriaNotifyingInput).ariaNotify;
-    if (typeof notify !== 'function') return;
-    notify.call(target, message, { priority: 'normal' });
-  }, SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    const synthesis = 'speechSynthesis' in window ? window.speechSynthesis : null;
+    if (synthesis?.speaking) {
+      // The browser has actually begun the AQP utterance. Suppress the AT
+      // fallback so one real setting change still has only one AQP spoken path.
+      return;
+    }
+
+    waitedMs += BUILT_IN_SPEECH_POLL_MS;
+    if (waitedMs < BUILT_IN_SPEECH_START_GRACE_MS) {
+      component.__rf09NotificationTimerId = window.setTimeout(
+        observeBuiltInSpeech,
+        BUILT_IN_SPEECH_POLL_MS,
+      );
+      return;
+    }
+
+    // speak() may leave an utterance queued or paused without ever speaking it.
+    // Remove that late candidate before the AT fallback so it cannot begin after
+    // ariaNotify and create a duplicate confirmation.
+    if (synthesis && (synthesis.pending || synthesis.paused)) synthesis.cancel();
+    deliverSupportNotification(component, target, message, generation);
+  };
+
+  component.__rf09NotificationTimerId = window.setTimeout(
+    observeBuiltInSpeech,
+    BUILT_IN_SPEECH_POLL_MS,
+  );
 }
 
 function recordSupportFeedback(
