@@ -1,12 +1,13 @@
 // @ts-nocheck
-/*
- * Vendored from github/arianotify-polyfill at commit
- * 15d720f075fbe12583e2cc0dab72956384e5c5ef and adapted only to guard
- * CSS.supports in non-browser test environments.
- *
- * MIT License
+/*!
+ * @license MIT
  * Copyright (c) 2024 GitHub
- * See THIRD_PARTY_NOTICES.md for the complete notice and source identity.
+ *
+ * Vendored from github/arianotify-polyfill at commit
+ * 15d720f075fbe12583e2cc0dab72956384e5c5ef. The production mechanism is
+ * retained; AQP adds TypeScript/module wrapping, explanatory comments and a
+ * defensive CSS.supports guard for non-browser test environments.
+ * See THIRD_PARTY_NOTICES.md for the complete licence and source identity.
  */
 
 const domAPIsAreAvailable =
