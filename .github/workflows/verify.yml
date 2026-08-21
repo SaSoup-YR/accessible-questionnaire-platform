@@ -1,27 +1,29 @@
-name: Commit exact synchronized RF-01 candidate
+name: Verify source and generated release
 
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  AQP_WORKFLOW_EVENT: ${{ github.event_name }}
+  AQP_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  AQP_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
 
 jobs:
-  commit-candidate:
+  verify:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: source
     steps:
-      - name: Check out source branch
+      - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 5
-
-      - name: Apply bounded candidate patch
-        run: python ../scripts/rf01-build-candidate.py
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -36,46 +38,96 @@ jobs:
       - name: Run automated tests
         run: npm test -- --run
 
-      - name: Build production site
+      - name: Add quantified technical evaluation to the job summary
+        if: always()
+        run: npm run report:technical
+
+      - name: Publish quantified technical evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantified-technical-evaluation
+          path: |
+            docs/evidence/fidelity-source-of-truth.json
+            docs/evidence/technical-evaluation-report.json
+            docs/evidence/technical-evaluation-report.html
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build the production site for rendered-browser checks
         run: npm run build
 
-      - name: Install browser engines
+      - name: Install browser engines for rendered checks
         run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run rendered-browser accessibility regression
+      - name: Run real-browser accessibility regression
         run: npm run test:browser
 
-      - name: Record cross-browser support
+      - name: Record the cross-browser capability matrix
+        if: always()
         run: npm run test:browser-support
 
-      - name: Build release outputs
+      - name: Add the cross-browser matrix to the job summary
+        if: always()
+        run: npm run report:browser-support
+
+      - name: Add rendered accessibility evidence to the job summary
+        if: always()
+        run: npm run report:browser
+
+      - name: Publish rendered accessibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-accessibility-evidence
+          path: |
+            docs/evidence/axe-browser-report.json
+            docs/evidence/axe-browser-report.html
+            docs/evidence/cross-browser-support-report.json
+            docs/evidence/cross-browser-support-report.html
+            source/playwright-report
+            source/test-results
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build production, standalone and release outputs
         run: npm run build:release
 
-      - name: Remove one-shot builder and check formatting
-        run: |
-          rm ../scripts/rf01-build-candidate.py
-          git diff --check
+      - name: Confirm the committed deployment files are current
+        run: >-
+          git diff --exit-code --
+          demo/accessible-nasa-tlx-v0.7.html
+          demo/accessible-questionnaire-platform-v0.8.html
+          ../index.html
+          ../study.html
+          ../assets
+          ../questionnaires
 
-      - name: Commit verified source and generated outputs
+  sync-pages:
+    name: Sync verified main to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Replace its file tree with the verified main revision
         env:
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          VERIFIED_MAIN_SHA: ${{ github.sha }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A \
-            ../integrations/qualtrics/qualtrics-question.js \
-            tests/rf01-qualtrics-connection-alert.test.ts \
-            ../docs/evidence/RF01-R3-A26-DEDICATED-ANNOUNCER-SUCCESSOR-2026-08-21.md \
-            demo/accessible-nasa-tlx-v0.7.html \
-            demo/accessible-questionnaire-platform-v0.8.html \
-            ../index.html \
-            ../study.html \
-            ../assets \
-            ../questionnaires \
-            ../scripts/rf01-build-candidate.py
+          git fetch origin "$VERIFIED_MAIN_SHA"
+          git read-tree --reset -u "$VERIFIED_MAIN_SHA"
           if git diff --cached --quiet; then
-            echo "Candidate outputs are already committed."
+            echo "GitHub Pages already matches verified main."
             exit 0
           fi
-          git commit -m "fix: harden RF-01 dedicated connection announcer"
-          git push origin HEAD:"$HEAD_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Deploy verified main ${VERIFIED_MAIN_SHA}"
+          git push origin HEAD:gh-pages
