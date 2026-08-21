@@ -66,47 +66,14 @@ async function expectSupportNotification(
     targetName,
   });
 
-  // The older component-wide live region is not mutated by these setting
-  // changes; ariaNotify is the sole new AT message when browser speech did not
-  // actually start.
+  // RF-09 setting results use one AT notification channel. The older
+  // component-wide live region is not mutated, and no assertive result is added.
   await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(
     legacyStatusBefore,
   );
   await expect(
     page.locator('[data-aqp-announcement-priority="assertive"]'),
   ).toBeEmpty();
-}
-
-async function audioOnNotificationCount(
-  page: Page,
-  priorCount: number,
-  legacyStatusBefore: string,
-  targetName: string,
-) {
-  // Headless browser engines differ in whether their installed speech service
-  // actually starts an utterance. RF-09 deliberately has two valid outcomes:
-  // if speech starts, browser speech is the only AQP spoken channel; if it does
-  // not start within the bounded grace period, one normal ariaNotify fallback
-  // is emitted. Unit tests deterministically exercise both branches. This
-  // rendered-browser test verifies either platform outcome without mocking the
-  // browser's native speech service.
-  await page.waitForTimeout(1200);
-  const records = await notificationLog(page);
-  expect(
-    [priorCount, priorCount + 1],
-    'audio-on must either start browser speech or emit exactly one AT fallback',
-  ).toContain(records.length);
-  if (records.length === priorCount + 1) {
-    expect(records.at(-1)).toEqual({
-      message: AUDIO_ON_MESSAGE,
-      priority: 'normal',
-      targetName,
-    });
-  }
-  await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(
-    legacyStatusBefore,
-  );
-  return records.length;
 }
 
 test('RF-09 support settings expose unique text labels and one non-focus-moving notification path', async ({ page, browserName }) => {
@@ -215,8 +182,10 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   await expect(audio).toBeChecked();
   await expect(feedback).toHaveText(AUDIO_ON_MESSAGE);
   await expect(answer).toBeChecked();
-  expectedNotifications = await audioOnNotificationCount(
+  expectedNotifications += 1;
+  await expectSupportNotification(
     page,
+    AUDIO_ON_MESSAGE,
     expectedNotifications,
     legacyStatusBefore,
     await audio.getAttribute('aria-label') ?? '',
