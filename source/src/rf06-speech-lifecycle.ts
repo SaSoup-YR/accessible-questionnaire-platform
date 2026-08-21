@@ -85,29 +85,6 @@ function clearLifecycleTimers(component: InternalComponent) {
   clearTimer(component, '__rf06VoiceNoticeTimerId');
 }
 
-function normaliseVoiceControlCommand(value: string) {
-  return value
-    .toLocaleLowerCase()
-    .replace(/[“”"'’.,!?;:]+/gu, ' ')
-    .replace(/\s+/gu, ' ')
-    .trim();
-}
-
-function resultTranscripts(event: RecognitionEventLike) {
-  const firstResult = event.results?.[0];
-  if (!firstResult) return [];
-  const transcripts: string[] = [];
-  for (let index = 0; index < firstResult.length; index += 1) {
-    const transcript = firstResult[index]?.transcript?.trim();
-    if (transcript) transcripts.push(transcript);
-  }
-  return transcripts;
-}
-
-function isStopVoiceControlCommand(transcript: string) {
-  const command = normaliseVoiceControlCommand(transcript);
-  return /^(?:(?:click|press|select|tap|choose)\s+)?(?:the\s+)?stop voice input(?:\s+button)?$/u.test(command);
-}
 
 function scheduleListeningAnnouncement(component: InternalComponent, recognition: RecognitionLike) {
   clearTimer(component, '__rf06ListeningAnnouncementTimerId');
@@ -266,20 +243,6 @@ export function installRf06SpeechLifecycle() {
     if (!recognition || this.voiceState !== 'listening') return;
 
     scheduleListeningAnnouncement(this, recognition);
-
-    const originalOnResult = recognition.onresult;
-    recognition.onresult = (event) => {
-      if (this.recognition !== recognition) return;
-      // Windows Voice Access and built-in Web Speech can hear the same command.
-      // If Web Speech wins the race for the visible Stop command, treat it as
-      // the same cancellation action instead of consuming it as a questionnaire
-      // answer and removing the Stop control before Voice Access can act.
-      if (resultTranscripts(event).some(isStopVoiceControlCommand)) {
-        stopVoiceInput(this);
-        return;
-      }
-      originalOnResult?.(event);
-    };
 
     const originalOnError = recognition.onerror;
     recognition.onerror = (event) => {
