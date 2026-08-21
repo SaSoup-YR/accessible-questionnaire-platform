@@ -52,7 +52,7 @@ jobs:
 
       - name: Restore canonical workflow and remove bootstrap script in candidate tree
         run: |
-          git show a5171b620695c7358d567f28fc0abdcb0e1fddde:.github/workflows/verify.yml > ../.github/workflows/verify.yml
+          git show b173707024bf4b3b6caa7ddfa99357571d571190:.github/workflows/verify.yml > ../.github/workflows/verify.yml
           rm ../scripts/rf01-build-candidate.py
 
       - name: Check patch formatting
