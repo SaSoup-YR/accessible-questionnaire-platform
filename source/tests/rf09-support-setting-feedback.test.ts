@@ -3,9 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/rf09-support-setting-feedback';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
-const SUPPORT_ANNOUNCEMENT_DELAY_MS = 650;
+const SUPPORT_NOTIFICATION_REQUEST_DELAY_MS = 400;
+const POLYFILL_LIVE_REGION_DELAY_MS = 250;
 const AUDIO_ON_MESSAGE =
   'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
+
+type NotificationRecord = {
+  target: Element;
+  message: string;
+  priority: string | undefined;
+};
 
 async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
@@ -32,16 +39,6 @@ function feedback(component: AccessibleNasaTlx) {
   return component.querySelector<HTMLElement>('[data-rf09-support-feedback]')!;
 }
 
-function supportStatusRegions(component: AccessibleNasaTlx) {
-  return [...component.querySelectorAll<HTMLElement>('[data-rf09-support-announcement]')];
-}
-
-function supportAnnouncementText(component: AccessibleNasaTlx) {
-  return supportStatusRegions(component)
-    .map((region) => region.textContent?.trim() ?? '')
-    .filter(Boolean);
-}
-
 function globalStatusText(component: AccessibleNasaTlx) {
   return component.querySelector<HTMLElement>('main > p.sr-only[aria-live="polite"]')
     ?.textContent?.trim() ?? '';
@@ -49,6 +46,29 @@ function globalStatusText(component: AccessibleNasaTlx) {
 
 function compactText(element: Element | null) {
   return element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function installAriaNotifySpy() {
+  const records: NotificationRecord[] = [];
+  const prototype = Element.prototype as Element & {
+    ariaNotify: (
+      message: string,
+      options?: { priority?: string },
+    ) => void;
+  };
+  const original = prototype.ariaNotify;
+  expect(typeof original).toBe('function');
+
+  vi.spyOn(prototype, 'ariaNotify').mockImplementation(function (
+    this: Element,
+    message: string,
+    options?: { priority?: string },
+  ) {
+    records.push({ target: this, message, priority: options?.priority });
+    original.call(this, message, options);
+  });
+
+  return records;
 }
 
 function installSpeechSynthesis() {
@@ -78,6 +98,11 @@ function installSpeechSynthesis() {
   return { spoken, cancel };
 }
 
+async function finishFallbackAnnouncement() {
+  await vi.advanceTimersByTimeAsync(POLYFILL_LIVE_REGION_DELAY_MS);
+  await Promise.resolve();
+}
+
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
@@ -95,9 +120,10 @@ afterEach(() => {
 });
 
 describe('RF-09 support-setting feedback', () => {
-  it('uses unique visible text-size names and an alternating status after native state settles', async () => {
+  it('uses unique visible text-size names and one normal-priority notification', async () => {
     vi.useFakeTimers();
     installSpeechSynthesis();
+    const notifications = installAriaNotifySpy();
     const component = await renderComponent();
     await startRatings(component);
 
@@ -108,13 +134,9 @@ describe('RF-09 support-setting feedback', () => {
     expect(standard.getAttribute('aria-label')).toBe('Standard text');
     expect(large.getAttribute('aria-label')).toBe('Large text');
 
-    const regions = supportStatusRegions(component);
-    expect(regions).toHaveLength(2);
-    for (const region of regions) {
-      expect(region.getAttribute('role')).toBe('status');
-      expect(region.getAttribute('aria-live')).toBe('polite');
-      expect(region.getAttribute('aria-atomic')).toBe('true');
-    }
+    const supportFeedback = feedback(component);
+    expect(standard.getAttribute('aria-controls')).toBe(supportFeedback.id);
+    expect(large.getAttribute('aria-controls')).toBe(supportFeedback.id);
 
     const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
     answer.click();
@@ -130,16 +152,26 @@ describe('RF-09 support-setting feedback', () => {
     expect(large.checked).toBe(true);
     expect(document.activeElement).toBe(large);
     expect(answer.checked).toBe(true);
-    expect(feedback(component).hidden).toBe(false);
-    expect(feedback(component).textContent?.trim()).toBe('Large text selected.');
+    expect(supportFeedback.hidden).toBe(false);
+    expect(supportFeedback.textContent?.trim()).toBe('Large text selected.');
     expect(globalStatusText(component)).toBe(legacyStatusBefore);
-    expect(supportAnnouncementText(component)).toEqual([]);
+    expect(notifications).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS - 1);
-    expect(supportAnnouncementText(component)).toEqual([]);
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS - 1);
+    expect(notifications).toEqual([]);
     await vi.advanceTimersByTimeAsync(1);
-    await component.updateComplete;
-    expect(supportAnnouncementText(component)).toEqual(['Large text selected.']);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      target: large,
+      message: 'Large text selected.',
+      priority: 'normal',
+    });
+    await finishFallbackAnnouncement();
+    expect(
+      [...document.body.children].some((element) =>
+        element.localName.startsWith('polite-live-region-'),
+      ),
+    ).toBe(true);
 
     standard.focus();
     standard.closest('label')!.click();
@@ -148,18 +180,23 @@ describe('RF-09 support-setting feedback', () => {
     expect(standard.checked).toBe(true);
     expect(document.activeElement).toBe(standard);
     expect(answer.checked).toBe(true);
-    expect(feedback(component).textContent?.trim()).toBe('Standard text selected.');
+    expect(supportFeedback.textContent?.trim()).toBe('Standard text selected.');
     expect(globalStatusText(component)).toBe(legacyStatusBefore);
-    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
-    await component.updateComplete;
-    expect(supportAnnouncementText(component)).toEqual(['Standard text selected.']);
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    expect(notifications).toHaveLength(2);
+    expect(notifications[1]).toMatchObject({
+      target: standard,
+      message: 'Standard text selected.',
+      priority: 'normal',
+    });
+    await finishFallbackAnnouncement();
   });
 
-  it('gives delayed recovery status without moving focus or changing an answer', async () => {
+  it('gives recovery feedback without moving focus or changing an answer', async () => {
     vi.useFakeTimers();
     installSpeechSynthesis();
+    const notifications = installAriaNotifySpy();
     const component = await renderComponent();
     await startRatings(component);
 
@@ -180,18 +217,21 @@ describe('RF-09 support-setting feedback', () => {
       'Interruption recovery is on. Incomplete answers will be stored in this browser.',
     );
     expect(globalStatusText(component)).toBe(legacyStatusBefore);
-    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
-    await component.updateComplete;
-    expect(supportAnnouncementText(component)).toEqual([
-      'Interruption recovery is on. Incomplete answers will be stored in this browser.',
-    ]);
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      target: recovery,
+      message: 'Interruption recovery is on. Incomplete answers will be stored in this browser.',
+      priority: 'normal',
+    });
+    await finishFallbackAnnouncement();
   });
 
-  it('uses built-in speech for audio-on and one delayed status for audio-off', async () => {
+  it('uses built-in speech for audio-on and one notification for audio-off', async () => {
     vi.useFakeTimers();
     const { spoken, cancel } = installSpeechSynthesis();
+    const notifications = installAriaNotifySpy();
     const component = await renderComponent();
     await startRatings(component);
 
@@ -210,8 +250,10 @@ describe('RF-09 support-setting feedback', () => {
     expect(spoken.at(-1)).toBe(AUDIO_ON_MESSAGE);
     expect(feedback(component).textContent?.trim()).toBe(AUDIO_ON_MESSAGE);
 
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
-    expect(supportAnnouncementText(component)).toEqual([]);
+    await vi.advanceTimersByTimeAsync(
+      SUPPORT_NOTIFICATION_REQUEST_DELAY_MS + POLYFILL_LIVE_REGION_DELAY_MS,
+    );
+    expect(notifications).toEqual([]);
 
     audio.closest('label')!.click();
     await component.updateComplete;
@@ -223,28 +265,33 @@ describe('RF-09 support-setting feedback', () => {
     expect(feedback(component).textContent?.trim()).toBe(
       'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
     );
-    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
-    await component.updateComplete;
-    expect(supportAnnouncementText(component)).toEqual([
-      'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
-    ]);
+    await vi.advanceTimersByTimeAsync(SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      target: audio,
+      message: 'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
+      priority: 'normal',
+    });
+    await finishFallbackAnnouncement();
   });
 
   it('does not claim a support-setting change for unrelated answer-format controls', async () => {
     vi.useFakeTimers();
     installSpeechSynthesis();
+    const notifications = installAriaNotifySpy();
     const component = await renderComponent();
 
     const smiley = component.querySelector<HTMLInputElement>('.answer-mode-control input[value="smiley"]')!;
     smiley.click();
     await component.updateComplete;
-    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
+    await vi.advanceTimersByTimeAsync(
+      SUPPORT_NOTIFICATION_REQUEST_DELAY_MS + POLYFILL_LIVE_REGION_DELAY_MS,
+    );
 
     expect(smiley.checked).toBe(true);
     expect(feedback(component).hidden).toBe(true);
     expect(feedback(component).textContent?.trim()).toBe('');
-    expect(supportAnnouncementText(component)).toEqual([]);
+    expect(notifications).toEqual([]);
   });
 });
