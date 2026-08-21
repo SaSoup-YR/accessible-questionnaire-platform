@@ -6,6 +6,9 @@ type NotificationRecord = {
   targetName: string;
 };
 
+const AUDIO_ON_MESSAGE =
+  'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
+
 async function installNotificationRecorder(page: Page) {
   await page.evaluate(() => {
     const prototype = Element.prototype as Element & {
@@ -64,7 +67,8 @@ async function expectSupportNotification(
   });
 
   // The older component-wide live region is not mutated by these setting
-  // changes; ariaNotify is the sole new AT message when built-in audio is off.
+  // changes; ariaNotify is the sole new AT message when browser speech did not
+  // actually start.
   await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(
     legacyStatusBefore,
   );
@@ -73,16 +77,36 @@ async function expectSupportNotification(
   ).toBeEmpty();
 }
 
-async function expectNoNewNotification(
+async function audioOnNotificationCount(
   page: Page,
-  expectedCount: number,
+  priorCount: number,
   legacyStatusBefore: string,
+  targetName: string,
 ) {
-  await page.waitForTimeout(750);
-  expect(await notificationLog(page)).toHaveLength(expectedCount);
+  // Headless browser engines differ in whether their installed speech service
+  // actually starts an utterance. RF-09 deliberately has two valid outcomes:
+  // if speech starts, browser speech is the only AQP spoken channel; if it does
+  // not start within the bounded grace period, one normal ariaNotify fallback
+  // is emitted. Unit tests deterministically exercise both branches. This
+  // rendered-browser test verifies either platform outcome without mocking the
+  // browser's native speech service.
+  await page.waitForTimeout(1200);
+  const records = await notificationLog(page);
+  expect(
+    [priorCount, priorCount + 1],
+    'audio-on must either start browser speech or emit exactly one AT fallback',
+  ).toContain(records.length);
+  if (records.length === priorCount + 1) {
+    expect(records.at(-1)).toEqual({
+      message: AUDIO_ON_MESSAGE,
+      priority: 'normal',
+      targetName,
+    });
+  }
   await expect(page.locator('main > p.sr-only[aria-live="polite"]')).toHaveText(
     legacyStatusBefore,
   );
+  return records.length;
 }
 
 test('RF-09 support settings expose unique text labels and one non-focus-moving notification path', async ({ page, browserName }) => {
@@ -189,11 +213,14 @@ test('RF-09 support settings expose unique text labels and one non-focus-moving 
   ).toBeEnabled();
   await activateLabelWithoutMovingExistingFocus(audio);
   await expect(audio).toBeChecked();
-  await expect(feedback).toHaveText(
-    'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.',
-  );
+  await expect(feedback).toHaveText(AUDIO_ON_MESSAGE);
   await expect(answer).toBeChecked();
-  await expectNoNewNotification(page, expectedNotifications, legacyStatusBefore);
+  expectedNotifications = await audioOnNotificationCount(
+    page,
+    expectedNotifications,
+    legacyStatusBefore,
+    await audio.getAttribute('aria-label') ?? '',
+  );
 
   await activateLabelWithoutMovingExistingFocus(audio);
   await expect(audio).not.toBeChecked();
