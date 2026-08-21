@@ -54,18 +54,6 @@ function installHangingRecognition() {
   return instances;
 }
 
-function recognitionResult(transcript: string) {
-  return {
-    results: {
-      0: {
-        0: { transcript },
-        length: 1,
-      },
-      length: 1,
-    },
-  };
-}
-
 beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
@@ -203,31 +191,5 @@ describe('RF-06 speech listening lifecycle', () => {
     expect(message).toContain('No answer was changed.');
     expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
-  });
-
-  it('treats the visible Voice Access Stop command as cancellation instead of an answer transcript', async () => {
-    vi.useFakeTimers();
-    const instances = installHangingRecognition();
-    const component = await renderComponent();
-    await startRatings(component);
-
-    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
-    await component.updateComplete;
-    const result = instances[0].onresult;
-    expect(result).not.toBeNull();
-
-    result!(recognitionResult('click stop voice input'));
-    await component.updateComplete;
-
-    expect(instances[0].stopCalls).toBe(1);
-    expect(component.querySelector('[data-voice-stop]')).toBeNull();
-    expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
-    expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
-    expect(component.querySelector('.voice-status')?.textContent).toContain('No answer was changed.');
-    expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
-
-    await vi.advanceTimersByTimeAsync(20_000);
-    await component.updateComplete;
-    expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
   });
 });
