@@ -25,6 +25,10 @@ async function startRatings(component: AccessibleNasaTlx) {
   await component.updateComplete;
 }
 
+function assertiveAnnouncer() {
+  return document.querySelector<HTMLElement>('[data-aqp-announcement-priority="assertive"]');
+}
+
 function installHangingRecognition() {
   const instances: FakeRecognitionInstance[] = [];
   class FakeRecognition {
@@ -71,7 +75,7 @@ afterEach(() => {
 });
 
 describe('RF-06 speech listening lifecycle', () => {
-  it('creates a delayed Listening mutation and exposes an explicit Stop control while answers remain usable', async () => {
+  it('creates delayed Listening feedback and keeps manual Stop in the ordinary status channel', async () => {
     vi.useFakeTimers();
     const instances = installHangingRecognition();
     const component = await renderComponent();
@@ -79,18 +83,19 @@ describe('RF-06 speech listening lifecycle', () => {
 
     const voiceDetails = component.querySelector<HTMLDetailsElement>('.voice-input')!;
     voiceDetails.open = true;
-    const status = component.querySelector<HTMLElement>('.voice-status');
-    expect(status).not.toBeNull();
-    expect(status?.textContent?.trim()).toBe('');
-    const alert = component.querySelector<HTMLElement>('.voice-alert');
-    expect(alert).not.toBeNull();
-    expect(alert?.getAttribute('role')).toBe('alert');
-    expect(alert?.textContent?.trim()).toBe('');
+    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
+    expect(component.querySelector<HTMLElement>('.voice-error')?.hidden).toBe(true);
 
     component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
 
-    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
+    const announcer = assertiveAnnouncer();
+    expect(announcer).not.toBeNull();
+    expect(announcer?.getAttribute('role')).toBe('log');
+    expect(announcer?.getAttribute('aria-live')).toBe('assertive');
+    expect(announcer?.getAttribute('aria-relevant')).toBe('additions');
+    expect(announcer?.textContent?.trim()).toBe('');
+
     const stop = component.querySelector<HTMLButtonElement>('[data-voice-stop]');
     expect(stop?.textContent?.trim()).toBe('Stop voice input');
     expect(stop?.disabled).toBe(false);
@@ -109,13 +114,14 @@ describe('RF-06 speech listening lifecycle', () => {
     expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
     expect(component.querySelector('.voice-status')?.textContent).toContain('No answer was changed.');
-    expect(component.querySelector('.voice-alert')?.textContent?.trim()).toBe('');
+    expect(component.querySelector<HTMLElement>('.voice-error')?.hidden).toBe(true);
+    expect(assertiveAnnouncer()?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
     expect(component.querySelector('[data-voice-stop]')).toBeNull();
   });
 
-  it('ends a browser that never fires onend with the AQP watchdog and exposes delayed specific no-speech recovery', async () => {
+  it('ends a hanging recogniser and appends the watchdog recovery to the stable assertive log', async () => {
     vi.useFakeTimers();
     const instances = installHangingRecognition();
     const component = await renderComponent();
@@ -136,16 +142,21 @@ describe('RF-06 speech listening lifecycle', () => {
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
 
-    const message = component.querySelector('.voice-alert')?.textContent ?? '';
-    expect(message).toContain('No speech was detected before the listening time limit.');
-    expect(message).toContain('Voice input stopped.');
-    expect(message).toContain('No answer was changed.');
+    const visibleMessage = component.querySelector('.voice-error')?.textContent ?? '';
+    expect(visibleMessage).toContain('No speech was detected before the listening time limit.');
+    expect(visibleMessage).toContain('Voice input stopped.');
+    expect(visibleMessage).toContain('No answer was changed.');
+    expect(component.querySelector<HTMLElement>('.voice-error')?.hidden).toBe(false);
+
+    const announcementItems = assertiveAnnouncer()?.children ?? [];
+    expect(announcementItems).toHaveLength(1);
+    expect(announcementItems[0]?.textContent).toContain('No speech was detected before the listening time limit.');
     expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
   });
 
-  it('turns native no-speech end into a separate specific recovery announcement and cancels the watchdog', async () => {
+  it('turns native no-speech end into a visible recovery plus a newly appended assertive item', async () => {
     vi.useFakeTimers();
     const instances = installHangingRecognition();
     const component = await renderComponent();
@@ -163,20 +174,20 @@ describe('RF-06 speech listening lifecycle', () => {
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
 
-    const message = component.querySelector('.voice-alert')?.textContent ?? '';
-    expect(message).toContain('No speech was detected.');
-    expect(message).toContain('Try again, or use a visible answer button.');
-    expect(message).toContain('No answer was changed.');
+    const visibleMessage = component.querySelector('.voice-error')?.textContent ?? '';
+    expect(visibleMessage).toContain('No speech was detected.');
+    expect(visibleMessage).toContain('Try again, or use a visible answer button.');
+    expect(visibleMessage).toContain('No answer was changed.');
+    expect(assertiveAnnouncer()?.children).toHaveLength(1);
+    expect(assertiveAnnouncer()?.lastElementChild?.textContent).toContain('No speech was detected.');
     expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
 
-    await vi.advanceTimersByTimeAsync(20_000);
-    await component.updateComplete;
-    expect(instances[0].stopCalls).toBe(1);
-    expect(component.querySelector('.voice-alert')?.textContent).toContain('No speech was detected.');
+    await vi.advanceTimersByTimeAsync(7_000);
+    expect(assertiveAnnouncer()?.children).toHaveLength(0);
   });
 
-  it('normalises a native no-speech error into the same safe A13 recovery state', async () => {
+  it('normalises a native no-speech error into the same page-level announcement path', async () => {
     vi.useFakeTimers();
     const instances = installHangingRecognition();
     const component = await renderComponent();
@@ -193,10 +204,10 @@ describe('RF-06 speech listening lifecycle', () => {
 
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
-    const message = component.querySelector('.voice-alert')?.textContent ?? '';
-    expect(message).toContain('No speech was detected.');
-    expect(message).toContain('No answer was changed.');
-    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
+    expect(component.querySelector('.voice-error')?.textContent).toContain('No speech was detected.');
+    expect(component.querySelector('.voice-error')?.textContent).toContain('No answer was changed.');
+    expect(assertiveAnnouncer()?.children).toHaveLength(1);
+    expect(assertiveAnnouncer()?.lastElementChild?.textContent).toContain('No speech was detected.');
     expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
   });
