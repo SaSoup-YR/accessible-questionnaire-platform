@@ -9,7 +9,9 @@ Status: **R2-A10, R3-A10 and R3-A13 closed by post-fix manual evidence; R4-A10 h
 - Proven R3-A13 production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
 - Canonically verified R3-A13 evidence head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
 - R3-A13 canonical run: `32478383479` — **success**.
-- Current R4 Escape-candidate source/test head before generated-release synchronization: `5c4e03f7d82f8e642e5da1e2fcbed3613b52e09c`.
+- Synchronized R4 Escape-candidate runtime and immutable preview source: `f6917d08527e0c8276db90ea46995c73da4fd74a`.
+- Immutable R4 preview path: `/rf06-r4-escape-preview/`.
+- A fresh canonical read-only run is required on this documentation-only successor before manual testing is credited.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -93,7 +95,7 @@ The manual R4 retest must use Windows Voice Access + Chrome and say **`Press Esc
 
 ## Automated evidence boundary
 
-The prior R3-A13 runtime passed 22/22 Vitest files, 215/215 tests, 12/12 rendered-browser tests, 9/9 cross-browser support tests, build/release and generated freshness. The Escape candidate requires its own synchronized generated release and fresh canonical run before manual testing.
+The prior R3-A13 runtime passed 22/22 Vitest files, 215/215 tests, 12/12 rendered-browser tests, 9/9 cross-browser support tests, build/release and generated freshness. The Escape candidate source/tests and generated release have been synchronized; a fresh canonical run must pass before the preview is treated as the final automated candidate.
 
 Automated evidence establishes the implemented mechanism and invariants. It cannot override a contradictory real Voice Access result.
 
