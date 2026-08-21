@@ -1,15 +1,16 @@
 # RF-09 / A33 support-setting feedback candidate — 21 August 2026
 
-Status: **research, implementation, focused tests, generated-release synchronization and immutable preview complete; final canonical read-only CI and manual R3/R4 adjudication pending**
+Status: **research, implementation, focused tests, generated-release synchronization, immutable preview and canonical automated verification complete; manual R3/R4 adjudication pending**
 
 ## Identity and audit boundary
 
 - Stacked base: final retained RF-06 branch head `e45a59d25e2188f194484c8dadd877cdbdf80ea1`.
 - Branch: `agent/fix-rf09-support-setting-feedback`.
 - Synchronized RF-09 runtime and immutable preview source: `d3af4889c4479a41d54f9c6d4754694f2e0233ed`.
+- Canonically verified documentation-only head: `3b55788ff10a940016cf9964b788781da5316a86`.
 - Immutable preview path: `/rf09-preview/`.
 - Generated synchronization/publish run: `32488814604` — **success**.
-- A documentation-only successor must pass the restored canonical read-only workflow before automated closure.
+- Final canonical read-only run: `32489074995` — **success**.
 - Frozen q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - RF-09 targets only historical **R3-A33** and **R4-A33**.
 
@@ -73,7 +74,7 @@ The visible element is not focusable and is not used as a second live region.
 
 ### One AQP announcement channel per change
 
-The already-proven RF-06 body-level announcer is reused with its **polite** log. When built-in automatic audio is off, RF-09 appends one fresh polite item after 100 ms. This separates the setting-result message from the native checked/radio state event and follows the mature-library timing pattern.
+The already-proven RF-06 body-level announcer is reused with its **polite** log. When built-in automatic audio is off, RF-09 appends one fresh polite item after 100 ms. This separates the setting-result message from the native radio/checkbox state event and follows the mature-library timing pattern.
 
 When automatic AQP audio is already on, the existing setting handler already speaks the same result through browser speech synthesis. RF-09 updates the visible status but deliberately does not add a second live-region message. Turning automatic audio on uses the existing spoken confirmation; turning it off uses the polite announcer after speech has been stopped. This avoids two simultaneous AQP announcement channels while preserving a visible result for R4.
 
@@ -105,6 +106,7 @@ No focus call, scroll call, answer write, score calculation or input-route mutat
 - The implementation was corrected to attach the bubbling `change` observer structurally in the rendered settings wrapper and to recreate the stable announcer for each isolated test.
 - Corrected-source canonical run `32487897508` passed unit/component tests, production build, rendered-browser accessibility checks, Chromium/Firefox/WebKit support checks and release generation. It failed only the generated-release freshness gate, as expected before new CSS/JS output was committed.
 - Synchronization run `32488814604` regenerated release files, restored the canonical read-only workflow before committing, and published the immutable `/rf09-preview/` page. The preview `SOURCE-SHA.txt` is bound to runtime `d3af4889c4479a41d54f9c6d4754694f2e0233ed`.
+- Final canonical read-only run `32489074995` passed on the synchronized runtime plus documentation only. It recorded **0 npm vulnerabilities**, **23/23 Vitest files and 218/218 tests**, **12/12 rendered-browser accessibility tests**, **12/12 cross-browser support tests** including the RF-09 route on Chromium, Firefox and WebKit, production/standalone/release builds, and generated-release freshness.
 
 ## Evidence boundary and manual gate
 
