@@ -8,9 +8,13 @@ import {
 type SupportContext = 'intro' | 'toolbar';
 type SupportScope = 'all' | 'presentation-only';
 
-type InternalComponent = AccessibleNasaTlx & {
+type InternalComponent = HTMLElement & {
   audioGuidance: boolean;
+  connectedCallback(): void;
+  disconnectedCallback(): void;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
+  updateComplete: Promise<unknown>;
+  requestUpdate(): void;
   __rf09SupportStatusMessage?: string;
   __rf09SupportChangeHandler?: (event: Event) => void;
 };
