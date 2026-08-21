@@ -1,0 +1,60 @@
+name: RF-09 one-time immutable preview publish
+
+on:
+  push:
+    branches:
+      - agent/fix-rf09-support-setting-feedback
+    paths:
+      - '.github/workflows/rf09-publish-preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact synchronized runtime
+        uses: actions/checkout@v4
+        with:
+          ref: d2c8ca5a2beba06bb281ed3db222a7a302f17702
+          path: runtime
+          fetch-depth: 1
+
+      - name: Check out deployment branch separately
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: pages
+          fetch-depth: 1
+
+      - name: Create new preview only
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIEW='pages/rf09-speech-failover-preview'
+          if [ -e "$PREVIEW" ]; then
+            echo 'Refusing to overwrite an existing RF-09 speech-failover preview.' >&2
+            exit 1
+          fi
+          mkdir -p "$PREVIEW"
+          cp runtime/source/demo/accessible-questionnaire-platform-v0.8.html "$PREVIEW/index.html"
+          printf '%s\n' 'd2c8ca5a2beba06bb281ed3db222a7a302f17702' > "$PREVIEW/SOURCE-SHA.txt"
+
+      - name: Commit only the new immutable preview
+        working-directory: pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add rf09-speech-failover-preview
+          CHANGED="$(git diff --cached --name-only)"
+          printf '%s\n' "$CHANGED"
+          if printf '%s\n' "$CHANGED" | grep -v '^rf09-speech-failover-preview/' | grep -q .; then
+            echo 'Unexpected gh-pages path changed; refusing publish.' >&2
+            exit 1
+          fi
+          git diff --cached --check
+          git commit -m 'Publish immutable RF-09 speech-failover preview d2c8ca5a'
+          git push origin HEAD:gh-pages
