@@ -11,13 +11,15 @@ const expected = [
 test('RF-08 smiley choices keep native names and expose real on-screen radio targets', async ({ page, browserName }) => {
   await page.goto('/index.html');
 
-  const answerMode = page.locator('.answer-mode-control');
+  // Follow the real participant path: the answer-format control lives inside
+  // the optional accessibility disclosure on the introduction screen.
+  const introSupport = page.locator('.participant-support-setup');
+  await introSupport.locator('summary').click();
+  await expect(introSupport).toHaveAttribute('open', '');
+
+  const answerMode = introSupport.locator('.answer-mode-control');
   const smileyMode = answerMode.locator('input[type="radio"][value="smiley"]');
   await expect(smileyMode).toHaveCount(1);
-  // RF-08 is testing the five rendered smiley answer radios, not the separate
-  // answer-format control. Activate that existing custom radio through its
-  // visible label so the test does not mistake its intentional hidden-input
-  // styling for an RF-08 product failure.
   await answerMode.locator('label').filter({ hasText: 'Smiley landmarks' }).click();
   await expect(smileyMode).toBeChecked();
 
