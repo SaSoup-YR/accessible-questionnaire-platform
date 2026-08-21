@@ -55,6 +55,7 @@ type InternalComponent = {
   __rf06VoiceWatchdogTimerId?: number | null;
   __rf06ListeningAnnouncementTimerId?: number | null;
   __rf06VoiceNoticeTimerId?: number | null;
+  __rf06MessageChannel?: 'status' | 'alert';
 };
 
 const VOICE_LISTENING_WATCHDOG_MS = 15_000;
@@ -88,6 +89,7 @@ function clearLifecycleTimers(component: InternalComponent) {
 
 function scheduleListeningAnnouncement(component: InternalComponent, recognition: RecognitionLike) {
   clearTimer(component, '__rf06ListeningAnnouncementTimerId');
+  component.__rf06MessageChannel = 'status';
   // Safari/VoiceOver can speak its own microphone-capture notice at the same
   // instant recognition starts. Keep the already-present live region empty,
   // then create a separate content mutation after that browser notice so the
@@ -102,6 +104,7 @@ function scheduleListeningAnnouncement(component: InternalComponent, recognition
 
 function scheduleNoSpeechNotice(component: InternalComponent, message: string) {
   clearTimer(component, '__rf06VoiceNoticeTimerId');
+  component.__rf06MessageChannel = 'alert';
   // Separate the AQP recovery message from Safari's own "stopped capturing
   // sound" announcement. This keeps the error as a genuine later live-region
   // mutation instead of competing with the browser notification.
@@ -118,6 +121,7 @@ function stopVoiceInput(component: InternalComponent) {
   if (component.voiceState !== 'listening') return;
   component.releaseRecognition();
   component.pendingVoiceAnswer = null;
+  component.__rf06MessageChannel = 'status';
   component.showVoiceNotice(MANUAL_STOP_MESSAGE);
   void component.updateComplete.then(() => {
     component.querySelector<HTMLButtonElement>('[data-voice-start]')?.focus();
@@ -152,6 +156,8 @@ export function installRf06SpeechLifecycle() {
       context === 'rating'
         ? this.ratingVoicePrompt(first)
         : `Say “${first.name}” or “${second!.name}”.`;
+    const voiceMessageIsAlert =
+      this.__rf06MessageChannel === 'alert' && Boolean(this.voiceMessage);
 
     return html`
       <details class="voice-input" .open=${this.voiceState !== 'idle'}>
@@ -192,7 +198,12 @@ export function installRf06SpeechLifecycle() {
                 the visible buttons by name.
               </p>`
             : nothing}
-          <p class="voice-status" role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>
+          <p class="voice-status" role="status" aria-live="polite" aria-atomic="true">
+            ${voiceMessageIsAlert ? '' : this.voiceMessage}
+          </p>
+          <p class="voice-alert" role="alert" aria-atomic="true">
+            ${voiceMessageIsAlert ? this.voiceMessage : ''}
+          </p>
           ${activeForContext && this.pendingVoiceAnswer
             ? html`
                 <div class="voice-confirmation">

@@ -82,6 +82,10 @@ describe('RF-06 speech listening lifecycle', () => {
     const status = component.querySelector<HTMLElement>('.voice-status');
     expect(status).not.toBeNull();
     expect(status?.textContent?.trim()).toBe('');
+    const alert = component.querySelector<HTMLElement>('.voice-alert');
+    expect(alert).not.toBeNull();
+    expect(alert?.getAttribute('role')).toBe('alert');
+    expect(alert?.textContent?.trim()).toBe('');
 
     component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await component.updateComplete;
@@ -105,6 +109,7 @@ describe('RF-06 speech listening lifecycle', () => {
     expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
     expect(component.querySelector('.voice-status')?.textContent).toContain('No answer was changed.');
+    expect(component.querySelector('.voice-alert')?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
     expect(component.querySelector('[data-voice-stop]')).toBeNull();
@@ -131,10 +136,11 @@ describe('RF-06 speech listening lifecycle', () => {
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
 
-    const message = component.querySelector('.voice-status')?.textContent ?? '';
+    const message = component.querySelector('.voice-alert')?.textContent ?? '';
     expect(message).toContain('No speech was detected before the listening time limit.');
     expect(message).toContain('Voice input stopped.');
     expect(message).toContain('No answer was changed.');
+    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
   });
@@ -157,16 +163,17 @@ describe('RF-06 speech listening lifecycle', () => {
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
 
-    const message = component.querySelector('.voice-status')?.textContent ?? '';
+    const message = component.querySelector('.voice-alert')?.textContent ?? '';
     expect(message).toContain('No speech was detected.');
     expect(message).toContain('Try again, or use a visible answer button.');
     expect(message).toContain('No answer was changed.');
+    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
 
     await vi.advanceTimersByTimeAsync(20_000);
     await component.updateComplete;
     expect(instances[0].stopCalls).toBe(1);
-    expect(component.querySelector('.voice-status')?.textContent).toContain('No speech was detected.');
+    expect(component.querySelector('.voice-alert')?.textContent).toContain('No speech was detected.');
   });
 
   it('normalises a native no-speech error into the same safe A13 recovery state', async () => {
@@ -186,9 +193,10 @@ describe('RF-06 speech listening lifecycle', () => {
 
     await vi.advanceTimersByTimeAsync(650);
     await component.updateComplete;
-    const message = component.querySelector('.voice-status')?.textContent ?? '';
+    const message = component.querySelector('.voice-alert')?.textContent ?? '';
     expect(message).toContain('No speech was detected.');
     expect(message).toContain('No answer was changed.');
+    expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
   });
