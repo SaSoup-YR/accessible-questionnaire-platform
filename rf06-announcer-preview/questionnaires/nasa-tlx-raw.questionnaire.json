@@ -1,0 +1,93 @@
+{
+  "$schema": "./questionnaire-definition.schema.json",
+  "schemaVersion": 1,
+  "id": "nasa-tlx-raw",
+  "version": "1.0.0",
+  "name": "Raw NASA Task Load Index",
+  "shortName": "Raw TLX",
+  "description": "The six NASA-TLX magnitude ratings scored as an unweighted arithmetic mean, without pairwise weighting.",
+  "introPrompt": "Think about the task that you have just completed.",
+  "officialContentNotice": "The six NASA-TLX dimensions, values and direction remain authoritative. This definition uses the explicitly identified unweighted Raw TLX scoring method.",
+  "source": {
+    "label": "NASA Technical Reports Server, Raw TLX description",
+    "url": "https://ntrs.nasa.gov/api/citations/20200002718/downloads/20200002718.pdf"
+  },
+  "scale": {
+    "type": "magnitude",
+    "minimum": 0,
+    "maximum": 100,
+    "step": 5
+  },
+  "items": [
+    {
+      "id": "mental",
+      "name": "Mental Demand",
+      "prompt": "How much mental and perceptual activity was required (for example, thinking, deciding, calculating, remembering, looking or searching)? Was the task easy or demanding, simple or complex, exacting or forgiving?",
+      "shortMeaning": "Thinking, deciding, remembering or concentrating.",
+      "lowAnchor": "Low",
+      "highAnchor": "High",
+      "voiceLowAliases": ["low", "lo"],
+      "voiceHighAliases": ["high", "hi"]
+    },
+    {
+      "id": "physical",
+      "name": "Physical Demand",
+      "prompt": "How much physical activity was required (for example, pushing, pulling, turning, controlling or activating)? Was the task easy or demanding, slow or brisk, slack or strenuous, restful or laborious?",
+      "shortMeaning": "Movement, control or physical force.",
+      "lowAnchor": "Low",
+      "highAnchor": "High",
+      "voiceLowAliases": ["low", "lo"],
+      "voiceHighAliases": ["high", "hi"]
+    },
+    {
+      "id": "temporal",
+      "name": "Temporal Demand",
+      "prompt": "How much time pressure did you feel due to the rate or pace at which the task or task elements occurred? Was the pace slow and leisurely or rapid and frantic?",
+      "shortMeaning": "Time pressure caused by the pace of the task.",
+      "lowAnchor": "Low",
+      "highAnchor": "High",
+      "voiceLowAliases": ["low", "lo"],
+      "voiceHighAliases": ["high", "hi"]
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "prompt": "How successful do you think you were in accomplishing the goals of the task set by the experimenter or yourself? How satisfied were you with your performance in accomplishing these goals?",
+      "shortMeaning": "How successful and satisfied you were with your result.",
+      "lowAnchor": "Good",
+      "highAnchor": "Poor",
+      "voiceLowAliases": ["good", "successful"],
+      "voiceHighAliases": ["poor", "pour", "bad", "unsuccessful"]
+    },
+    {
+      "id": "effort",
+      "name": "Effort",
+      "prompt": "How hard did you have to work mentally and physically to accomplish your level of performance?",
+      "shortMeaning": "How hard you had to work to achieve your result.",
+      "lowAnchor": "Low",
+      "highAnchor": "High",
+      "voiceLowAliases": ["low", "lo"],
+      "voiceHighAliases": ["high", "hi"]
+    },
+    {
+      "id": "frustration",
+      "name": "Frustration",
+      "prompt": "How insecure, discouraged, irritated, stressed and annoyed versus secure, gratified, content, relaxed and complacent did you feel during the task?",
+      "shortMeaning": "Feeling stressed, irritated or discouraged.",
+      "lowAnchor": "Low",
+      "highAnchor": "High",
+      "voiceLowAliases": ["low", "lo"],
+      "voiceHighAliases": ["high", "hi"]
+    }
+  ],
+  "scoring": {
+    "strategy": "nasa-tlx-raw-v1",
+    "scoreName": "Raw workload score",
+    "minimum": 0,
+    "maximum": 100
+  },
+  "supports": {
+    "simplerExplanations": false,
+    "smileyLandmarks": false
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sasoup-yr.github.io/accessible-questionnaire-platform/questionnaires/questionnaire-definition.schema.json",
+  "title": "Accessible questionnaire platform definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "name",
+    "shortName",
+    "description",
+    "introPrompt",
+    "officialContentNotice",
+    "source",
+    "scale",
+    "items",
+    "scoring",
+    "supports"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "language": {
+      "type": "string",
+      "maxLength": 35,
+      "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+      "default": "en-GB"
+    },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "version": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "shortName": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "introPrompt": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "officialContentNotice": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "minimum", "maximum", "step"],
+      "properties": {
+        "type": {
+          "enum": ["magnitude", "agreement", "semantic-differential"]
+        },
+        "minimum": { "type": "integer" },
+        "maximum": { "type": "integer" },
+        "step": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "prompt", "shortMeaning", "lowAnchor", "highAnchor"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "simpleExplanation": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "shortMeaning": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "lowAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "highAnchor": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "responseLabels": {
+            "type": "object",
+            "propertyNames": { "pattern": "^-?[0-9]+$" },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "voiceLowAliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "uniqueItems": true
+          },
+          "voiceHighAliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "landmarks": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "cue", "position"],
+        "properties": {
+          "value": { "type": "integer" },
+          "cue": { "type": "string", "minLength": 1, "maxLength": 8 },
+          "position": {
+            "enum": ["low", "closer-low", "middle", "closer-high", "high"]
+          }
+        }
+      }
+    },
+    "pairwise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "prompt", "instruction", "simplePrompt"],
+      "properties": {
+        "mode": { "const": "all-pairs" },
+        "prompt": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "instruction": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "simplePrompt": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "scoring": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "nasa-tlx-weighted-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "nasa-tlx-raw-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "sus-standard-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "const": "ueqs-standard-v1" },
+            "scoreName": { "type": "string" },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "scoreName", "minimum", "maximum"],
+          "properties": {
+            "strategy": { "enum": ["mean-v1", "sum-v1"] },
+            "scoreName": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "minimum": { "type": "integer" },
+            "maximum": { "type": "integer" },
+            "reverseItemIds": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      ]
+    },
+    "supports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["simplerExplanations", "smileyLandmarks"],
+      "properties": {
+        "simplerExplanations": { "type": "boolean" },
+        "smileyLandmarks": { "type": "boolean" }
+      }
+    }
+  }
+}
