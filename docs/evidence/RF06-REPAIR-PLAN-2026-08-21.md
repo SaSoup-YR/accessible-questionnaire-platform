@@ -7,6 +7,7 @@ Status: **second-round manual evidence collected; R2-A10 and R3-A10 pass; R4-A10
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
 - Retained synchronized runtime: `e8ccd11909b2d3e6f6600d95bdc88a6e04374eb3`.
+- Current evidence head: `568c930465698d1fcee18fd620adf03d6a869517` (documentation only relative to retained runtime).
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -38,7 +39,7 @@ The focused RF-06 automated tests cover:
 - native no-speech recovery;
 - safe lifecycle cleanup.
 
-The retained-runtime synchronization job passed repository tests and release generation after removing the unproven Voice Access transcript workaround. A fresh canonical read-only verification run is required on the evidence head after this document update. Automated evidence does not override the manual AT result.
+The retained-runtime synchronization job passed repository tests and release generation after removing the unproven Voice Access transcript workaround. A fresh canonical read-only verification run is required on the current evidence head. Automated evidence does not override the manual AT result.
 
 ## Post-fix manual evidence
 
