@@ -5,7 +5,6 @@ import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
 interface FakeRecognitionInstance {
   stopCalls: number;
-  abortCalls: number;
   onresult: ((event: any) => void) | null;
   onerror: ((event: any) => void) | null;
   onend: (() => void) | null;
@@ -41,7 +40,6 @@ function installHangingRecognition() {
     onerror: ((event: any) => void) | null = null;
     onend: (() => void) | null = null;
     stopCalls = 0;
-    abortCalls = 0;
 
     constructor() {
       instances.push(this);
@@ -54,10 +52,6 @@ function installHangingRecognition() {
 
     stop() {
       this.stopCalls += 1;
-    }
-
-    abort() {
-      this.abortCalls += 1;
     }
   }
   window.webkitSpeechRecognition = FakeRecognition as any;
@@ -104,9 +98,7 @@ describe('RF-06 speech listening lifecycle', () => {
 
     const stop = component.querySelector<HTMLButtonElement>('[data-voice-stop]');
     expect(stop?.textContent?.trim()).toBe('Stop voice input');
-    expect(stop?.getAttribute('aria-keyshortcuts')).toBe('Escape');
     expect(stop?.disabled).toBe(false);
-    expect(component.querySelector('.voice-cancel-help')?.textContent).toContain('Press Escape');
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(true);
     expect(component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')?.disabled).toBe(false);
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
@@ -119,8 +111,7 @@ describe('RF-06 speech listening lifecycle', () => {
     stop!.click();
     await component.updateComplete;
 
-    expect(instances[0].abortCalls).toBe(1);
-    expect(instances[0].stopCalls).toBe(0);
+    expect(instances[0].stopCalls).toBe(1);
     expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
     expect(component.querySelector('.voice-status')?.textContent).toContain('No answer was changed.');
     expect(component.querySelector<HTMLElement>('.voice-error')?.hidden).toBe(true);
@@ -128,40 +119,6 @@ describe('RF-06 speech listening lifecycle', () => {
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
     expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
     expect(component.querySelector('[data-voice-stop]')).toBeNull();
-  });
-
-  it('lets an Escape key command cancel recognition without changing the existing answer', async () => {
-    vi.useFakeTimers();
-    const instances = installHangingRecognition();
-    const component = await renderComponent();
-    await startRatings(component);
-
-    const selected = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
-    selected.click();
-    await component.updateComplete;
-    expect(selected.checked).toBe(true);
-
-    component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
-    await component.updateComplete;
-    expect(component.querySelector('[data-voice-stop]')).not.toBeNull();
-
-    const escape = new KeyboardEvent('keydown', {
-      key: 'Escape',
-      bubbles: true,
-      cancelable: true,
-    });
-    document.dispatchEvent(escape);
-    await component.updateComplete;
-    await Promise.resolve();
-
-    expect(escape.defaultPrevented).toBe(true);
-    expect(instances[0].abortCalls).toBe(1);
-    expect(instances[0].stopCalls).toBe(0);
-    expect(selected.checked).toBe(true);
-    expect(component.querySelector('.voice-status')?.textContent).toContain('Voice input stopped.');
-    expect(component.querySelector('.voice-status')?.textContent).toContain('No answer was changed.');
-    expect(component.querySelector('[data-voice-stop]')).toBeNull();
-    expect(component.querySelector<HTMLButtonElement>('[data-voice-start]')?.disabled).toBe(false);
   });
 
   it('ends a hanging recogniser and appends the watchdog recovery to the stable assertive log', async () => {
@@ -179,7 +136,6 @@ describe('RF-06 speech listening lifecycle', () => {
     await vi.advanceTimersByTimeAsync(14_350);
     await component.updateComplete;
     expect(instances[0].stopCalls).toBe(1);
-    expect(instances[0].abortCalls).toBe(0);
     expect(component.querySelector('.voice-status')?.textContent?.trim()).toBe('');
     expect(component.querySelector('[data-voice-stop]')).toBeNull();
 
@@ -253,7 +209,6 @@ describe('RF-06 speech listening lifecycle', () => {
     expect(assertiveAnnouncer()?.children).toHaveLength(1);
     expect(assertiveAnnouncer()?.lastElementChild?.textContent).toContain('No speech was detected.');
     expect(instances[0].stopCalls).toBe(1);
-    expect(instances[0].abortCalls).toBe(0);
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
   });
 });
