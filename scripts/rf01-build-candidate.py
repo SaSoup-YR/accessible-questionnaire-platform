@@ -1,0 +1,253 @@
+from pathlib import Path
+import re
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{label}: expected one exact match, found {count}")
+    return text.replace(old, new, 1)
+
+
+root = Path(__file__).resolve().parents[1]
+bridge_path = root / "integrations/qualtrics/qualtrics-question.js"
+bridge = bridge_path.read_text(encoding="utf-8")
+announcer_pattern = re.compile(
+    r"  function setStatus\(message, quiet, severity\) \{.*?\n  function setImportantStyle",
+    re.DOTALL,
+)
+announcer_block = """  function cancelPendingConnectionAnnouncement() {
+    if (connectionAnnouncementTimerId === null) return;
+    window.clearTimeout(connectionAnnouncementTimerId);
+    connectionAnnouncementTimerId = null;
+  }
+
+  function setStatus(message, quiet, severity) {
+    if (!status) return;
+    var isError = severity === 'error';
+    if (isError) cancelPendingConnectionAnnouncement();
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', isError ? 'alert' : 'status');
+      status.setAttribute('data-quiet', quiet ? 'true' : 'false');
+      status.setAttribute('data-severity', isError ? 'error' : 'information');
+      status.setAttribute('aria-live', quiet ? 'off' : (isError ? 'assertive' : 'polite'));
+      status.setAttribute('aria-atomic', 'true');
+    }
+    status.textContent = message;
+  }
+
+  function ensureConnectionAnnouncer() {
+    if (connectionAnnouncer) return connectionAnnouncer;
+    if (!document.body || typeof document.createElement !== 'function') return null;
+
+    // Scoped fallback architecture based on github/arianotify-polyfill:
+    // register one empty polite region in the stable body before its first
+    // message. Keep it local to this paste-in Qualtrics bridge rather than
+    // modifying host-page prototypes or loading a network dependency.
+    connectionAnnouncer = document.createElement('div');
+    connectionAnnouncer.setAttribute('role', 'status');
+    connectionAnnouncer.setAttribute('aria-live', 'polite');
+    connectionAnnouncer.setAttribute('aria-atomic', 'true');
+    connectionAnnouncer.setAttribute('data-aqp-connection-announcer', 'true');
+    connectionAnnouncer.textContent = '';
+    if (connectionAnnouncer.style) {
+      connectionAnnouncer.style.position = 'absolute';
+      connectionAnnouncer.style.width = '1px';
+      connectionAnnouncer.style.height = '1px';
+      connectionAnnouncer.style.margin = '-1px';
+      connectionAnnouncer.style.padding = '0';
+      connectionAnnouncer.style.border = '0';
+      connectionAnnouncer.style.overflow = 'hidden';
+      connectionAnnouncer.style.clip = 'rect(0, 0, 0, 0)';
+      connectionAnnouncer.style.clipPath = 'inset(50%)';
+      connectionAnnouncer.style.whiteSpace = 'nowrap';
+    }
+    document.body.appendChild(connectionAnnouncer);
+    return connectionAnnouncer;
+  }
+
+  function announceConnectionStatus(message) {
+    var announcer = ensureConnectionAnnouncer();
+    if (!announcer) return;
+    announcer.textContent = announcer.textContent === message
+      ? message + '\\u00a0'
+      : message;
+  }
+
+  function removeConnectionAnnouncer() {
+    if (!connectionAnnouncer) return;
+    if (typeof connectionAnnouncer.remove === 'function') {
+      connectionAnnouncer.remove();
+    } else if (
+      connectionAnnouncer.parentNode &&
+      typeof connectionAnnouncer.parentNode.removeChild === 'function'
+    ) {
+      connectionAnnouncer.parentNode.removeChild(connectionAnnouncer);
+    }
+    connectionAnnouncer = null;
+  }
+
+  function queueConnectingStatus() {
+    if (!status) return;
+    // Keep the visible advisory navigable as a semantic status while the
+    // dedicated body-level polite region is the sole automatic AT channel.
+    // Blocking failure states still go through setStatus(alert/assertive).
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', 'status');
+      status.setAttribute('data-quiet', 'false');
+      status.setAttribute('data-severity', 'information');
+      status.setAttribute('aria-live', 'off');
+      status.setAttribute('aria-atomic', 'true');
+    }
+    status.textContent = '';
+    ensureConnectionAnnouncer();
+    connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
+      connectionAnnouncementTimerId = null;
+      if (childConnected) return;
+      var message =
+        'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.';
+      status.textContent = message;
+      announceConnectionStatus(message);
+    }, 250);
+  }
+
+  function setImportantStyle"""
+bridge, count = announcer_pattern.subn(announcer_block, bridge, count=1)
+if count != 1:
+    raise SystemExit(f"announcer block: expected one match, found {count}")
+
+bridge = replace_once(
+    bridge,
+    """      if (connectionAnnouncementTimerId !== null) {
+        window.clearTimeout(connectionAnnouncementTimerId);
+        connectionAnnouncementTimerId = null;
+      }
+""",
+    """      cancelPendingConnectionAnnouncement();
+""",
+    "verified-connection cancellation",
+)
+bridge = replace_once(
+    bridge,
+    """  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
+    removeConnectionAnnouncer();
+""",
+    """  Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
+    cancelPendingConnectionAnnouncement();
+    removeConnectionAnnouncer();
+""",
+    "unload cancellation insertion",
+)
+bridge = replace_once(
+    bridge,
+    """    if (connectionAnnouncementTimerId !== null) {
+      window.clearTimeout(connectionAnnouncementTimerId);
+      connectionAnnouncementTimerId = null;
+    }
+""",
+    "",
+    "obsolete unload timer block",
+)
+bridge_path.write_text(bridge, encoding="utf-8")
+
+test_path = root / "source/tests/rf01-qualtrics-connection-alert.test.ts"
+test = test_path.read_text(encoding="utf-8")
+test = replace_once(
+    test,
+    """  const timers: Array<{ callback: () => void; delay: number }> = [];
+""",
+    """  const timers: Array<{ callback: () => void; delay: number; id: number }> = [];
+  const cancelledTimerIds = new Set<number>();
+""",
+    "timer model declaration",
+)
+test = replace_once(
+    test,
+    """    setTimeout(callback: () => void, delay: number) {
+      timers.push({ callback, delay });
+      return timers.length;
+    },
+    clearTimeout: vi.fn(),
+""",
+    """    setTimeout(callback: () => void, delay: number) {
+      const id = timers.length + 1;
+      timers.push({ callback, delay, id });
+      return id;
+    },
+    clearTimeout: vi.fn((id: number) => {
+      cancelledTimerIds.add(id);
+    }),
+""",
+    "cancellable timer model",
+)
+test = replace_once(
+    test,
+    """    setJSEmbeddedData,
+    receiveMessage: (event: MessageEvent) => receiveMessage!(event),
+""",
+    """    setJSEmbeddedData,
+    runTimer(delay: number) {
+      const timer = timers.find((entry) => entry.delay === delay);
+      if (!timer) throw new Error(`No timer registered for ${delay}ms.`);
+      if (!cancelledTimerIds.has(timer.id)) timer.callback();
+    },
+    receiveMessage: (event: MessageEvent) => receiveMessage!(event),
+""",
+    "runTimer helper",
+)
+test = test.replace(
+    "runtime.timers.find(({ delay }) => delay === 250)!.callback();",
+    "runtime.runTimer(250);",
+)
+test = test.replace(
+    "runtime.timers.find(({ delay }) => delay === 8000)!.callback();",
+    "runtime.runTimer(8000);",
+)
+marker = """  it('removes the scoped announcer on Qualtrics unload', () => {
+"""
+early_error_test = """  it('does not let a pending polite advisory overwrite an early blocking bridge error', () => {
+    const runtime = createRuntime();
+    runtime.receiveMessage({
+      source: runtime.frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: {
+        type: QUALTRICS_CHILD_READY_MESSAGE,
+        protocolVersion: 2,
+        bridgeBuild: `${QUALTRICS_BRIDGE_BUILD}-mismatch`,
+      },
+    } as unknown as MessageEvent);
+
+    expect(runtime.status.textContent).toContain('do not use the same bridge version');
+    expect(runtime.statusAttributes.role).toBe('alert');
+    expect(runtime.statusAttributes['aria-live']).toBe('assertive');
+    expect(runtime.statusAttributes['data-severity']).toBe('error');
+    expect(runtime.announcer.textContent).toBe('');
+    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+
+    runtime.runTimer(250);
+    expect(runtime.status.textContent).toContain('do not use the same bridge version');
+    expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
+    expect(runtime.statusAttributes.role).toBe('alert');
+    expect(runtime.statusAttributes['aria-live']).toBe('assertive');
+    expect(runtime.announcer.textContent).toBe('');
+  });
+
+"""
+test = replace_once(test, marker, early_error_test + marker, "early-error regression")
+test_path.write_text(test, encoding="utf-8")
+
+evidence_path = root / "docs/evidence/RF01-R3-A26-DEDICATED-ANNOUNCER-SUCCESSOR-2026-08-21.md"
+evidence = evidence_path.read_text(encoding="utf-8")
+evidence = replace_once(
+    evidence,
+    "- cancel that pending advisory announcement if the verified child connection arrives first;",
+    "- cancel that pending advisory announcement if the verified child connection or any blocking bridge error arrives first, so a stale polite timer cannot overwrite a decisive alert;",
+    "evidence implementation boundary",
+)
+evidence = replace_once(
+    evidence,
+    "4. an early verified child connection cancels the pending `Connecting` announcement and cannot be overwritten by it;\n5. missing/mismatched bridge failures remain visible `role=alert`, assertive and actionable;",
+    "4. an early verified child connection cancels the pending `Connecting` announcement and cannot be overwritten by it;\n5. an early version/diagnostic blocking failure also cancels the pending polite advisory, remains visible `role=alert`, assertive and actionable, and cannot be overwritten by a stale timer;",
+    "evidence regression gate",
+)
+evidence_path.write_text(evidence, encoding="utf-8")
