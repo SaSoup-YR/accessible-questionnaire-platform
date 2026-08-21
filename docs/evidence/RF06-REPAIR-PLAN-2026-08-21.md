@@ -1,16 +1,15 @@
 # RF-06 speech-listening lifecycle repair evidence — 21 August 2026
 
-Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained as an interoperability failure; two component-local R3-A13 candidates failed; final production-announcer candidate verified automatically and awaiting one focused Safari/VoiceOver retest**
+Status: **R2-A10, R3-A10 and R3-A13 closed by post-fix manual evidence; R4-A10 has one final standards- and platform-supported Escape-cancellation candidate awaiting manual Voice Access retest**
 
 ## Identity
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
-- Production-announcer runtime and immutable preview source: `050fff9a811198d5c6348cb56e1feb50c889b898`.
-- Canonically verified evidence-only head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
-- Later commits after that head are documentation only and do not alter the tested runtime.
-- Final canonical read-only run: `32478383479` — **success**.
-- Immutable preview path: `/rf06-announcer-preview/`.
+- Proven R3-A13 production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
+- Canonically verified R3-A13 evidence head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
+- R3-A13 canonical run: `32478383479` — **success**.
+- Current R4 Escape-candidate source/test head before generated-release synchronization: `5c4e03f7d82f8e642e5da1e2fcbed3613b52e09c`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -34,9 +33,10 @@ The RF-06 lifecycle module:
 - adds an AQP-owned 15-second watchdog so an indefinitely active recogniser cannot leave the interface permanently Listening;
 - states that no answer changed after manual Stop or no-speech termination;
 - separates the AQP Listening mutation from Safari's own microphone-capture announcement;
+- uses a stable body-level production announcer for no-speech errors;
 - removes the unproven Voice Access transcript-interception experiment.
 
-## Post-fix manual evidence
+## Closed post-fix observations
 
 ### R2-A10 — NVDA + Chrome — **P**
 
@@ -46,63 +46,61 @@ The manual run announced `Listening for one answer.`, exposed an operable Stop c
 
 The Safari preview produced an actual VoiceOver announcement of `Listening for one answer.` while the AQP panel visibly remained in Listening and exposed **Stop voice input**. Manual Stop then produced `Voice input stopped. No answer was changed. Try again, or use a visible answer button.` Safari's separate microphone-capture announcement did not suppress those later AQP status messages.
 
-### R4-A10 — Windows Voice Access + Chrome — **F retained**
+### R3-A13 — VoiceOver + Safari — **P**
 
-The manual route reproduced a concurrent-recogniser race. While AQP Web Speech recognition was listening, the same spoken control command intended for Windows Voice Access was also consumed by the in-page recogniser. The visible Stop control therefore could not be shown to be reliably voice-operable through Voice Access while AQP recognition remained active.
+Two component-local approaches failed first: a polite status region and then a pre-existing component-local `role=alert` both left VoiceOver announcing only Safari's `Current tab stopped capturing sound` message.
 
-This is bounded to **simultaneous Windows Voice Access + in-page Web Speech recognition** on the tested route. It is not a general failure of Voice Access with ordinary questionnaire controls. Microsoft's Voice Access guidance describes switching between speech-access solutions without having both listen at once. The Web Speech API controls only the page's recogniser and provides no standard API for suspending Windows Voice Access. No further recogniser-side command-parsing workaround is credited.
+The final production-announcer implementation followed the stronger shared pattern used by Adobe React Aria and Angular CDK: a stable visually hidden body-level announcer, separate polite/assertive channels, and a fresh child appended for each message. In the exact silent-attempt retest, VoiceOver automatically announced:
 
-## R3-A13 candidate history
+> No speech was detected before the listening time limit. Voice input stopped. Try again, or use a visible answer button. No answer was changed.
 
-### Component-local polite status — **F**
+The visible panel showed the same recovery, Start returned, and no questionnaire answer changed. This closes the historical R3-A13 failure on the tested Safari/VoiceOver configuration.
 
-During the silent attempt, VoiceOver announced Safari's `Current tab stopped capturing sound` and then ended. It did not announce the AQP recovery beginning `No speech was detected...`.
+## R4-A10 research and candidate history
 
-### Component-local pre-existing `role=alert` — **F**
+### Direct visible-button command — **F in the tested candidate**
 
-The next candidate routed only no-speech recovery to a pre-existing empty alert node inside the voice component. The exact silent-attempt retest again produced Safari's capture-stop message but no AQP recovery announcement. Visible text and automated DOM assertions cannot override this real-AT result.
+The manual Voice Access route reproduced a concurrent-recogniser race. While AQP Web Speech recognition was listening, the same spoken `Click Stop voice input` or overlay command intended for Windows Voice Access was also available to the in-page recogniser. A best-effort recogniser-side transcript interception was tested and removed after it failed to provide reliable control.
 
-## Final production-announcer candidate
+### External evidence review
 
-The component-local alert was standards-aligned but was not the strongest implementation pattern available in mature open-source accessibility libraries. A source review therefore compared the failed approach with:
+The final R4 review used primary platform/API sources and open-source code search:
 
-- W3C Technique ARIA19, which requires the live/error container to exist before the error is injected;
-- Adobe React Aria's `LiveAnnouncer`, which creates stable body-level polite and assertive logs and appends a fresh child for each announcement;
-- Angular CDK's `LiveAnnouncer`, which centralises announcements in a persistent visually hidden body-level element and separates clearing from later message insertion.
+- Microsoft states that Voice Access in Listening mode listens to everything said and executes recognised commands.
+- Microsoft's Voice Access FAQ describes switching between voice-access solutions with distinct wake words **without having both listening at the same time**.
+- Microsoft documents the general `Press <key>` Voice Access command, including Escape-key operation.
+- The Web Speech API exposes control only over the page's recogniser. `SpeechRecognition.abort()` cancels listening without attempting to return a recognition result; there is no standard web API that suspends Windows Voice Access.
+- W3C keyboard-trap guidance supports providing an explicit keyboard mechanism to escape an active interaction state.
+- GitHub/open-source searches found many application-level Stop/Escape patterns but no mature web implementation or browser API that coordinates Windows Voice Access and in-page Web Speech Recognition as two simultaneous recognisers.
 
-The final candidate adopts the shared production pattern rather than adding another arbitrary delay:
+The direct-button failure is therefore not repaired by another transcript-parsing heuristic. The only materially different, platform-supported route still worth testing is a keyboard cancellation command that Voice Access itself can issue.
 
-- `source/src/accessibility-announcer.ts` creates one visually hidden body-level announcer before speech recognition starts;
-- separate polite and assertive `role=log` channels use `aria-live` plus `aria-relevant=additions`;
-- each no-speech recovery is a newly appended child, retained for seven seconds, rather than a text replacement in a rerendered component subtree;
-- the recovery remains visibly present in the voice panel;
-- ordinary Listening and manual Stop continue through the existing polite component status and are not promoted to assertive urgency;
-- focus is not moved and no questionnaire answer changes.
+## Final bounded R4 Escape candidate
 
-Focused tests establish the DOM mechanism, message routing, one-child-per-error behaviour, seven-second cleanup, returned Start route and answer invariance.
+The candidate adds a normal keyboard escape route rather than attempting to control the operating-system recogniser:
 
-## Final automated verification
+- while AQP is Listening, **Escape** cancels the page recogniser;
+- the visible Stop button exposes `aria-keyshortcuts="Escape"`;
+- the interface visibly states `Press Escape to stop without choosing or changing an answer.`;
+- cancellation uses `SpeechRecognition.abort()` when available, with `stop()` only as compatibility fallback;
+- result/error/end handlers are detached before cancellation, so the spoken Voice Access command cannot be committed as a questionnaire answer through this route;
+- the existing answer remains unchanged, Start returns, and the ordinary status says that voice input stopped and no answer changed;
+- the Escape listener exists only while the exact recogniser is active and is removed on every release path.
 
-Canonical run `32478383479` completed successfully on evidence head `656c112e85c4be449ee9b94becc8c7e2508460ec`, with the product runtime unchanged from `050fff9a811198d5c6348cb56e1feb50c889b898`. It recorded:
+Focused automated tests cover manual Stop, Escape cancellation, `aria-keyshortcuts`, abort semantics, retained prior answer, returned Start, no-speech watchdog and page-level error announcement.
 
-- npm audit: **0 vulnerabilities**;
-- **22/22** Vitest files and **215/215** tests passed, including RF-06 **4/4**;
-- production TypeScript/Vite build passed;
-- rendered-browser accessibility regression: **12/12 passed**;
-- cross-browser support matrix: **9/9 passed** across Chromium, Firefox and WebKit;
-- production, standalone and release builds passed;
-- generated-release freshness passed.
+The manual R4 retest must use Windows Voice Access + Chrome and say **`Press Escape`** after AQP enters Listening. If the command reliably ends Listening, returns Start and preserves the answer, R4-A10 may close on that tested configuration. If Voice Access and Web Speech still race so that the Escape key is not delivered reliably, **R4-A10 remains F and RF-06 stops here**. No further transcript, timing or operating-system-control workaround will be credited.
 
-## Final manual gate
+## Automated evidence boundary
 
-Use only the immutable `/rf06-announcer-preview/` page in Safari with VoiceOver. Start the ratings, expand voice input, start one attempt, remain silent and do not select Stop. After Safari says `Current tab stopped capturing sound`, record whether VoiceOver automatically announces the AQP error beginning `No speech was detected...`. Do not move the VoiceOver cursor to find the visible text.
+The prior R3-A13 runtime passed 22/22 Vitest files, 215/215 tests, 12/12 rendered-browser tests, 9/9 cross-browser support tests, build/release and generated freshness. The Escape candidate requires its own synchronized generated release and fresh canonical run before manual testing.
 
-If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
+Automated evidence establishes the implemented mechanism and invariants. It cannot override a contradictory real Voice Access result.
 
 ## Next repair family
 
-Once this final R3-A13 observation is adjudicated, the next code family in the frozen repair order is **RF-09 / A33 support-setting feedback**, targeting historical R3-A33 and R4-A33. Its implementation must centralise accurate feedback for text-size, interruption-recovery and audio-guidance state changes, preserve focus, and prove scored-answer invariance. It will be researched and developed in a separate branch/PR after RF-06 is closed; RF-06 and RF-09 will not be mixed.
+Once the final R4-A10 observation is adjudicated, the next code family in the frozen repair order is **RF-09 / A33 support-setting feedback**, targeting historical R3-A33 and R4-A33. It will be researched and developed in a separate branch/PR; RF-06 and RF-09 will not be mixed.
 
 ## Audit boundary
 
-Historical q8 is never rewritten. Post-fix evidence closes R2-A10 and R3-A10 separately, retains R4-A10 as a tested interoperability limitation and may close R3-A13 only if the production-announcer message is actually announced by VoiceOver in Safari.
+Historical q8 is never rewritten. Post-fix evidence closes R2-A10, R3-A10 and R3-A13 separately. R4-A10 closes only if the final Escape route is actually operable through Windows Voice Access on the named Chrome configuration.
