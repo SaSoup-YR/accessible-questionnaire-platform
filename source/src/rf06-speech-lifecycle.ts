@@ -8,7 +8,7 @@ type RecognitionLike = {
   onend: (() => void) | null;
 };
 
-type InternalComponent = AccessibleNasaTlx & {
+type InternalComponent = {
   voiceInputAvailable: boolean;
   voiceState: 'idle' | 'listening' | 'pending' | 'error';
   voiceMessage: string;
@@ -20,6 +20,11 @@ type InternalComponent = AccessibleNasaTlx & {
   definition: { language: string };
   recognition: RecognitionLike | null;
   ratingVoicePrompt(item: QuestionnaireItem): string;
+  renderVoiceInput(
+    context: VoiceContext,
+    first: QuestionnaireItem,
+    second?: QuestionnaireItem,
+  ): unknown;
   startVoiceInput(
     context: VoiceContext,
     first: QuestionnaireItem,
