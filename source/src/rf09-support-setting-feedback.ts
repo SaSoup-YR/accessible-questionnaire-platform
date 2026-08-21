@@ -5,6 +5,7 @@ import { AccessibleNasaTlx } from './accessible-nasa-tlx';
 type SupportContext = 'intro' | 'toolbar';
 type SupportScope = 'all' | 'presentation-only';
 type NotificationPriority = 'normal' | 'high';
+type SupportChangeSetting = 'automatic-audio';
 
 type AriaNotifyingInput = HTMLInputElement & {
   ariaNotify?: (
@@ -14,9 +15,19 @@ type AriaNotifyingInput = HTMLInputElement & {
 };
 
 type InternalComponent = HTMLElement & {
+  audioGuidance: boolean;
+  readingAloud?: boolean;
   updateComplete: Promise<unknown>;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
   requestUpdate(): void;
+  recordSupportChange(
+    setting: SupportChangeSetting,
+    from: boolean,
+    to: boolean,
+  ): void;
+  invalidatePendingSubmission(): void;
+  persistProgress(): void;
+  stopReading(announce?: boolean): void;
   __rf09SupportStatusMessage?: string;
   __rf09NotificationGeneration?: number;
   __rf09NotificationTimerId?: number | null;
@@ -81,33 +92,6 @@ function replaceStaticLabelText(
   input.setAttribute('aria-label', replacement);
 }
 
-function prepareSupportControls(component: InternalComponent) {
-  for (const region of component.querySelectorAll<HTMLElement>(
-    '[data-rf09-support-setting-region]',
-  )) {
-    const feedback = region.querySelector<HTMLElement>(
-      '[data-rf09-support-feedback]',
-    );
-    if (!feedback?.id) continue;
-    for (const input of region.querySelectorAll<HTMLInputElement>(
-      '.support-settings input',
-    )) {
-      input.setAttribute('aria-controls', feedback.id);
-    }
-  }
-
-  for (const standard of component.querySelectorAll<HTMLInputElement>(
-    '.text-size-control input[type="radio"][value="standard"]',
-  )) {
-    replaceStaticLabelText(standard, 'Standard', 'Standard text');
-  }
-  for (const large of component.querySelectorAll<HTMLInputElement>(
-    '.text-size-control input[type="radio"][value="large"]',
-  )) {
-    replaceStaticLabelText(large, 'Large', 'Large text');
-  }
-}
-
 function deliverSupportNotification(
   component: InternalComponent,
   target: HTMLInputElement,
@@ -158,17 +142,108 @@ function recordSupportFeedback(
   scheduleSupportNotification(component, target, message);
 }
 
+function browserSpeechIsActive(component: InternalComponent) {
+  const synthesis = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  return Boolean(
+    component.readingAloud ||
+      synthesis?.speaking ||
+      synthesis?.pending ||
+      synthesis?.paused,
+  );
+}
+
+/**
+ * The base component historically used SpeechSynthesis to announce that
+ * SpeechSynthesis had just been enabled. That couples the setting-result status
+ * to the optional output channel being configured and forces the browser to
+ * guess between silence and duplicate VoiceOver + TTS output.
+ *
+ * Intercept only the automatic-audio checkbox before Lit's original target
+ * handler, preserve the original state/persistence semantics, and send the
+ * setting result through the same single AT notification path as the other
+ * RF-09 settings. Enabling audio does not call cancel() when the speech engine
+ * is idle, preserving the base component's safeguard against first-utterance
+ * failures after an unnecessary cancel. If speech is already active it is
+ * cleared so it cannot compete with the setting result. Future questionnaire
+ * feedback still uses browser TTS because audioGuidance remains true.
+ */
+function installAudioSettingInterceptor(
+  component: InternalComponent,
+  input: HTMLInputElement,
+) {
+  if (input.dataset.rf09AudioInterceptor === 'true') return;
+  input.dataset.rf09AudioInterceptor = 'true';
+
+  input.addEventListener(
+    'change',
+    (event) => {
+      event.stopImmediatePropagation();
+      const value = input.checked;
+      const previous = component.audioGuidance;
+
+      component.recordSupportChange('automatic-audio', previous, value);
+      if (!value || browserSpeechIsActive(component)) {
+        component.stopReading(false);
+      }
+      component.audioGuidance = value;
+      component.invalidatePendingSubmission();
+      component.persistProgress();
+
+      recordSupportFeedback(
+        component,
+        input,
+        value ? AUDIO_ON_MESSAGE : AUDIO_OFF_MESSAGE,
+      );
+    },
+    { capture: true },
+  );
+}
+
+function prepareSupportControls(component: InternalComponent) {
+  for (const region of component.querySelectorAll<HTMLElement>(
+    '[data-rf09-support-setting-region]',
+  )) {
+    const feedback = region.querySelector<HTMLElement>(
+      '[data-rf09-support-feedback]',
+    );
+    if (!feedback?.id) continue;
+    for (const input of region.querySelectorAll<HTMLInputElement>(
+      '.support-settings input',
+    )) {
+      input.setAttribute('aria-controls', feedback.id);
+      if (input.id.endsWith('-audio') && input.type === 'checkbox') {
+        installAudioSettingInterceptor(component, input);
+      }
+    }
+  }
+
+  for (const standard of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="standard"]',
+  )) {
+    replaceStaticLabelText(standard, 'Standard', 'Standard text');
+  }
+  for (const large of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="large"]',
+  )) {
+    replaceStaticLabelText(large, 'Large', 'Large text');
+  }
+}
+
 function handleSupportChange(component: InternalComponent, event: Event) {
   const target = event.target;
   if (!(target instanceof HTMLInputElement) || !component.contains(target)) return;
+
+  // Audio changes are handled by the target capture listener above so the base
+  // SpeechSynthesis self-confirmation never starts and no second RF-09 result is
+  // generated when the event would otherwise reach this observer.
+  if (target.id.endsWith('-audio') && target.type === 'checkbox') return;
+
   const message = messageForSupportChange(target);
   if (!message) return;
 
   // Lit's target-level @change handler runs before this ancestor listener, so
-  // wording is derived from the committed native checked/value state. The base
-  // audio handler deliberately does not use browser TTS to self-confirm that
-  // TTS has just been enabled; this single AT channel therefore remains
-  // independent of optional future spoken guidance.
+  // wording is derived from the committed native checked/value state rather
+  // than from the attempted action.
   recordSupportFeedback(component, target, message);
 }
 
@@ -177,8 +252,9 @@ let installed = false;
 /**
  * Adds one visible and one non-duplicating assistive-technology feedback path
  * for text-size, interruption-recovery and automatic-audio changes. Native
- * radio/checkbox semantics and the component's existing state, persistence and
- * support-change handlers remain the source of truth.
+ * radio/checkbox semantics remain intact. Audio on/off preserves the component's
+ * state, persistence and support-change semantics while deliberately separating
+ * the setting-result status channel from optional browser text-to-speech.
  */
 export function installRf09SupportSettingFeedback() {
   if (installed) return;
@@ -195,9 +271,9 @@ export function installRf09SupportSettingFeedback() {
     const visibleMessage = this.__rf09SupportStatusMessage ?? '';
     const feedbackId = `rf09-${context}-support-feedback`;
 
-    // Original labels are static Lit text. Normalise names and wire the advisory
-    // result relationship after every committed render without replacing the
-    // native controls or their native event paths.
+    // Original labels are static Lit text. Normalise names, wire advisory
+    // relationships and install the bounded audio-setting interceptor after each
+    // committed render without replacing the native controls.
     void this.updateComplete.then(() => prepareSupportControls(this));
 
     return html`
