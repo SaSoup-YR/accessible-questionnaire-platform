@@ -39,9 +39,16 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   // allows rather than being used as a reading pause.
   var completionDelayMs = 800;
 
+  function cancelPendingConnectionAnnouncement() {
+    if (connectionAnnouncementTimerId === null) return;
+    window.clearTimeout(connectionAnnouncementTimerId);
+    connectionAnnouncementTimerId = null;
+  }
+
   function setStatus(message, quiet, severity) {
     if (!status) return;
     var isError = severity === 'error';
+    if (isError) cancelPendingConnectionAnnouncement();
     if (typeof status.setAttribute === 'function') {
       status.setAttribute('role', isError ? 'alert' : 'status');
       status.setAttribute('data-quiet', quiet ? 'true' : 'false');
@@ -53,79 +60,79 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   }
 
   function ensureConnectionAnnouncer() {
-  if (connectionAnnouncer) return connectionAnnouncer;
-  if (!document.body || typeof document.createElement !== 'function') return null;
+    if (connectionAnnouncer) return connectionAnnouncer;
+    if (!document.body || typeof document.createElement !== 'function') return null;
 
-  // Scoped fallback architecture based on github/arianotify-polyfill:
-  // register one empty polite region in the stable body before its first
-  // message. Keep it local to this paste-in Qualtrics bridge rather than
-  // modifying host-page prototypes or loading a network dependency.
-  connectionAnnouncer = document.createElement('div');
-  connectionAnnouncer.setAttribute('role', 'status');
-  connectionAnnouncer.setAttribute('aria-live', 'polite');
-  connectionAnnouncer.setAttribute('aria-atomic', 'true');
-  connectionAnnouncer.setAttribute('data-aqp-connection-announcer', 'true');
-  connectionAnnouncer.textContent = '';
-  if (connectionAnnouncer.style) {
-    connectionAnnouncer.style.position = 'absolute';
-    connectionAnnouncer.style.width = '1px';
-    connectionAnnouncer.style.height = '1px';
-    connectionAnnouncer.style.margin = '-1px';
-    connectionAnnouncer.style.padding = '0';
-    connectionAnnouncer.style.border = '0';
-    connectionAnnouncer.style.overflow = 'hidden';
-    connectionAnnouncer.style.clip = 'rect(0 0 0 0)';
-    connectionAnnouncer.style.clipPath = 'inset(50%)';
-    connectionAnnouncer.style.whiteSpace = 'nowrap';
+    // Scoped fallback architecture based on github/arianotify-polyfill:
+    // register one empty polite region in the stable body before its first
+    // message. Keep it local to this paste-in Qualtrics bridge rather than
+    // modifying host-page prototypes or loading a network dependency.
+    connectionAnnouncer = document.createElement('div');
+    connectionAnnouncer.setAttribute('role', 'status');
+    connectionAnnouncer.setAttribute('aria-live', 'polite');
+    connectionAnnouncer.setAttribute('aria-atomic', 'true');
+    connectionAnnouncer.setAttribute('data-aqp-connection-announcer', 'true');
+    connectionAnnouncer.textContent = '';
+    if (connectionAnnouncer.style) {
+      connectionAnnouncer.style.position = 'absolute';
+      connectionAnnouncer.style.width = '1px';
+      connectionAnnouncer.style.height = '1px';
+      connectionAnnouncer.style.margin = '-1px';
+      connectionAnnouncer.style.padding = '0';
+      connectionAnnouncer.style.border = '0';
+      connectionAnnouncer.style.overflow = 'hidden';
+      connectionAnnouncer.style.clip = 'rect(0, 0, 0, 0)';
+      connectionAnnouncer.style.clipPath = 'inset(50%)';
+      connectionAnnouncer.style.whiteSpace = 'nowrap';
+    }
+    document.body.appendChild(connectionAnnouncer);
+    return connectionAnnouncer;
   }
-  document.body.appendChild(connectionAnnouncer);
-  return connectionAnnouncer;
-}
 
-function announceConnectionStatus(message) {
-  var announcer = ensureConnectionAnnouncer();
-  if (!announcer) return;
-  announcer.textContent = announcer.textContent === message
-    ? message + '\u00a0'
-    : message;
-}
-
-function removeConnectionAnnouncer() {
-  if (!connectionAnnouncer) return;
-  if (typeof connectionAnnouncer.remove === 'function') {
-    connectionAnnouncer.remove();
-  } else if (
-    connectionAnnouncer.parentNode &&
-    typeof connectionAnnouncer.parentNode.removeChild === 'function'
-  ) {
-    connectionAnnouncer.parentNode.removeChild(connectionAnnouncer);
+  function announceConnectionStatus(message) {
+    var announcer = ensureConnectionAnnouncer();
+    if (!announcer) return;
+    announcer.textContent = announcer.textContent === message
+      ? message + '\u00a0'
+      : message;
   }
-  connectionAnnouncer = null;
-}
 
-function queueConnectingStatus() {
-  if (!status) return;
-  // Keep the visible advisory navigable as a semantic status while the
-  // dedicated body-level polite region is the sole automatic AT channel.
-  // Blocking failure states still go through setStatus(alert/assertive).
-  if (typeof status.setAttribute === 'function') {
-    status.setAttribute('role', 'status');
-    status.setAttribute('data-quiet', 'false');
-    status.setAttribute('data-severity', 'information');
-    status.setAttribute('aria-live', 'off');
-    status.setAttribute('aria-atomic', 'true');
+  function removeConnectionAnnouncer() {
+    if (!connectionAnnouncer) return;
+    if (typeof connectionAnnouncer.remove === 'function') {
+      connectionAnnouncer.remove();
+    } else if (
+      connectionAnnouncer.parentNode &&
+      typeof connectionAnnouncer.parentNode.removeChild === 'function'
+    ) {
+      connectionAnnouncer.parentNode.removeChild(connectionAnnouncer);
+    }
+    connectionAnnouncer = null;
   }
-  status.textContent = '';
-  ensureConnectionAnnouncer();
-  connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
-    connectionAnnouncementTimerId = null;
-    if (childConnected) return;
-    var message =
-      'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.';
-    status.textContent = message;
-    announceConnectionStatus(message);
-  }, 250);
-}
+
+  function queueConnectingStatus() {
+    if (!status) return;
+    // Keep the visible advisory navigable as a semantic status while the
+    // dedicated body-level polite region is the sole automatic AT channel.
+    // Blocking failure states still go through setStatus(alert/assertive).
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', 'status');
+      status.setAttribute('data-quiet', 'false');
+      status.setAttribute('data-severity', 'information');
+      status.setAttribute('aria-live', 'off');
+      status.setAttribute('aria-atomic', 'true');
+    }
+    status.textContent = '';
+    ensureConnectionAnnouncer();
+    connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
+      connectionAnnouncementTimerId = null;
+      if (childConnected) return;
+      var message =
+        'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.';
+      status.textContent = message;
+      announceConnectionStatus(message);
+    }, 250);
+  }
 
   function setImportantStyle(element, name, value) {
     if (!element || !element.style) return;
@@ -488,10 +495,7 @@ function queueConnectingStatus() {
         return;
       }
       childConnected = true;
-      if (connectionAnnouncementTimerId !== null) {
-        window.clearTimeout(connectionAnnouncementTimerId);
-        connectionAnnouncementTimerId = null;
-      }
+      cancelPendingConnectionAnnouncement();
       if (connectionTimerId !== null) {
         window.clearTimeout(connectionTimerId);
         connectionTimerId = null;
@@ -648,6 +652,7 @@ function queueConnectingStatus() {
     question.showNextButton();
   }, 8000);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
+    cancelPendingConnectionAnnouncement();
     removeConnectionAnnouncer();
     if (completionTimerId !== null) {
       window.clearTimeout(completionTimerId);
@@ -660,10 +665,6 @@ function queueConnectingStatus() {
     if (connectionTimerId !== null) {
       window.clearTimeout(connectionTimerId);
       connectionTimerId = null;
-    }
-    if (connectionAnnouncementTimerId !== null) {
-      window.clearTimeout(connectionAnnouncementTimerId);
-      connectionAnnouncementTimerId = null;
     }
     parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
       window.clearTimeout(timerId);

@@ -52,7 +52,7 @@ The candidate will:
 - create one empty body-level, visually-hidden `role=status` / `aria-live=polite` / `aria-atomic=true` announcer before the initial connection message;
 - keep it persistent for the Qualtrics question lifetime rather than creating/removing a live region for each message;
 - update the visible connection status and the dedicated announcer with the same `Connecting questionnaire package …` string after the registration delay;
-- cancel that pending advisory announcement if the verified child connection arrives first;
+- cancel that pending advisory announcement if the verified child connection or any blocking bridge error arrives first, so a stale polite timer cannot overwrite a decisive alert;
 - leave clean-connection text, bridge version checks, iframe reveal, Qualtrics diagnostic fields, response staging, offline recovery, submission and blocking-error semantics unchanged;
 - remove the dedicated announcer on Qualtrics unload;
 - avoid browser/VoiceOver sniffing, focus changes, assertive escalation, duplicate browser TTS, external runtime dependencies or global `Element.prototype` modification.
@@ -67,7 +67,7 @@ Automated tests must show:
 2. the visible advisory remains `role=status` but `aria-live=off` while the dedicated polite announcer is the single automatic channel;
 3. the exact visible and announced `Connecting` strings match;
 4. an early verified child connection cancels the pending `Connecting` announcement and cannot be overwritten by it;
-5. missing/mismatched bridge failures remain visible `role=alert`, assertive and actionable;
+5. an early version/diagnostic blocking failure also cancels the pending polite advisory, remains visible `role=alert`, assertive and actionable, and cannot be overwritten by a stale timer;
 6. no participant iframe is exposed before verified connection;
 7. the existing full repository verification remains green.
 

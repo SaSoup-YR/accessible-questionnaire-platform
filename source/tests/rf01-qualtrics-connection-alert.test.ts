@@ -27,7 +27,8 @@ function createRuntime() {
   let onReady: (() => void) | undefined;
   let onUnload: (() => void) | undefined;
   let receiveMessage: ((event: MessageEvent) => void) | undefined;
-  const timers: Array<{ callback: () => void; delay: number }> = [];
+  const timers: Array<{ callback: () => void; delay: number; id: number }> = [];
+  const cancelledTimerIds = new Set<number>();
   const frameWindow = { postMessage: vi.fn() };
   const iframeStyle = trackedStyle();
   const liveStyle = trackedStyle();
@@ -113,10 +114,13 @@ function createRuntime() {
     CSS: { supports: () => true },
     navigator: { onLine: true },
     setTimeout(callback: () => void, delay: number) {
-      timers.push({ callback, delay });
-      return timers.length;
+      const id = timers.length + 1;
+      timers.push({ callback, delay, id });
+      return id;
     },
-    clearTimeout: vi.fn(),
+    clearTimeout: vi.fn((id: number) => {
+      cancelledTimerIds.add(id);
+    }),
     addEventListener(type: string, listener: EventListener) {
       if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
     },
@@ -137,6 +141,11 @@ function createRuntime() {
     hideNextButton,
     showNextButton,
     setJSEmbeddedData,
+    runTimer(delay: number) {
+      const timer = timers.find((entry) => entry.delay === delay);
+      if (!timer) throw new Error(`No timer registered for ${delay}ms.`);
+      if (!cancelledTimerIds.has(timer.id)) timer.callback();
+    },
     receiveMessage: (event: MessageEvent) => receiveMessage!(event),
     unload: () => onUnload!(),
   };
@@ -156,12 +165,12 @@ describe('RF-01 successor Qualtrics connection announcement', () => {
     expect(runtime.hideNextButton).toHaveBeenCalledOnce();
     expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
 
-    runtime.timers.find(({ delay }) => delay === 250)!.callback();
+    runtime.runTimer(250);
     expect(runtime.status.textContent).toContain('Connecting questionnaire package');
     expect(runtime.announcer.textContent).toBe(runtime.status.textContent);
     expect(runtime.statusAttributes['aria-live']).toBe('off');
 
-    runtime.timers.find(({ delay }) => delay === 8000)!.callback();
+    runtime.runTimer(8000);
     expect(runtime.status.textContent).toContain('questionnaire connection did not start');
     expect(runtime.statusAttributes.role).toBe('alert');
     expect(runtime.statusAttributes['aria-live']).toBe('assertive');
@@ -188,9 +197,36 @@ describe('RF-01 successor Qualtrics connection announcement', () => {
     expect(runtime.iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
     expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_READY', '1');
 
-    runtime.timers.find(({ delay }) => delay === 250)!.callback();
+    runtime.runTimer(250);
     expect(runtime.status.textContent).toContain('questionnaire is connected');
     expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
+    expect(runtime.announcer.textContent).toBe('');
+  });
+
+  it('does not let a pending polite advisory overwrite an early blocking bridge error', () => {
+    const runtime = createRuntime();
+    runtime.receiveMessage({
+      source: runtime.frameWindow,
+      origin: 'https://sasoup-yr.github.io',
+      data: {
+        type: QUALTRICS_CHILD_READY_MESSAGE,
+        protocolVersion: 2,
+        bridgeBuild: `${QUALTRICS_BRIDGE_BUILD}-mismatch`,
+      },
+    } as unknown as MessageEvent);
+
+    expect(runtime.status.textContent).toContain('do not use the same bridge version');
+    expect(runtime.statusAttributes.role).toBe('alert');
+    expect(runtime.statusAttributes['aria-live']).toBe('assertive');
+    expect(runtime.statusAttributes['data-severity']).toBe('error');
+    expect(runtime.announcer.textContent).toBe('');
+    expect(runtime.showNextButton).toHaveBeenCalledOnce();
+
+    runtime.runTimer(250);
+    expect(runtime.status.textContent).toContain('do not use the same bridge version');
+    expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
+    expect(runtime.statusAttributes.role).toBe('alert');
+    expect(runtime.statusAttributes['aria-live']).toBe('assertive');
     expect(runtime.announcer.textContent).toBe('');
   });
 
