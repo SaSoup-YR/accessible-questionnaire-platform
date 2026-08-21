@@ -14,7 +14,11 @@ test('RF-08 smiley choices keep native names and expose real on-screen radio tar
   const answerMode = page.locator('.answer-mode-control');
   const smileyMode = answerMode.locator('input[type="radio"][value="smiley"]');
   await expect(smileyMode).toHaveCount(1);
-  await smileyMode.check();
+  // RF-08 is testing the five rendered smiley answer radios, not the separate
+  // answer-format control. Activate that existing custom radio through its
+  // visible label so the test does not mistake its intentional hidden-input
+  // styling for an RF-08 product failure.
+  await answerMode.locator('label').filter({ hasText: 'Smiley landmarks' }).click();
   await expect(smileyMode).toBeChecked();
 
   await page.getByRole('button', { name: 'Start the six ratings' }).click();
