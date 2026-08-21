@@ -6,6 +6,7 @@ Status: **second-round manual evidence collected; R2-A10 and R3-A10 pass; R4-A10
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
+- Retained synchronized runtime: `e8ccd11909b2d3e6f6600d95bdc88a6e04374eb3`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -25,7 +26,7 @@ The RF-06 lifecycle module keeps a pre-existing `role=status`, `aria-live=polite
 
 A second-round Safari/VoiceOver adjustment separates the AQP live-region mutations from Safari's own microphone-capture announcements. This change is supported by the post-fix Safari observation below.
 
-A recogniser-side best-effort interpretation of the spoken phrase `stop voice input` was also explored for Windows Voice Access. The manual R4 route shows that this does **not** solve the underlying concurrent-recogniser race and is **not** credited as a pass condition.
+A recogniser-side best-effort interpretation of the spoken phrase `stop voice input` was explored for Windows Voice Access. The manual R4 route showed that it did **not** solve the underlying concurrent-recogniser race. That experimental transcript workaround and its dedicated test were therefore removed from the retained runtime rather than being used to manufacture a Pass.
 
 ## Automated evidence
 
@@ -37,7 +38,7 @@ The focused RF-06 automated tests cover:
 - native no-speech recovery;
 - safe lifecycle cleanup.
 
-The second-round source tests passed before generated-release freshness, together with the repository browser regressions. Automated evidence does not override the manual AT result.
+The retained-runtime synchronization job passed repository tests and release generation after removing the unproven Voice Access transcript workaround. A fresh canonical read-only verification run is required on the evidence head after this document update. Automated evidence does not override the manual AT result.
 
 ## Post-fix manual evidence
 
@@ -65,4 +66,4 @@ Microsoft's own Voice Access guidance states that Voice Access in Listening mode
 
 ## Audit boundary
 
-Historical q8 is never rewritten. Post-fix evidence may close R2-A10 and R3-A10 separately, may close R3-A13 only after its exact no-speech announcement is confirmed, and retains R4-A10 as a tested interoperability limitation.
+Historical q8 is never rewritten. Post-fix evidence closes R2-A10 and R3-A10 separately, may close R3-A13 only after its exact no-speech announcement is confirmed, and retains R4-A10 as a tested interoperability limitation.
