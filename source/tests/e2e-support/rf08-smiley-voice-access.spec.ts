@@ -12,9 +12,10 @@ test('RF-08 smiley choices keep native names and expose real on-screen radio tar
   await page.goto('/index.html');
 
   // Follow the real participant path: the answer-format control lives inside
-  // the optional accessibility disclosure on the introduction screen.
+  // the outer optional accessibility disclosure. Match the exact visible
+  // summary so the nested experimental gaze disclosure is not selected.
   const introSupport = page.locator('.participant-support-setup');
-  await introSupport.locator('summary').click();
+  await page.getByText('Accessibility and audio options (optional)', { exact: true }).click();
   await expect(introSupport).toHaveAttribute('open', '');
 
   const answerMode = introSupport.locator('.answer-mode-control');
