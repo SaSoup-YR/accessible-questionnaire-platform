@@ -1,16 +1,14 @@
 name: One-time RF-07 generated release sync
 
 on:
-  push:
-    branches:
-      - agent/fix-rf07-speech-recognition-reliability
+  pull_request:
 
 permissions:
   contents: write
 
 jobs:
   sync:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'agent/fix-rf07-speech-recognition-reliability'
     runs-on: ubuntu-latest
     steps:
       - name: Check out RF-07 candidate
