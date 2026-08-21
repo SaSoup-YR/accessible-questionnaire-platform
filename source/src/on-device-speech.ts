@@ -4,12 +4,15 @@ export type SpeechRecognitionAvailability =
   | 'downloading'
   | 'available';
 
-export type SpeechRecognitionQuality = 'command';
+export type SpeechRecognitionQuality =
+  | 'command'
+  | 'dictation'
+  | 'conversation';
 
 export interface SpeechRecognitionAvailabilityOptions {
   langs: string[];
   processLocally: true;
-  quality?: SpeechRecognitionQuality;
+  quality: SpeechRecognitionQuality;
 }
 
 export interface OnDeviceSpeechRecognitionProvider {
@@ -31,6 +34,7 @@ export type PreparedSpeechRecognitionRoute =
       action: 'start';
       mode: 'local';
       lang: string;
+      quality: 'dictation';
       message: string;
     }
   | {
@@ -43,16 +47,17 @@ export type PreparedSpeechRecognitionRoute =
       action: 'wait';
       mode: 'installed' | 'downloading';
       lang: string;
+      quality: 'dictation';
       message: string;
     };
 
-const COMMAND_QUALITY: SpeechRecognitionQuality = 'command';
+const REQUIRED_LOCAL_QUALITY = 'dictation' as const;
 
-function optionsFor(lang: string, includeQuality: boolean): SpeechRecognitionAvailabilityOptions {
+function optionsFor(lang: string): SpeechRecognitionAvailabilityOptions {
   return {
     langs: [lang],
     processLocally: true,
-    ...(includeQuality ? { quality: COMMAND_QUALITY } : {}),
+    quality: REQUIRED_LOCAL_QUALITY,
   };
 }
 
@@ -62,18 +67,14 @@ async function checkAvailability(
 ): Promise<SpeechRecognitionAvailability | null> {
   if (!provider.available) return null;
   try {
-    return await provider.available(optionsFor(lang, true));
+    return await provider.available(optionsFor(lang));
   } catch {
-    // Chrome 139–149 implemented the local-recognition state machine before
-    // the later quality-level option. Retry once without quality rather than
-    // treating an older implementation as a broken speech route.
-    try {
-      return await provider.available(optionsFor(lang, false));
-    } catch {
-      // Permissions Policy, inactive-document and partial implementations must
-      // leave the existing remote route available.
-      return null;
-    }
+    // The earlier command-quality candidate was manually observed to preserve
+    // only a bare number reliably while truncating the frozen two-word command
+    // (for example, "number four" -> "Number"). A quality-less retry would
+    // silently select that same lower-capability route, so an implementation
+    // that cannot verify the dictation floor must retain the remote fallback.
+    return null;
   }
 }
 
@@ -83,13 +84,9 @@ async function installLanguagePack(
 ): Promise<boolean> {
   if (!provider.install) return false;
   try {
-    return await provider.install(optionsFor(lang, true));
+    return await provider.install(optionsFor(lang));
   } catch {
-    try {
-      return await provider.install(optionsFor(lang, false));
-    } catch {
-      return false;
-    }
+    return false;
   }
 }
 
@@ -108,8 +105,15 @@ function prepareRemote(
 }
 
 /**
- * Prefer a locally installed short-command model without weakening or removing
- * the established remote Web Speech route.
+ * Prefer a locally installed dictation-capable model without weakening or
+ * removing the established remote Web Speech route.
+ *
+ * The first on-device successor used the default command-quality floor. Live
+ * Windows-Chrome testing showed that model could recognise a bare digit while
+ * commonly truncating the frozen two-word phrase after its first word. The
+ * current Web Speech API explicitly distinguishes command and dictation model
+ * capability, so this successor requires the higher dictation floor rather
+ * than changing the parser or guessing the missing value.
  *
  * The function is intentionally side-effect-limited: it may set the selected
  * language/local-processing flag or request one browser-managed language-pack
@@ -119,22 +123,24 @@ export async function preparePreferredSpeechRecognitionRoute(
   provider: OnDeviceSpeechRecognitionProvider | undefined,
   recognition: OnDeviceSpeechRecognitionInstance,
   allowOnDevice = true,
-  preferredLang = 'en-GB',
-  localFallbackLang = 'en-US',
+  remoteLang = 'en-GB',
+  localCandidates: readonly string[] = ['en-US', 'en-GB'],
 ): Promise<PreparedSpeechRecognitionRoute> {
   if (
     !allowOnDevice ||
     !provider?.available ||
     !('processLocally' in recognition)
   ) {
-    return prepareRemote(recognition, preferredLang);
+    return prepareRemote(recognition, remoteLang);
   }
 
-  const localCandidates = [...new Set([preferredLang, localFallbackLang])];
-  for (const lang of localCandidates) {
+  // Chrome's documented local-English examples and pack-management path use
+  // en-US. Prefer that documented pack, then retain en-GB as a bounded local
+  // fallback. The remote route remains en-GB.
+  for (const lang of [...new Set(localCandidates)]) {
     const availability = await checkAvailability(provider, lang);
     if (availability === null) {
-      return prepareRemote(recognition, preferredLang);
+      return prepareRemote(recognition, remoteLang);
     }
     if (availability === 'unavailable') continue;
 
@@ -145,7 +151,10 @@ export async function preparePreferredSpeechRecognitionRoute(
         action: 'start',
         mode: 'local',
         lang,
-        message: `Listening for one answer using on-device English recognition (${lang}).`,
+        quality: REQUIRED_LOCAL_QUALITY,
+        message:
+          `Listening for one answer using on-device English recognition ` +
+          `(${lang}, dictation-quality model).`,
       };
     }
 
@@ -156,8 +165,9 @@ export async function preparePreferredSpeechRecognitionRoute(
         action: 'wait',
         mode: 'downloading',
         lang,
+        quality: REQUIRED_LOCAL_QUALITY,
         message:
-          `The browser is still downloading its on-device English speech model (${lang}). ` +
+          `The browser is still downloading its on-device English dictation model (${lang}). ` +
           'No answer was selected. Start voice input again when the download finishes, or use a visible answer button.',
       };
     }
@@ -170,14 +180,15 @@ export async function preparePreferredSpeechRecognitionRoute(
         action: 'wait',
         mode: 'installed',
         lang,
+        quality: REQUIRED_LOCAL_QUALITY,
         message:
-          `The on-device English speech model (${lang}) is ready. ` +
+          `The on-device English dictation model (${lang}) is ready. ` +
           'No answer was selected. Start voice input again, or use a visible answer button.',
       };
     }
-    // A locale-specific installation failure does not disable the documented
-    // fallback locale or the existing remote route.
+    // A locale-specific installation failure does not disable the second local
+    // candidate or the established remote route.
   }
 
-  return prepareRemote(recognition, preferredLang);
+  return prepareRemote(recognition, remoteLang);
 }
