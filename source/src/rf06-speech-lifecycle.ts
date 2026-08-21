@@ -4,7 +4,21 @@ import type { QuestionnaireItem } from './questionnaire-definition';
 
 type VoiceContext = 'rating' | 'pair';
 
+type RecognitionEventLike = Event & {
+  results?: {
+    readonly length: number;
+    [index: number]: {
+      readonly length: number;
+      [index: number]: { transcript?: string };
+    };
+  };
+};
+
+type RecognitionErrorLike = Event & { error?: string };
+
 type RecognitionLike = {
+  onresult: ((event: RecognitionEventLike) => void) | null;
+  onerror: ((event: RecognitionErrorLike) => void) | null;
   onend: (() => void) | null;
 };
 
@@ -39,9 +53,12 @@ type InternalComponent = {
   querySelector<E extends Element = Element>(selectors: string): E | null;
   __rf06Installed?: boolean;
   __rf06VoiceWatchdogTimerId?: number | null;
+  __rf06ListeningAnnouncementTimerId?: number | null;
+  __rf06VoiceNoticeTimerId?: number | null;
 };
 
 const VOICE_LISTENING_WATCHDOG_MS = 15_000;
+const VOICE_LIVE_REGION_DELAY_MS = 650;
 const MANUAL_STOP_MESSAGE =
   'Voice input stopped. No answer was changed. Try again, or use a visible answer button.';
 const NATIVE_NO_SPEECH_MESSAGE =
@@ -49,10 +66,75 @@ const NATIVE_NO_SPEECH_MESSAGE =
 const WATCHDOG_NO_SPEECH_MESSAGE =
   'No speech was detected before the listening time limit. Voice input stopped. Try again, or use a visible answer button. No answer was changed.';
 
-function clearWatchdog(component: InternalComponent) {
-  if (component.__rf06VoiceWatchdogTimerId === null || component.__rf06VoiceWatchdogTimerId === undefined) return;
-  window.clearTimeout(component.__rf06VoiceWatchdogTimerId);
-  component.__rf06VoiceWatchdogTimerId = null;
+function clearTimer(
+  component: InternalComponent,
+  key:
+    | '__rf06VoiceWatchdogTimerId'
+    | '__rf06ListeningAnnouncementTimerId'
+    | '__rf06VoiceNoticeTimerId',
+) {
+  const timerId = component[key];
+  if (timerId === null || timerId === undefined) return;
+  window.clearTimeout(timerId);
+  component[key] = null;
+}
+
+function clearLifecycleTimers(component: InternalComponent) {
+  clearTimer(component, '__rf06VoiceWatchdogTimerId');
+  clearTimer(component, '__rf06ListeningAnnouncementTimerId');
+  clearTimer(component, '__rf06VoiceNoticeTimerId');
+}
+
+function normaliseVoiceControlCommand(value: string) {
+  return value
+    .toLocaleLowerCase()
+    .replace(/[“”"'’.,!?;:]+/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+function resultTranscripts(event: RecognitionEventLike) {
+  const firstResult = event.results?.[0];
+  if (!firstResult) return [];
+  const transcripts: string[] = [];
+  for (let index = 0; index < firstResult.length; index += 1) {
+    const transcript = firstResult[index]?.transcript?.trim();
+    if (transcript) transcripts.push(transcript);
+  }
+  return transcripts;
+}
+
+function isStopVoiceControlCommand(transcript: string) {
+  const command = normaliseVoiceControlCommand(transcript);
+  return /^(?:(?:click|press|select|tap|choose)\s+)?(?:the\s+)?stop voice input(?:\s+button)?$/u.test(command);
+}
+
+function scheduleListeningAnnouncement(component: InternalComponent, recognition: RecognitionLike) {
+  clearTimer(component, '__rf06ListeningAnnouncementTimerId');
+  // Safari/VoiceOver can speak its own microphone-capture notice at the same
+  // instant recognition starts. Keep the already-present live region empty,
+  // then create a separate content mutation after that browser notice so the
+  // AQP Listening state has its own opportunity to be announced.
+  component.voiceMessage = '';
+  component.__rf06ListeningAnnouncementTimerId = window.setTimeout(() => {
+    component.__rf06ListeningAnnouncementTimerId = null;
+    if (component.recognition !== recognition || component.voiceState !== 'listening') return;
+    component.voiceMessage = 'Listening for one answer.';
+  }, VOICE_LIVE_REGION_DELAY_MS);
+}
+
+function scheduleNoSpeechNotice(component: InternalComponent, message: string) {
+  clearTimer(component, '__rf06VoiceNoticeTimerId');
+  // Separate the AQP recovery message from Safari's own "stopped capturing
+  // sound" announcement. This keeps the error as a genuine later live-region
+  // mutation instead of competing with the browser notification.
+  component.voiceState = 'error';
+  component.voiceMessage = '';
+  component.__rf06VoiceNoticeTimerId = window.setTimeout(() => {
+    component.__rf06VoiceNoticeTimerId = null;
+    if (component.recognition || component.voiceState !== 'error') return;
+    component.showVoiceNotice(message);
+  }, VOICE_LIVE_REGION_DELAY_MS);
 }
 
 function stopVoiceInput(component: InternalComponent) {
@@ -166,7 +248,7 @@ export function installRf06SpeechLifecycle() {
     this: InternalComponent,
     recognition = this.recognition,
   ) {
-    clearWatchdog(this);
+    clearLifecycleTimers(this);
     originalReleaseRecognition.call(this, recognition);
   };
 
@@ -177,29 +259,51 @@ export function installRf06SpeechLifecycle() {
     second?: QuestionnaireItem,
     allowContextualHints = true,
   ) {
-    clearWatchdog(this);
+    clearLifecycleTimers(this);
     originalStartVoiceInput.call(this, context, first, second, allowContextualHints);
 
     const recognition = this.recognition;
     if (!recognition || this.voiceState !== 'listening') return;
 
-    const originalOnEnd = recognition.onend;
-    recognition.onend = () => {
-      clearWatchdog(this);
+    scheduleListeningAnnouncement(this, recognition);
+
+    const originalOnResult = recognition.onresult;
+    recognition.onresult = (event) => {
       if (this.recognition !== recognition) return;
-      if (this.voiceState !== 'listening') {
-        originalOnEnd?.();
+      // Windows Voice Access and built-in Web Speech can hear the same command.
+      // If Web Speech wins the race for the visible Stop command, treat it as
+      // the same cancellation action instead of consuming it as a questionnaire
+      // answer and removing the Stop control before Voice Access can act.
+      if (resultTranscripts(event).some(isStopVoiceControlCommand)) {
+        stopVoiceInput(this);
         return;
       }
-      this.recognition = null;
-      this.showVoiceNotice(NATIVE_NO_SPEECH_MESSAGE);
+      originalOnResult?.(event);
+    };
+
+    const originalOnError = recognition.onerror;
+    recognition.onerror = (event) => {
+      if (this.recognition !== recognition) return;
+      if (this.voiceState === 'listening' && (event.error === 'no-speech' || event.error === 'aborted')) {
+        this.releaseRecognition(recognition);
+        scheduleNoSpeechNotice(this, NATIVE_NO_SPEECH_MESSAGE);
+        return;
+      }
+      originalOnError?.(event);
+    };
+
+    recognition.onend = () => {
+      if (this.recognition !== recognition) return;
+      if (this.voiceState !== 'listening') return;
+      this.releaseRecognition(recognition);
+      scheduleNoSpeechNotice(this, NATIVE_NO_SPEECH_MESSAGE);
     };
 
     this.__rf06VoiceWatchdogTimerId = window.setTimeout(() => {
       this.__rf06VoiceWatchdogTimerId = null;
       if (this.recognition !== recognition || this.voiceState !== 'listening') return;
       this.releaseRecognition(recognition);
-      this.showVoiceNotice(WATCHDOG_NO_SPEECH_MESSAGE);
+      scheduleNoSpeechNotice(this, WATCHDOG_NO_SPEECH_MESSAGE);
     }, VOICE_LISTENING_WATCHDOG_MS);
   };
 }
