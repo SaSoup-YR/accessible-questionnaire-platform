@@ -83,9 +83,8 @@ function replaceStaticLabelText(
   const textNode = [...label.childNodes].find(
     (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === original,
   );
-  if (textNode?.textContent !== undefined) {
-    textNode.textContent = textNode.textContent.replace(original, replacement);
-  }
+  const currentText = textNode?.textContent;
+  if (currentText) textNode.textContent = currentText.replace(original, replacement);
 
   // Keep the unique visible wording and the programmatic voice target exactly
   // aligned. This avoids the observed Voice Access "Which one?" collision with
