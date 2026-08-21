@@ -120,6 +120,8 @@ describe('RF-09 support-setting feedback', () => {
     answer.click();
     await component.updateComplete;
     expect(answer.checked).toBe(true);
+    const legacyStatusBefore = globalStatusText(component);
+    expect(legacyStatusBefore).toBe('Mental Demand, 50, selected.');
 
     large.focus();
     large.closest('label')!.click();
@@ -130,7 +132,7 @@ describe('RF-09 support-setting feedback', () => {
     expect(answer.checked).toBe(true);
     expect(feedback(component).hidden).toBe(false);
     expect(feedback(component).textContent?.trim()).toBe('Large text selected.');
-    expect(globalStatusText(component)).toBe('');
+    expect(globalStatusText(component)).toBe(legacyStatusBefore);
     expect(supportAnnouncementText(component)).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS - 1);
@@ -147,7 +149,7 @@ describe('RF-09 support-setting feedback', () => {
     expect(document.activeElement).toBe(standard);
     expect(answer.checked).toBe(true);
     expect(feedback(component).textContent?.trim()).toBe('Standard text selected.');
-    expect(globalStatusText(component)).toBe('');
+    expect(globalStatusText(component)).toBe(legacyStatusBefore);
     expect(supportAnnouncementText(component)).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
@@ -164,6 +166,7 @@ describe('RF-09 support-setting feedback', () => {
     const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
     answer.click();
     await component.updateComplete;
+    const legacyStatusBefore = globalStatusText(component);
 
     const recovery = supportInput(component, 'recovery');
     recovery.focus();
@@ -176,7 +179,7 @@ describe('RF-09 support-setting feedback', () => {
     expect(feedback(component).textContent?.trim()).toBe(
       'Interruption recovery is on. Incomplete answers will be stored in this browser.',
     );
-    expect(globalStatusText(component)).toBe('');
+    expect(globalStatusText(component)).toBe(legacyStatusBefore);
     expect(supportAnnouncementText(component)).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
