@@ -2,9 +2,7 @@ name: Commit exact synchronized RF-01 candidate
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/fix-rf01-r3-a26-dedicated-announcer
+  pull_request:
 
 permissions:
   contents: write
@@ -19,6 +17,7 @@ jobs:
       - name: Check out source branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 5
 
       - name: Apply bounded candidate patch
@@ -59,7 +58,7 @@ jobs:
 
       - name: Commit verified source and generated outputs
         env:
-          HEAD_BRANCH: ${{ github.ref_name }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
