@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../src/rf09-support-setting-feedback';
-import { ensureAccessibilityAnnouncer } from '../src/accessibility-announcer';
 import type { AccessibleNasaTlx } from '../src/accessible-nasa-tlx';
 
+const SUPPORT_ANNOUNCEMENT_DELAY_MS = 650;
 const AUDIO_ON_MESSAGE =
   'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
 
@@ -11,6 +11,7 @@ async function renderComponent() {
   const component = document.createElement('accessible-nasa-tlx') as AccessibleNasaTlx;
   document.body.append(component);
   await component.updateComplete;
+  await Promise.resolve();
   return component;
 }
 
@@ -20,6 +21,7 @@ async function startRatings(component: AccessibleNasaTlx) {
   );
   start!.click();
   await component.updateComplete;
+  await Promise.resolve();
 }
 
 function supportInput(component: AccessibleNasaTlx, suffix: string) {
@@ -30,12 +32,23 @@ function feedback(component: AccessibleNasaTlx) {
   return component.querySelector<HTMLElement>('[data-rf09-support-feedback]')!;
 }
 
-function politeLog() {
-  return document.querySelector<HTMLElement>('[data-aqp-announcement-priority="polite"]')!;
+function supportStatusRegions(component: AccessibleNasaTlx) {
+  return [...component.querySelectorAll<HTMLElement>('[data-rf09-support-announcement]')];
 }
 
-function assertiveLog() {
-  return document.querySelector<HTMLElement>('[data-aqp-announcement-priority="assertive"]')!;
+function supportAnnouncementText(component: AccessibleNasaTlx) {
+  return supportStatusRegions(component)
+    .map((region) => region.textContent?.trim() ?? '')
+    .filter(Boolean);
+}
+
+function globalStatusText(component: AccessibleNasaTlx) {
+  return component.querySelector<HTMLElement>('main > p.sr-only[aria-live="polite"]')
+    ?.textContent?.trim() ?? '';
+}
+
+function compactText(element: Element | null) {
+  return element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 }
 
 function installSpeechSynthesis() {
@@ -69,7 +82,6 @@ beforeEach(() => {
   Object.defineProperty(window, 'scrollTo', { value: () => undefined, writable: true });
   localStorage.clear();
   sessionStorage.clear();
-  ensureAccessibilityAnnouncer();
 });
 
 afterEach(() => {
@@ -83,18 +95,32 @@ afterEach(() => {
 });
 
 describe('RF-09 support-setting feedback', () => {
-  it('gives visible and polite feedback for text-size and recovery changes without moving focus or changing an answer', async () => {
+  it('uses unique visible text-size names and an alternating status after native state settles', async () => {
     vi.useFakeTimers();
     installSpeechSynthesis();
     const component = await renderComponent();
     await startRatings(component);
+
+    const standard = supportInput(component, 'standard-text');
+    const large = supportInput(component, 'large-text');
+    expect(compactText(standard.closest('label'))).toBe('Standard text');
+    expect(compactText(large.closest('label'))).toBe('Large text');
+    expect(standard.getAttribute('aria-label')).toBe('Standard text');
+    expect(large.getAttribute('aria-label')).toBe('Large text');
+
+    const regions = supportStatusRegions(component);
+    expect(regions).toHaveLength(2);
+    for (const region of regions) {
+      expect(region.getAttribute('role')).toBe('status');
+      expect(region.getAttribute('aria-live')).toBe('polite');
+      expect(region.getAttribute('aria-atomic')).toBe('true');
+    }
 
     const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
     answer.click();
     await component.updateComplete;
     expect(answer.checked).toBe(true);
 
-    const large = supportInput(component, 'large-text');
     large.focus();
     large.closest('label')!.click();
     await component.updateComplete;
@@ -104,13 +130,40 @@ describe('RF-09 support-setting feedback', () => {
     expect(answer.checked).toBe(true);
     expect(feedback(component).hidden).toBe(false);
     expect(feedback(component).textContent?.trim()).toBe('Large text selected.');
-    expect(politeLog().children).toHaveLength(0);
-    expect(assertiveLog().children).toHaveLength(0);
+    expect(globalStatusText(component)).toBe('');
+    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(100);
-    expect(politeLog().children).toHaveLength(1);
-    expect(politeLog().lastElementChild?.textContent).toBe('Large text selected.');
-    expect(assertiveLog().children).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS - 1);
+    expect(supportAnnouncementText(component)).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    await component.updateComplete;
+    expect(supportAnnouncementText(component)).toEqual(['Large text selected.']);
+
+    standard.focus();
+    standard.closest('label')!.click();
+    await component.updateComplete;
+
+    expect(standard.checked).toBe(true);
+    expect(document.activeElement).toBe(standard);
+    expect(answer.checked).toBe(true);
+    expect(feedback(component).textContent?.trim()).toBe('Standard text selected.');
+    expect(globalStatusText(component)).toBe('');
+    expect(supportAnnouncementText(component)).toEqual([]);
+
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
+    await component.updateComplete;
+    expect(supportAnnouncementText(component)).toEqual(['Standard text selected.']);
+  });
+
+  it('gives delayed recovery status without moving focus or changing an answer', async () => {
+    vi.useFakeTimers();
+    installSpeechSynthesis();
+    const component = await renderComponent();
+    await startRatings(component);
+
+    const answer = component.querySelector<HTMLInputElement>('.rating-option input[value="50"]')!;
+    answer.click();
+    await component.updateComplete;
 
     const recovery = supportInput(component, 'recovery');
     recovery.focus();
@@ -123,16 +176,17 @@ describe('RF-09 support-setting feedback', () => {
     expect(feedback(component).textContent?.trim()).toBe(
       'Interruption recovery is on. Incomplete answers will be stored in this browser.',
     );
+    expect(globalStatusText(component)).toBe('');
+    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(100);
-    expect(politeLog().children).toHaveLength(2);
-    expect(politeLog().lastElementChild?.textContent).toBe(
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
+    await component.updateComplete;
+    expect(supportAnnouncementText(component)).toEqual([
       'Interruption recovery is on. Incomplete answers will be stored in this browser.',
-    );
-    expect(assertiveLog().children).toHaveLength(0);
+    ]);
   });
 
-  it('uses built-in speech for audio-on and one polite message for audio-off while keeping the answer and focus', async () => {
+  it('uses built-in speech for audio-on and one delayed status for audio-off', async () => {
     vi.useFakeTimers();
     const { spoken, cancel } = installSpeechSynthesis();
     const component = await renderComponent();
@@ -153,9 +207,8 @@ describe('RF-09 support-setting feedback', () => {
     expect(spoken.at(-1)).toBe(AUDIO_ON_MESSAGE);
     expect(feedback(component).textContent?.trim()).toBe(AUDIO_ON_MESSAGE);
 
-    await vi.advanceTimersByTimeAsync(100);
-    expect(politeLog().children).toHaveLength(0);
-    expect(assertiveLog().children).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
+    expect(supportAnnouncementText(component)).toEqual([]);
 
     audio.closest('label')!.click();
     await component.updateComplete;
@@ -167,13 +220,13 @@ describe('RF-09 support-setting feedback', () => {
     expect(feedback(component).textContent?.trim()).toBe(
       'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
     );
+    expect(supportAnnouncementText(component)).toEqual([]);
 
-    await vi.advanceTimersByTimeAsync(100);
-    expect(politeLog().children).toHaveLength(1);
-    expect(politeLog().lastElementChild?.textContent).toBe(
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
+    await component.updateComplete;
+    expect(supportAnnouncementText(component)).toEqual([
       'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.',
-    );
-    expect(assertiveLog().children).toHaveLength(0);
+    ]);
   });
 
   it('does not claim a support-setting change for unrelated answer-format controls', async () => {
@@ -184,12 +237,11 @@ describe('RF-09 support-setting feedback', () => {
     const smiley = component.querySelector<HTMLInputElement>('.answer-mode-control input[value="smiley"]')!;
     smiley.click();
     await component.updateComplete;
-    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(SUPPORT_ANNOUNCEMENT_DELAY_MS);
 
     expect(smiley.checked).toBe(true);
     expect(feedback(component).hidden).toBe(true);
     expect(feedback(component).textContent?.trim()).toBe('');
-    expect(politeLog().children).toHaveLength(0);
-    expect(assertiveLog().children).toHaveLength(0);
+    expect(supportAnnouncementText(component)).toEqual([]);
   });
 });
