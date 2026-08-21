@@ -114,7 +114,7 @@ export function installRf06SpeechLifecycle() {
               ?disabled=${!available || this.voiceState === 'listening'}
               @click=${() => this.startVoiceInput(context, first, second)}
             >
-              Start voice input
+              ${this.voiceState === 'listening' ? 'Listening…' : 'Start voice input'}
             </button>
             ${this.voiceState === 'listening'
               ? html`<button
