@@ -97,6 +97,10 @@ Canonical run `32478383479` completed successfully on evidence head `656c112e85c
 
 One focused Safari/VoiceOver silent-attempt retest is required. If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
 
+## Next repair family
+
+Once this final R3-A13 observation is adjudicated, the next code family in the frozen repair order is **RF-09 / A33 support-setting feedback**, targeting historical R3-A33 and R4-A33. Its implementation must centralise accurate feedback for text-size, interruption-recovery and audio-guidance state changes, preserve focus, and prove scored-answer invariance. It will be researched and developed in a separate branch/PR after RF-06 is closed; RF-06 and RF-09 will not be mixed.
+
 ## Audit boundary
 
 Historical q8 is never rewritten. Post-fix evidence closes R2-A10 and R3-A10 separately, retains R4-A10 as a tested interoperability limitation and may close R3-A13 only if the production-announcer message is actually announced by VoiceOver in Safari.
