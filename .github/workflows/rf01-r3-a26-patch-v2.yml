@@ -1,0 +1,394 @@
+name: One-time RF-01 R3-A26 patch v2
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.ref == 'agent/fix-rf01-r3-a26-dedicated-announcer'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf01-r3-a26-dedicated-announcer
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Apply bounded bridge change and replace targeted regression harness
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          bridge_path = Path('integrations/qualtrics/qualtrics-question.js')
+          bridge = bridge_path.read_text()
+
+          variable_old = "  var connectionAnnouncementTimerId = null;\n"
+          variable_new = variable_old + "  var connectionAnnouncer = null;\n"
+          if variable_new not in bridge:
+              if variable_old not in bridge:
+                  raise SystemExit('connection announcement variable anchor missing')
+              bridge = bridge.replace(variable_old, variable_new, 1)
+
+          dedicated_block = r'''  function ensureConnectionAnnouncer() {
+            if (connectionAnnouncer) return connectionAnnouncer;
+            if (!document.body || typeof document.createElement !== 'function') return null;
+
+            // Scoped fallback architecture based on github/arianotify-polyfill:
+            // register one empty polite region in the stable body before its first
+            // message. Keep the mechanism local to this paste-in Qualtrics bridge
+            // rather than modifying host-page prototypes or loading a network script.
+            connectionAnnouncer = document.createElement('div');
+            connectionAnnouncer.setAttribute('role', 'status');
+            connectionAnnouncer.setAttribute('aria-live', 'polite');
+            connectionAnnouncer.setAttribute('aria-atomic', 'true');
+            connectionAnnouncer.setAttribute('data-aqp-connection-announcer', 'true');
+            connectionAnnouncer.textContent = '';
+            if (connectionAnnouncer.style) {
+              connectionAnnouncer.style.position = 'absolute';
+              connectionAnnouncer.style.width = '1px';
+              connectionAnnouncer.style.height = '1px';
+              connectionAnnouncer.style.margin = '-1px';
+              connectionAnnouncer.style.padding = '0';
+              connectionAnnouncer.style.border = '0';
+              connectionAnnouncer.style.overflow = 'hidden';
+              connectionAnnouncer.style.clip = 'rect(0 0 0 0)';
+              connectionAnnouncer.style.clipPath = 'inset(50%)';
+              connectionAnnouncer.style.whiteSpace = 'nowrap';
+            }
+            document.body.appendChild(connectionAnnouncer);
+            return connectionAnnouncer;
+          }
+
+          function announceConnectionStatus(message) {
+            var announcer = ensureConnectionAnnouncer();
+            if (!announcer) return;
+            announcer.textContent = announcer.textContent === message
+              ? message + '\u00a0'
+              : message;
+          }
+
+          function removeConnectionAnnouncer() {
+            if (!connectionAnnouncer) return;
+            if (typeof connectionAnnouncer.remove === 'function') {
+              connectionAnnouncer.remove();
+            } else if (
+              connectionAnnouncer.parentNode &&
+              typeof connectionAnnouncer.parentNode.removeChild === 'function'
+            ) {
+              connectionAnnouncer.parentNode.removeChild(connectionAnnouncer);
+            }
+            connectionAnnouncer = null;
+          }
+
+          function queueConnectingStatus() {
+            if (!status) return;
+            // The visible message stays a semantic status and remains navigable,
+            // but aria-live is off so the dedicated body-level region is the one
+            // automatic advisory channel. Error states still use setStatus(alert).
+            if (typeof status.setAttribute === 'function') {
+              status.setAttribute('role', 'status');
+              status.setAttribute('data-quiet', 'false');
+              status.setAttribute('data-severity', 'information');
+              status.setAttribute('aria-live', 'off');
+              status.setAttribute('aria-atomic', 'true');
+            }
+            status.textContent = '';
+            ensureConnectionAnnouncer();
+            connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
+              connectionAnnouncementTimerId = null;
+              if (childConnected) return;
+              var message =
+                'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.';
+              status.textContent = message;
+              announceConnectionStatus(message);
+            }, 250);
+          }'''
+
+          queue_pattern = re.compile(
+              r"  function queueConnectingStatus\(\) \{.*?\n  \}\n\n  function setImportantStyle",
+              re.S,
+          )
+          if 'function ensureConnectionAnnouncer()' not in bridge:
+              bridge, count = queue_pattern.subn(
+                  dedicated_block + "\n\n  function setImportantStyle",
+                  bridge,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit(f'expected one queueConnectingStatus block, replaced {count}')
+
+          cleanup_old = """    if (connectionAnnouncementTimerId !== null) {
+              window.clearTimeout(connectionAnnouncementTimerId);
+              connectionAnnouncementTimerId = null;
+            }
+            parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
+          """
+          cleanup_new = """    if (connectionAnnouncementTimerId !== null) {
+              window.clearTimeout(connectionAnnouncementTimerId);
+              connectionAnnouncementTimerId = null;
+            }
+            removeConnectionAnnouncer();
+            parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
+          """
+          if 'removeConnectionAnnouncer();\n    parentReadyTimerIds.forEach' not in bridge:
+              if cleanup_old not in bridge:
+                  raise SystemExit('unload cleanup anchor missing')
+              bridge = bridge.replace(cleanup_old, cleanup_new, 1)
+
+          bridge_path.write_text(bridge)
+
+          test = r'''// @vitest-environment jsdom
+          import { readFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          import { describe, expect, it, vi } from 'vitest';
+          import {
+            QUALTRICS_BRIDGE_BUILD,
+            QUALTRICS_CHILD_READY_MESSAGE,
+          } from '../src/result-sink';
+
+          function trackedStyle() {
+            const values: Record<string, string> = {};
+            return {
+              values,
+              style: {
+                setProperty(property: string, value: string) { values[property] = value; },
+                getPropertyValue(property: string) { return values[property] ?? ''; },
+                getPropertyPriority() { return ''; },
+              },
+            };
+          }
+
+          function createRuntime() {
+            const bridge = readFileSync(
+              resolve(process.cwd(), '../integrations/qualtrics/qualtrics-question.js'),
+              'utf8',
+            );
+            let onReady: (() => void) | undefined;
+            let onUnload: (() => void) | undefined;
+            let receiveMessage: ((event: MessageEvent) => void) | undefined;
+            const timers: Array<{ callback: () => void; delay: number }> = [];
+            const frameWindow = { postMessage: vi.fn() };
+            const iframeStyle = trackedStyle();
+            const liveStyle = trackedStyle();
+            const statusStyle = trackedStyle();
+            const bodyStyle = trackedStyle();
+            const htmlStyle = trackedStyle();
+            const statusAttributes: Record<string, string> = {};
+            const announcerAttributes: Record<string, string> = {};
+            const originalParent = {
+              appendChild(node: any) { node.parentNode = originalParent; },
+              insertBefore(node: any) { node.parentNode = originalParent; },
+            };
+            const liveQuestion: any = {
+              style: liveStyle.style,
+              parentNode: originalParent,
+              nextSibling: null,
+              getAttribute(name: string) {
+                return name === 'data-aqp-package-build' ? QUALTRICS_BRIDGE_BUILD : null;
+              },
+            };
+            const iframe = {
+              contentWindow: frameWindow,
+              style: iframeStyle.style,
+              setAttribute: vi.fn(),
+              removeAttribute: vi.fn(),
+              addEventListener: vi.fn(),
+              removeEventListener: vi.fn(),
+            };
+            const status = {
+              textContent: '',
+              style: statusStyle.style,
+              scrollIntoView: vi.fn(),
+              setAttribute(name: string, value: string) { statusAttributes[name] = value; },
+            };
+            const body: any = {
+              style: bodyStyle.style,
+              children: [] as any[],
+              appendChild(node: any) {
+                node.parentNode = body;
+                if (!body.children.includes(node)) body.children.push(node);
+              },
+              removeChild(node: any) {
+                body.children = body.children.filter((entry: any) => entry !== node);
+                node.parentNode = null;
+              },
+            };
+            const announcer: any = {
+              textContent: '',
+              style: {},
+              parentNode: null,
+              setAttribute(name: string, value: string) { announcerAttributes[name] = value; },
+              remove: vi.fn(function removeAnnouncer() {
+                if (announcer.parentNode?.removeChild) announcer.parentNode.removeChild(announcer);
+              }),
+            };
+            const documentRef = {
+              body,
+              documentElement: { style: htmlStyle.style },
+              createElement(tagName: string) {
+                if (tagName !== 'div') throw new Error(`Unexpected test element ${tagName}`);
+                return announcer;
+              },
+              getElementById(id: string) {
+                if (id === 'accessible-questionnaire-frame') return iframe;
+                if (id === 'accessible-questionnaire-collection-status') return status;
+                if (id === 'accessible-questionnaire-live-question') return liveQuestion;
+                if (id === 'accessible-questionnaire-recorded-summary') return { getAttribute: () => '0' };
+                return null;
+              },
+            };
+            const hideNextButton = vi.fn();
+            const showNextButton = vi.fn();
+            const clickNextButton = vi.fn();
+            const setJSEmbeddedData = vi.fn();
+            const fakeQualtrics = {
+              SurveyEngine: {
+                addOnReady(callback: () => void) { onReady = callback; },
+                addOnUnload(callback: () => void) { onUnload = callback; },
+                setJSEmbeddedData,
+              },
+            };
+            const fakeWindow = {
+              CSS: { supports: () => true },
+              navigator: { onLine: true },
+              setTimeout(callback: () => void, delay: number) {
+                timers.push({ callback, delay });
+                return timers.length;
+              },
+              clearTimeout: vi.fn(),
+              addEventListener(type: string, listener: EventListener) {
+                if (type === 'message') receiveMessage = listener as (event: MessageEvent) => void;
+              },
+              removeEventListener: vi.fn(),
+            };
+
+            new Function('Qualtrics', 'document', 'window', bridge)(fakeQualtrics, documentRef, fakeWindow);
+            onReady!.call({ hideNextButton, showNextButton, clickNextButton });
+
+            return {
+              timers,
+              frameWindow,
+              iframe,
+              status,
+              statusAttributes,
+              announcer,
+              announcerAttributes,
+              hideNextButton,
+              showNextButton,
+              clickNextButton,
+              setJSEmbeddedData,
+              receiveMessage: (event: MessageEvent) => receiveMessage!(event),
+              unload: () => onUnload!(),
+            };
+          }
+
+          describe('RF-01 successor Qualtrics connection announcement', () => {
+            it('uses one pre-registered body-level polite channel for the advisory Connecting state', () => {
+              const runtime = createRuntime();
+
+              expect(runtime.status.textContent).toBe('');
+              expect(runtime.statusAttributes.role).toBe('status');
+              expect(runtime.statusAttributes['aria-live']).toBe('off');
+              expect(runtime.statusAttributes['aria-atomic']).toBe('true');
+              expect(runtime.statusAttributes['data-severity']).toBe('information');
+              expect(runtime.announcer.textContent).toBe('');
+              expect(runtime.announcerAttributes.role).toBe('status');
+              expect(runtime.announcerAttributes['aria-live']).toBe('polite');
+              expect(runtime.announcerAttributes['aria-atomic']).toBe('true');
+              expect(runtime.hideNextButton).toHaveBeenCalledOnce();
+              expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
+
+              runtime.timers.find(({ delay }) => delay === 250)!.callback();
+
+              expect(runtime.status.textContent).toContain('Connecting questionnaire package');
+              expect(runtime.announcer.textContent).toBe(runtime.status.textContent);
+              expect(runtime.statusAttributes.role).toBe('status');
+              expect(runtime.statusAttributes['aria-live']).toBe('off');
+
+              runtime.timers.find(({ delay }) => delay === 8000)!.callback();
+
+              expect(runtime.status.textContent).toContain('questionnaire connection did not start');
+              expect(runtime.status.textContent).not.toContain('questionnaire is connected');
+              expect(runtime.statusAttributes.role).toBe('alert');
+              expect(runtime.statusAttributes['aria-live']).toBe('assertive');
+              expect(runtime.statusAttributes['aria-atomic']).toBe('true');
+              expect(runtime.statusAttributes['data-severity']).toBe('error');
+              expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
+              expect(runtime.showNextButton).toHaveBeenCalledOnce();
+            });
+
+            it('cancels the pending advisory if the verified child connects first', () => {
+              const runtime = createRuntime();
+
+              runtime.receiveMessage({
+                source: runtime.frameWindow,
+                origin: 'https://sasoup-yr.github.io',
+                data: {
+                  type: QUALTRICS_CHILD_READY_MESSAGE,
+                  protocolVersion: 2,
+                  bridgeBuild: QUALTRICS_BRIDGE_BUILD,
+                },
+              } as unknown as MessageEvent);
+
+              expect(runtime.status.textContent).toContain('questionnaire is connected');
+              expect(runtime.statusAttributes.role).toBe('status');
+              expect(runtime.statusAttributes['aria-live']).toBe('off');
+              expect(runtime.statusAttributes['aria-atomic']).toBe('true');
+              expect(runtime.statusAttributes['data-severity']).toBe('information');
+              expect(runtime.announcer.textContent).toBe('');
+              expect(runtime.iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
+              expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_READY', '1');
+
+              runtime.timers.find(({ delay }) => delay === 250)!.callback();
+              expect(runtime.status.textContent).toContain('questionnaire is connected');
+              expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
+              expect(runtime.announcer.textContent).toBe('');
+            });
+
+            it('removes the scoped announcer on Qualtrics unload', () => {
+              const runtime = createRuntime();
+              expect(runtime.announcer.parentNode).not.toBeNull();
+              runtime.unload();
+              expect(runtime.announcer.remove).toHaveBeenCalledOnce();
+              expect(runtime.announcer.parentNode).toBeNull();
+            });
+          });
+          '''
+          # The heredoc indentation is part of the Python string; normalize only the
+          # common leading spaces introduced by YAML so the TypeScript stays readable.
+          import textwrap
+          Path('source/tests/rf01-qualtrics-connection-alert.test.ts').write_text(textwrap.dedent(test))
+          PY
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run targeted RF-01 successor tests
+        working-directory: source
+        run: npx vitest run tests/rf01-qualtrics-connection-alert.test.ts
+
+      - name: Run full unit/component suite
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Commit candidate
+        run: |
+          git add integrations/qualtrics/qualtrics-question.js source/tests/rf01-qualtrics-connection-alert.test.ts
+          if git diff --cached --quiet; then
+            echo "Candidate already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add dedicated R3-A26 connection announcer"
+          git push origin HEAD:agent/fix-rf01-r3-a26-dedicated-announcer
