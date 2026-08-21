@@ -95,7 +95,9 @@ Canonical run `32478383479` completed successfully on evidence head `656c112e85c
 
 ## Final manual gate
 
-One focused Safari/VoiceOver silent-attempt retest is required. If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
+Use only the immutable `/rf06-announcer-preview/` page in Safari with VoiceOver. Start the ratings, expand voice input, start one attempt, remain silent and do not select Stop. After Safari says `Current tab stopped capturing sound`, record whether VoiceOver automatically announces the AQP error beginning `No speech was detected...`. Do not move the VoiceOver cursor to find the visible text.
+
+If VoiceOver still announces only Safari's capture-stop message and not the appended AQP error, **R3-A13 remains F and RF-06 stops here**. No further timing, urgency, focus or duplicated-speech experiments will be pursued.
 
 ## Next repair family
 
