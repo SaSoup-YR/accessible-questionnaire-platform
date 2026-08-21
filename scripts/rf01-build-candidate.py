@@ -112,7 +112,7 @@ announcer_block = """  function cancelPendingConnectionAnnouncement() {
   }
 
   function setImportantStyle"""
-bridge, count = announcer_pattern.subn(announcer_block, bridge, count=1)
+bridge, count = announcer_pattern.subn(lambda _: announcer_block, bridge, count=1)
 if count != 1:
     raise SystemExit(f"announcer block: expected one match, found {count}")
 
