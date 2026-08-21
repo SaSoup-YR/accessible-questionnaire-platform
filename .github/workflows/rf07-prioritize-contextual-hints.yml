@@ -1,0 +1,185 @@
+name: One-time RF-07 contextual-hint prioritization
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    if: github.event.pull_request.head.ref == 'agent/fix-rf07-speech-recognition-reliability'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out RF-07 candidate
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-rf07-speech-recognition-reliability
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Prioritize safety-critical contextual hints before fallback wrappers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('source/src/voice-input.ts')
+          text = source.read_text()
+          old = """export function buildRatingSpeechHints(
+            dimension: TlxDimension,
+            allowedValues: readonly number[],
+            landmarks: readonly RatingLandmark[],
+            includeVisibleLabels = true,
+          ) {
+            const hints: string[] = [];
+            for (const value of allowedValues) {
+              const spoken = Number.isInteger(value) && value >= 0 && value <= 100
+                ? integerWords(value)
+                : String(value);
+              hints.push(
+                String(value),
+                spoken,
+                `number ${spoken}`,
+                // Contextual biasing is only a probabilistic hint. Bias the frozen
+                // negated safety phrase alongside the affirmative value so the hint list
+                // does not exclusively favour an answer when the participant says
+                // \"not <value>\". The parser still rejects the negated transcript.
+                `not ${spoken}`,
+                `option ${spoken}`,
+                `rating ${spoken}`,
+                `value ${spoken}`,
+                `answer ${spoken}`,
+                `choice ${spoken}`,
+              );
+              if (includeVisibleLabels) {
+                const label = dimension.responseLabels?.[String(value)];
+                if (label?.trim()) {
+                  hints.push(label.trim(), `answer ${label.trim()}`, `choose ${label.trim()}`);
+                }
+              }
+            }
+            if (includeVisibleLabels) {
+              hints.push(
+                dimension.lowAnchor,
+                dimension.highAnchor,
+                ...(dimension.voiceLowAliases ?? []),
+                ...(dimension.voiceHighAliases ?? []),
+              );
+              if (landmarks.length === 5) {
+                hints.push('middle', 'midpoint', `closer to ${dimension.lowAnchor}`, `closer to ${dimension.highAnchor}`);
+              }
+            }
+            return [...new Set(hints.map((hint) => hint.trim()).filter(Boolean))];
+          }
+          """
+          new = """export function buildRatingSpeechHints(
+            dimension: TlxDimension,
+            allowedValues: readonly number[],
+            landmarks: readonly RatingLandmark[],
+            includeVisibleLabels = true,
+          ) {
+            const priorityHints: string[] = [];
+            const fallbackHints: string[] = [];
+            for (const value of allowedValues) {
+              const spoken = Number.isInteger(value) && value >= 0 && value <= 100
+                ? integerWords(value)
+                : String(value);
+
+              // configureVoiceHints deliberately caps the experimental phrase list.
+              // Put every value's exact forms and the matching negation-preservation
+              // cue ahead of convenience wrappers so a long scale cannot starve its
+              // higher values merely because lower values have many synonyms.
+              priorityHints.push(
+                String(value),
+                spoken,
+                `number ${spoken}`,
+                `not ${spoken}`,
+              );
+              fallbackHints.push(
+                `option ${spoken}`,
+                `rating ${spoken}`,
+                `value ${spoken}`,
+                `answer ${spoken}`,
+                `choice ${spoken}`,
+              );
+              if (includeVisibleLabels) {
+                const label = dimension.responseLabels?.[String(value)];
+                if (label?.trim()) {
+                  priorityHints.push(label.trim());
+                  fallbackHints.push(`answer ${label.trim()}`, `choose ${label.trim()}`);
+                }
+              }
+            }
+            if (includeVisibleLabels) {
+              priorityHints.push(
+                dimension.lowAnchor,
+                dimension.highAnchor,
+                ...(dimension.voiceLowAliases ?? []),
+                ...(dimension.voiceHighAliases ?? []),
+              );
+              if (landmarks.length === 5) {
+                priorityHints.push('middle', 'midpoint', `closer to ${dimension.lowAnchor}`, `closer to ${dimension.highAnchor}`);
+              }
+            }
+            return [...new Set([...priorityHints, ...fallbackHints].map((hint) => hint.trim()).filter(Boolean))];
+          }
+          """
+          if old not in text:
+              raise SystemExit('Expected buildRatingSpeechHints block was not found; refusing an unbounded patch.')
+          source.write_text(text.replace(old, new, 1))
+
+          tests = Path('source/tests/rf07-speech-hints.test.ts')
+          test_text = tests.read_text()
+          marker = "\n});\n"
+          if test_text.count(marker) != 1:
+              raise SystemExit('Unexpected RF-07 test-file shape; refusing an unbounded patch.')
+          added = r'''
+
+            it('keeps every 21-value NASA essential hint ahead of the runtime 120-phrase cap', () => {
+              const definition = getQuestionnaireDefinition('nasa-tlx-raw')!;
+              const item = definition.items[0];
+              const values = buildRatingValues(definition);
+              const applied = buildRatingSpeechHints(item, values, [], true).slice(0, 120);
+
+              expect(applied).toContain('100');
+              expect(applied).toContain('one hundred');
+              expect(applied).toContain('number one hundred');
+              expect(applied).toContain('not one hundred');
+              expect(applied).toContain(item.lowAnchor);
+              expect(applied).toContain(item.highAnchor);
+            });'''
+          tests.write_text(test_text.replace(marker, added + marker, 1))
+          PY
+
+      - name: Verify refined candidate and rebuild generated release
+        working-directory: source
+        run: |
+          npm ci
+          npm test -- --run
+          npm run build:release
+
+      - name: Commit refined source, regressions and generated release
+        run: |
+          git add \
+            source/src/voice-input.ts \
+            source/tests/rf07-speech-hints.test.ts \
+            source/demo/accessible-nasa-tlx-v0.7.html \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
+            questionnaires
+          if git diff --cached --quiet; then
+            echo "RF-07 hint prioritization is already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Prioritize RF-07 contextual speech hints"
+          git push origin HEAD:agent/fix-rf07-speech-recognition-reliability
