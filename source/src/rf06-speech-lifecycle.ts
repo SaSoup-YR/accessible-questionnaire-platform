@@ -24,6 +24,8 @@ type RecognitionLike = {
   onresult: ((event: RecognitionEventLike) => void) | null;
   onerror: ((event: RecognitionErrorLike) => void) | null;
   onend: (() => void) | null;
+  abort?: () => void;
+  stop?: () => void;
 };
 
 type InternalComponent = {
@@ -59,6 +61,7 @@ type InternalComponent = {
   __rf06VoiceWatchdogTimerId?: number | null;
   __rf06ListeningAnnouncementTimerId?: number | null;
   __rf06VoiceNoticeTimerId?: number | null;
+  __rf06EscapeHandler?: ((event: KeyboardEvent) => void) | null;
   __rf06MessageChannel?: 'status' | 'error';
 };
 
@@ -88,6 +91,13 @@ function clearLifecycleTimers(component: InternalComponent) {
   clearTimer(component, '__rf06VoiceWatchdogTimerId');
   clearTimer(component, '__rf06ListeningAnnouncementTimerId');
   clearTimer(component, '__rf06VoiceNoticeTimerId');
+}
+
+function clearEscapeCancellation(component: InternalComponent) {
+  const handler = component.__rf06EscapeHandler;
+  if (!handler) return;
+  document.removeEventListener('keydown', handler, true);
+  component.__rf06EscapeHandler = null;
 }
 
 function scheduleListeningAnnouncement(component: InternalComponent, recognition: RecognitionLike) {
@@ -125,15 +135,53 @@ function scheduleNoSpeechNotice(component: InternalComponent, message: string) {
   }, VOICE_LIVE_REGION_DELAY_MS);
 }
 
-function stopVoiceInput(component: InternalComponent) {
+function cancelVoiceInput(component: InternalComponent) {
   if (component.voiceState !== 'listening') return;
-  component.releaseRecognition();
+
+  const recognition = component.recognition;
+  clearLifecycleTimers(component);
+  clearEscapeCancellation(component);
+
+  if (recognition) {
+    if (component.recognition === recognition) component.recognition = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      // Cancellation must not attempt to turn a spoken Voice Access command
+      // into a questionnaire result. abort() is the Web Speech cancellation
+      // primitive; stop() is retained only as a compatibility fallback.
+      if (typeof recognition.abort === 'function') recognition.abort();
+      else recognition.stop?.();
+    } catch {
+      // A one-shot recogniser may already have ended while the cancellation
+      // key or button was being processed. The safe local state still returns.
+    }
+  }
+
   component.pendingVoiceAnswer = null;
   component.__rf06MessageChannel = 'status';
   component.showVoiceNotice(MANUAL_STOP_MESSAGE);
   void component.updateComplete.then(() => {
     component.querySelector<HTMLButtonElement>('[data-voice-start]')?.focus();
   });
+}
+
+function installEscapeCancellation(component: InternalComponent, recognition: RecognitionLike) {
+  clearEscapeCancellation(component);
+  const handler = (event: KeyboardEvent) => {
+    if (
+      event.key !== 'Escape' ||
+      component.recognition !== recognition ||
+      component.voiceState !== 'listening'
+    ) {
+      return;
+    }
+    event.preventDefault();
+    cancelVoiceInput(component);
+  };
+  component.__rf06EscapeHandler = handler;
+  document.addEventListener('keydown', handler, true);
 }
 
 /**
@@ -181,6 +229,11 @@ export function installRf06SpeechLifecycle() {
             not recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons
             remain available. While listening, you can stop the attempt at any time.
           </p>
+          ${this.voiceState === 'listening'
+            ? html`<p class="support-boundary voice-cancel-help">
+                Press Escape to stop without choosing or changing an answer.
+              </p>`
+            : nothing}
           <div class="button-row compact">
             <button
               class="secondary-button large-answer-button"
@@ -196,7 +249,8 @@ export function installRf06SpeechLifecycle() {
                   class="secondary-button large-answer-button"
                   type="button"
                   data-voice-stop
-                  @click=${() => stopVoiceInput(this)}
+                  aria-keyshortcuts="Escape"
+                  @click=${() => cancelVoiceInput(this)}
                 >
                   Stop voice input
                 </button>`
@@ -247,6 +301,7 @@ export function installRf06SpeechLifecycle() {
     recognition = this.recognition,
   ) {
     clearLifecycleTimers(this);
+    clearEscapeCancellation(this);
     originalReleaseRecognition.call(this, recognition);
   };
 
@@ -259,12 +314,14 @@ export function installRf06SpeechLifecycle() {
   ) {
     ensureAccessibilityAnnouncer();
     clearLifecycleTimers(this);
+    clearEscapeCancellation(this);
     originalStartVoiceInput.call(this, context, first, second, allowContextualHints);
 
     const recognition = this.recognition;
     if (!recognition || this.voiceState !== 'listening') return;
 
     scheduleListeningAnnouncement(this, recognition);
+    installEscapeCancellation(this, recognition);
 
     const originalOnError = recognition.onerror;
     recognition.onerror = (event) => {
