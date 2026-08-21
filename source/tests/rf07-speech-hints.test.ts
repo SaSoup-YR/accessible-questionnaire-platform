@@ -10,7 +10,7 @@ import {
 } from '../src/voice-input';
 
 describe('RF-07 speech proposal and negation safety', () => {
-  it('biases the frozen SUS command and its negated safety phrase without wrapper noise', () => {
+  it('biases the frozen SUS command and its negated safety phrase without removing proven hints', () => {
     const definition = getQuestionnaireDefinition('system-usability-scale')!;
     const item = definition.items[0];
     const values = buildRatingValues(definition);
@@ -21,11 +21,13 @@ describe('RF-07 speech proposal and negation safety', () => {
     expect(hints).toContain('number four');
     expect(hints).toContain('not four');
 
-    expect(hints).not.toContain('option four');
-    expect(hints).not.toContain('rating four');
-    expect(hints).not.toContain('value four');
-    expect(hints).not.toContain('answer four');
-    expect(hints).not.toContain('choice four');
+    // RF-07 is additive: the previously tested answer wrappers remain available
+    // while the new safety hint is introduced alongside them.
+    expect(hints).toContain('option four');
+    expect(hints).toContain('rating four');
+    expect(hints).toContain('value four');
+    expect(hints).toContain('answer four');
+    expect(hints).toContain('choice four');
     expect(new Set(hints).size).toBe(hints.length);
   });
 
