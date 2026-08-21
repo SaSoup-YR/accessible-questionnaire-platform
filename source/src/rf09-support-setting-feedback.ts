@@ -1,21 +1,29 @@
 import { html } from 'lit';
 import { AccessibleNasaTlx } from './accessible-nasa-tlx';
-import {
-  announceForAssistiveTechnology,
-  ensureAccessibilityAnnouncer,
-} from './accessibility-announcer';
 
 type SupportContext = 'intro' | 'toolbar';
 type SupportScope = 'all' | 'presentation-only';
+type AnnouncementSlot = 0 | 1;
 
 type InternalComponent = HTMLElement & {
   audioGuidance: boolean;
+  statusMessage: string;
+  updateComplete: Promise<unknown>;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
   requestUpdate(): void;
   __rf09SupportStatusMessage?: string;
+  __rf09SupportAnnouncementMessage?: string;
+  __rf09SupportAnnouncementSlot?: AnnouncementSlot;
+  __rf09SupportAnnouncementGeneration?: number;
+  __rf09SupportAnnouncementTimerId?: number | null;
 };
 
-const SUPPORT_ANNOUNCEMENT_DELAY_MS = 100;
+// The first candidate used a 100 ms body-level role=log mutation. The real
+// VoiceOver/Safari re-test exposed only the native selected/checked state. Keep
+// the status regions present from the initial render, then wait for the native
+// control announcement to settle before updating one alternating role=status
+// region. This remains timely while avoiding a collision with the control state.
+const SUPPORT_ANNOUNCEMENT_DELAY_MS = 650;
 const LARGE_TEXT_MESSAGE = 'Large text selected.';
 const STANDARD_TEXT_MESSAGE = 'Standard text selected.';
 const RECOVERY_ON_MESSAGE =
@@ -26,6 +34,15 @@ const AUDIO_ON_MESSAGE =
   'Built-in audio guidance is on. New questions, selected answers, voice proposals, simpler help, recovery summaries, errors and completion feedback will be spoken while this page remains open.';
 const AUDIO_OFF_MESSAGE =
   'Built-in audio guidance is off. New questions and feedback will not be spoken automatically.';
+
+const SUPPORT_MESSAGES = new Set([
+  LARGE_TEXT_MESSAGE,
+  STANDARD_TEXT_MESSAGE,
+  RECOVERY_ON_MESSAGE,
+  RECOVERY_OFF_MESSAGE,
+  AUDIO_ON_MESSAGE,
+  AUDIO_OFF_MESSAGE,
+]);
 
 function messageForSupportChange(target: HTMLInputElement) {
   if (!target.closest('.support-settings')) return null;
@@ -48,11 +65,95 @@ function messageForSupportChange(target: HTMLInputElement) {
 
 function originalHandlerAlreadySpeaks(component: InternalComponent, target: HTMLInputElement) {
   // The existing component uses browser speech synthesis for setting feedback
-  // whenever automatic audio is on. Do not add a second live-region message in
-  // that state: the visible confirmation is still updated, but only one AQP
-  // announcement channel is used for the change.
+  // whenever automatic audio is on. Do not add a second status-region message
+  // in that state. Turning audio off is different: speech has just stopped, so
+  // the alternating status region becomes the sole AQP announcement channel.
   if (target.id.endsWith('-audio')) return target.checked;
   return component.audioGuidance;
+}
+
+function replaceStaticLabelText(
+  input: HTMLInputElement,
+  original: string,
+  replacement: string,
+) {
+  const label = input.closest('label');
+  if (!label) return;
+
+  const textNode = [...label.childNodes].find(
+    (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === original,
+  );
+  if (textNode?.textContent !== undefined) {
+    textNode.textContent = textNode.textContent.replace(original, replacement);
+  }
+
+  // Keep the unique visible wording and the programmatic voice target exactly
+  // aligned. This avoids the observed Voice Access "Which one?" collision with
+  // the separate "Standard 21-value scale" control.
+  input.setAttribute('aria-label', replacement);
+}
+
+function ensureUniqueTextSizeLabels(component: InternalComponent) {
+  for (const standard of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="standard"]',
+  )) {
+    replaceStaticLabelText(standard, 'Standard', 'Standard text');
+  }
+  for (const large of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="large"]',
+  )) {
+    replaceStaticLabelText(large, 'Large', 'Large text');
+  }
+}
+
+function scheduleSupportAnnouncement(
+  component: InternalComponent,
+  target: HTMLInputElement,
+  message: string,
+) {
+  if (
+    component.__rf09SupportAnnouncementTimerId !== null &&
+    component.__rf09SupportAnnouncementTimerId !== undefined
+  ) {
+    window.clearTimeout(component.__rf09SupportAnnouncementTimerId);
+    component.__rf09SupportAnnouncementTimerId = null;
+  }
+
+  const generation = (component.__rf09SupportAnnouncementGeneration ?? 0) + 1;
+  component.__rf09SupportAnnouncementGeneration = generation;
+  component.__rf09SupportAnnouncementMessage = '';
+
+  // The established target-level handler has already run. Suppress only its
+  // matching support message in the older global live region so this change has
+  // one AQP status channel rather than two. Unrelated page status is untouched.
+  if (SUPPORT_MESSAGES.has(component.statusMessage)) component.statusMessage = '';
+  component.requestUpdate();
+
+  if (originalHandlerAlreadySpeaks(component, target)) return;
+
+  void component.updateComplete.then(() => {
+    if (
+      !component.isConnected ||
+      component.__rf09SupportAnnouncementGeneration !== generation
+    ) {
+      return;
+    }
+
+    component.__rf09SupportAnnouncementTimerId = window.setTimeout(() => {
+      component.__rf09SupportAnnouncementTimerId = null;
+      if (
+        !component.isConnected ||
+        component.__rf09SupportAnnouncementGeneration !== generation
+      ) {
+        return;
+      }
+
+      component.__rf09SupportAnnouncementSlot =
+        component.__rf09SupportAnnouncementSlot === 0 ? 1 : 0;
+      component.__rf09SupportAnnouncementMessage = message;
+      component.requestUpdate();
+    }, SUPPORT_ANNOUNCEMENT_DELAY_MS);
+  });
 }
 
 function recordSupportFeedback(
@@ -60,20 +161,8 @@ function recordSupportFeedback(
   target: HTMLInputElement,
   message: string,
 ) {
-  ensureAccessibilityAnnouncer();
   component.__rf09SupportStatusMessage = message;
-  component.requestUpdate();
-
-  if (originalHandlerAlreadySpeaks(component, target)) return;
-
-  // Angular CDK and React Aria both use a stable body-level announcer and a
-  // non-zero delay/fresh DOM mutation for cross-browser reliability. The AQP
-  // announcer exists before the delayed message; append one polite item after
-  // the native radio/checkbox state announcement has had time to settle.
-  window.setTimeout(() => {
-    if (!component.isConnected) return;
-    announceForAssistiveTechnology(message, 'polite');
-  }, SUPPORT_ANNOUNCEMENT_DELAY_MS);
+  scheduleSupportAnnouncement(component, target, message);
 }
 
 function handleSupportChange(component: InternalComponent, event: Event) {
@@ -98,7 +187,6 @@ let installed = false;
 export function installRf09SupportSettingFeedback() {
   if (installed) return;
   installed = true;
-  ensureAccessibilityAnnouncer();
 
   const prototype = AccessibleNasaTlx.prototype as unknown as InternalComponent;
   const originalRenderSupportSettings = prototype.renderSupportSettings;
@@ -108,7 +196,14 @@ export function installRf09SupportSettingFeedback() {
     context: SupportContext,
     scope: SupportScope,
   ) {
-    const message = this.__rf09SupportStatusMessage ?? '';
+    const visibleMessage = this.__rf09SupportStatusMessage ?? '';
+    const announcementMessage = this.__rf09SupportAnnouncementMessage ?? '';
+    const announcementSlot = this.__rf09SupportAnnouncementSlot ?? 0;
+
+    // The original static text is not a Lit dynamic part, so normalise it after
+    // each committed render without changing the controls or their event logic.
+    void this.updateComplete.then(() => ensureUniqueTextSizeLabels(this));
+
     return html`
       <div
         class="rf09-support-setting-region"
@@ -116,10 +211,24 @@ export function installRf09SupportSettingFeedback() {
       >
         ${originalRenderSupportSettings.call(this, context, scope)}
         <p
+          class="sr-only rf09-support-setting-announcement"
+          data-rf09-support-announcement="0"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >${announcementSlot === 0 ? announcementMessage : ''}</p>
+        <p
+          class="sr-only rf09-support-setting-announcement"
+          data-rf09-support-announcement="1"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >${announcementSlot === 1 ? announcementMessage : ''}</p>
+        <p
           class="support-setting-feedback"
           data-rf09-support-feedback
-          ?hidden=${!message}
-        >${message}</p>
+          ?hidden=${!visibleMessage}
+        >${visibleMessage}</p>
       </div>
     `;
   };
