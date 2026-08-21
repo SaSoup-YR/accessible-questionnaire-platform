@@ -1,12 +1,15 @@
 # RF-09 / A33 support-setting feedback candidate — 21 August 2026
 
-Status: **research complete; implementation and focused automated tests committed; full CI and manual R3/R4 adjudication pending**
+Status: **research, implementation, focused tests, generated-release synchronization and immutable preview complete; final canonical read-only CI and manual R3/R4 adjudication pending**
 
 ## Identity and audit boundary
 
 - Stacked base: final retained RF-06 branch head `e45a59d25e2188f194484c8dadd877cdbdf80ea1`.
 - Branch: `agent/fix-rf09-support-setting-feedback`.
-- Initial RF-09 source/test head before this evidence commit: `0e8feb5eedd4bb1b0fdd654884a25881c292150c`.
+- Synchronized RF-09 runtime and immutable preview source: `d3af4889c4479a41d54f9c6d4754694f2e0233ed`.
+- Immutable preview path: `/rf09-preview/`.
+- Generated synchronization/publish run: `32488814604` — **success**.
+- A documentation-only successor must pass the restored canonical read-only workflow before automated closure.
 - Frozen q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 - RF-09 targets only historical **R3-A33** and **R4-A33**.
 
@@ -95,6 +98,13 @@ No focus call, scroll call, answer write, score calculation or input-route mutat
 ### Cross-browser rendered test
 
 `source/tests/e2e-support/rf09-support-setting-feedback.spec.ts` runs in Chromium, Firefox and WebKit. It changes all three frozen A33 settings after selecting a rating and checks visible feedback, polite-channel output where applicable, retained input focus, retained answer and absence of assertive output.
+
+### Automated run history
+
+- Initial implementation run `32487433179` failed the three new component tests. Diagnosis showed that patching `connectedCallback` after custom-element registration does not replace the lifecycle callback cached by the platform, and test teardown removed the pre-created announcer DOM. No manual evidence was collected from that candidate.
+- The implementation was corrected to attach the bubbling `change` observer structurally in the rendered settings wrapper and to recreate the stable announcer for each isolated test.
+- Corrected-source canonical run `32487897508` passed unit/component tests, production build, rendered-browser accessibility checks, Chromium/Firefox/WebKit support checks and release generation. It failed only the generated-release freshness gate, as expected before new CSS/JS output was committed.
+- Synchronization run `32488814604` regenerated release files, restored the canonical read-only workflow before committing, and published the immutable `/rf09-preview/` page. The preview `SOURCE-SHA.txt` is bound to runtime `d3af4889c4479a41d54f9c6d4754694f2e0233ed`.
 
 ## Evidence boundary and manual gate
 
