@@ -39,11 +39,14 @@ afterEach(() => {
 });
 
 describe('RF-07 on-device speech component route', () => {
-  it('uses local en-US after the browser reports local en-GB unavailable', async () => {
+  it('uses the preferred local en-US dictation-capable model', async () => {
     const instances: FakeRecognition[] = [];
     class FakeRecognition {
-      static available = vi.fn(async ({ langs }: { langs: string[] }) =>
-        langs[0] === 'en-GB' ? 'unavailable' as const : 'available' as const);
+      static available = vi.fn(async ({ langs, quality }: { langs: string[]; quality: string }) => {
+        expect(langs).toEqual(['en-US']);
+        expect(quality).toBe('dictation');
+        return 'available' as const;
+      });
       lang = '';
       processLocally = false;
       continuous = false;
@@ -69,21 +72,24 @@ describe('RF-07 on-device speech component route', () => {
     component.querySelector<HTMLButtonElement>('[data-voice-start]')!.click();
     await settle(component);
 
-    expect(FakeRecognition.available.mock.calls.map(([options]) => options.langs[0]))
-      .toEqual(['en-GB', 'en-US']);
+    expect(FakeRecognition.available).toHaveBeenCalledOnce();
     expect(instances).toHaveLength(1);
     expect(component.textContent).toContain('Proposed answer');
     expect(component.textContent).toContain('50 for Mental Demand');
     expect(component.querySelector<HTMLInputElement>('input[value="50"]')?.checked).toBe(false);
   });
 
-  it('installs a downloadable model without starting or changing an answer', async () => {
+  it('installs a downloadable dictation model without starting or changing an answer', async () => {
     let installed = false;
     let startCount = 0;
     class FakeRecognition {
-      static available = vi.fn(async () =>
-        installed ? 'available' as const : 'downloadable' as const);
-      static install = vi.fn(async () => {
+      static available = vi.fn(async ({ quality }: { quality: string }) => {
+        expect(quality).toBe('dictation');
+        return installed ? 'available' as const : 'downloadable' as const;
+      });
+      static install = vi.fn(async ({ langs, quality }: { langs: string[]; quality: string }) => {
+        expect(langs).toEqual(['en-US']);
+        expect(quality).toBe('dictation');
         installed = true;
         return true;
       });
@@ -108,11 +114,11 @@ describe('RF-07 on-device speech component route', () => {
 
     expect(FakeRecognition.install).toHaveBeenCalledOnce();
     expect(startCount).toBe(0);
-    expect(component.textContent).toContain('on-device English speech model (en-GB) is ready');
+    expect(component.textContent).toContain('on-device English dictation model (en-US) is ready');
     expect(component.querySelectorAll<HTMLInputElement>('.rating-option input:checked')).toHaveLength(0);
   });
 
-  it('retries remotely once when a prepared local recognizer rejects its language', async () => {
+  it('retries remotely once when a prepared local dictation recognizer rejects its language', async () => {
     const instances: FakeRecognition[] = [];
     class FakeRecognition {
       static available = vi.fn(async () => 'available' as const);
@@ -145,7 +151,7 @@ describe('RF-07 on-device speech component route', () => {
     await settle(component);
 
     expect(instances).toHaveLength(2);
-    expect(instances[0]).toMatchObject({ lang: 'en-GB', processLocally: true });
+    expect(instances[0]).toMatchObject({ lang: 'en-US', processLocally: true });
     expect(instances[1]).toMatchObject({ lang: 'en-GB', processLocally: false });
     expect(FakeRecognition.available).toHaveBeenCalledOnce();
     expect(component.textContent).toContain('Proposed answer');
