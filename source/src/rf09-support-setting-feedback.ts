@@ -5,6 +5,7 @@ import { AccessibleNasaTlx } from './accessible-nasa-tlx';
 type SupportContext = 'intro' | 'toolbar';
 type SupportScope = 'all' | 'presentation-only';
 type NotificationPriority = 'normal' | 'high';
+type SupportChangeSetting = 'automatic-audio';
 
 type AriaNotifyingInput = HTMLInputElement & {
   ariaNotify?: (
@@ -18,25 +19,26 @@ type InternalComponent = HTMLElement & {
   updateComplete: Promise<unknown>;
   renderSupportSettings(context: SupportContext, scope: SupportScope): unknown;
   requestUpdate(): void;
+  recordSupportChange(
+    setting: SupportChangeSetting,
+    from: boolean,
+    to: boolean,
+  ): void;
+  invalidatePendingSubmission(): void;
+  persistProgress(): void;
+  stopReading(announce?: boolean): void;
   __rf09SupportStatusMessage?: string;
   __rf09NotificationGeneration?: number;
   __rf09NotificationTimerId?: number | null;
 };
 
-// When built-in AQP speech is not expected, keep the already-verified polite
-// notification timing: request ariaNotify 400 ms after the native state change;
-// GitHub's fallback then waits 250 ms before its first live-region mutation.
+// RF-09 setting results use one screen-reader/status channel, independent of
+// the optional browser text-to-speech channel. GitHub's production ARIA
+// Notification polyfill waits 250 ms after creating its scoped fallback live
+// region. Request the notification 400 ms after the native state change so the
+// fallback mutation occurs after VoiceOver's immediate checked/selected state
+// while remaining timely.
 const SUPPORT_NOTIFICATION_REQUEST_DELAY_MS = 400;
-
-// Safari/VoiceOver manual evidence showed that speechSynthesis.speak() can be
-// accepted without producing the AQP audio-on confirmation. Do not treat a
-// queued speak() call as proof of audible output. When built-in speech is
-// expected, observe the standard SpeechSynthesis.speaking state for a bounded
-// 800 ms window. If speech actually starts, keep browser speech as the sole AQP
-// channel. If it never starts, cancel any still-pending/paused AQP utterance and
-// fall back to one normal-priority ariaNotify message, avoiding a late duplicate.
-const BUILT_IN_SPEECH_START_GRACE_MS = 800;
-const BUILT_IN_SPEECH_POLL_MS = 50;
 
 const LARGE_TEXT_MESSAGE = 'Large text selected.';
 const STANDARD_TEXT_MESSAGE = 'Standard text selected.';
@@ -89,33 +91,6 @@ function replaceStaticLabelText(
   input.setAttribute('aria-label', replacement);
 }
 
-function prepareSupportControls(component: InternalComponent) {
-  for (const region of component.querySelectorAll<HTMLElement>(
-    '[data-rf09-support-setting-region]',
-  )) {
-    const feedback = region.querySelector<HTMLElement>(
-      '[data-rf09-support-feedback]',
-    );
-    if (!feedback?.id) continue;
-    for (const input of region.querySelectorAll<HTMLInputElement>(
-      '.support-settings input',
-    )) {
-      input.setAttribute('aria-controls', feedback.id);
-    }
-  }
-
-  for (const standard of component.querySelectorAll<HTMLInputElement>(
-    '.text-size-control input[type="radio"][value="standard"]',
-  )) {
-    replaceStaticLabelText(standard, 'Standard', 'Standard text');
-  }
-  for (const large of component.querySelectorAll<HTMLInputElement>(
-    '.text-size-control input[type="radio"][value="large"]',
-  )) {
-    replaceStaticLabelText(large, 'Large', 'Large text');
-  }
-}
-
 function deliverSupportNotification(
   component: InternalComponent,
   target: HTMLInputElement,
@@ -150,54 +125,10 @@ function scheduleSupportNotification(
 
   const generation = (component.__rf09NotificationGeneration ?? 0) + 1;
   component.__rf09NotificationGeneration = generation;
-
-  const browserSpeechExpected = component.audioGuidance;
-  if (!browserSpeechExpected) {
-    component.__rf09NotificationTimerId = window.setTimeout(() => {
-      component.__rf09NotificationTimerId = null;
-      deliverSupportNotification(component, target, message, generation);
-    }, SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
-    return;
-  }
-
-  let waitedMs = 0;
-  const observeBuiltInSpeech = () => {
+  component.__rf09NotificationTimerId = window.setTimeout(() => {
     component.__rf09NotificationTimerId = null;
-    if (
-      !component.isConnected ||
-      !target.isConnected ||
-      component.__rf09NotificationGeneration !== generation
-    ) {
-      return;
-    }
-
-    const synthesis = 'speechSynthesis' in window ? window.speechSynthesis : null;
-    if (synthesis?.speaking) {
-      // The browser has actually begun the AQP utterance. Suppress the AT
-      // fallback so one real setting change still has only one AQP spoken path.
-      return;
-    }
-
-    waitedMs += BUILT_IN_SPEECH_POLL_MS;
-    if (waitedMs < BUILT_IN_SPEECH_START_GRACE_MS) {
-      component.__rf09NotificationTimerId = window.setTimeout(
-        observeBuiltInSpeech,
-        BUILT_IN_SPEECH_POLL_MS,
-      );
-      return;
-    }
-
-    // speak() may leave an utterance queued or paused without ever speaking it.
-    // Remove that late candidate before the AT fallback so it cannot begin after
-    // ariaNotify and create a duplicate confirmation.
-    if (synthesis && (synthesis.pending || synthesis.paused)) synthesis.cancel();
     deliverSupportNotification(component, target, message, generation);
-  };
-
-  component.__rf09NotificationTimerId = window.setTimeout(
-    observeBuiltInSpeech,
-    BUILT_IN_SPEECH_POLL_MS,
-  );
+  }, SUPPORT_NOTIFICATION_REQUEST_DELAY_MS);
 }
 
 function recordSupportFeedback(
@@ -210,9 +141,85 @@ function recordSupportFeedback(
   scheduleSupportNotification(component, target, message);
 }
 
+/**
+ * The base component historically spoke the audio-on setting confirmation with
+ * SpeechSynthesis. That makes the setting result depend on a second, unrelated
+ * output channel and creates an impossible browser-side choice between silent
+ * speech and duplicate VoiceOver output. Intercept only this checkbox before
+ * the base Lit handler, preserve the base state/persistence semantics, and make
+ * the setting result use the same single AT notification path as every other
+ * RF-09 setting. Future questions and feedback still use SpeechSynthesis because
+ * audioGuidance remains true after this handler returns.
+ */
+function installAudioSettingInterceptor(
+  component: InternalComponent,
+  input: HTMLInputElement,
+) {
+  if (input.dataset.rf09AudioInterceptor === 'true') return;
+  input.dataset.rf09AudioInterceptor = 'true';
+
+  input.addEventListener(
+    'change',
+    (event) => {
+      event.stopImmediatePropagation();
+      const value = input.checked;
+      const previous = component.audioGuidance;
+
+      component.recordSupportChange('automatic-audio', previous, value);
+      component.stopReading(false);
+      component.audioGuidance = value;
+      component.invalidatePendingSubmission();
+      component.persistProgress();
+
+      recordSupportFeedback(
+        component,
+        input,
+        value ? AUDIO_ON_MESSAGE : AUDIO_OFF_MESSAGE,
+      );
+    },
+    { capture: true },
+  );
+}
+
+function prepareSupportControls(component: InternalComponent) {
+  for (const region of component.querySelectorAll<HTMLElement>(
+    '[data-rf09-support-setting-region]',
+  )) {
+    const feedback = region.querySelector<HTMLElement>(
+      '[data-rf09-support-feedback]',
+    );
+    if (!feedback?.id) continue;
+    for (const input of region.querySelectorAll<HTMLInputElement>(
+      '.support-settings input',
+    )) {
+      input.setAttribute('aria-controls', feedback.id);
+      if (input.id.endsWith('-audio') && input.type === 'checkbox') {
+        installAudioSettingInterceptor(component, input);
+      }
+    }
+  }
+
+  for (const standard of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="standard"]',
+  )) {
+    replaceStaticLabelText(standard, 'Standard', 'Standard text');
+  }
+  for (const large of component.querySelectorAll<HTMLInputElement>(
+    '.text-size-control input[type="radio"][value="large"]',
+  )) {
+    replaceStaticLabelText(large, 'Large', 'Large text');
+  }
+}
+
 function handleSupportChange(component: InternalComponent, event: Event) {
   const target = event.target;
   if (!(target instanceof HTMLInputElement) || !component.contains(target)) return;
+
+  // Audio changes are handled by the target capture listener above so the old
+  // SpeechSynthesis self-confirmation never starts. Do not generate a second
+  // result when the event reaches this observer.
+  if (target.id.endsWith('-audio') && target.type === 'checkbox') return;
+
   const message = messageForSupportChange(target);
   if (!message) return;
 
@@ -227,8 +234,9 @@ let installed = false;
 /**
  * Adds one visible and one non-duplicating assistive-technology feedback path
  * for text-size, interruption-recovery and automatic-audio changes. Native
- * radio/checkbox semantics and all existing setting/storage logic remain the
- * source of truth; this module observes only the committed native change event.
+ * radio/checkbox semantics remain intact. Audio-on/off preserves the base state,
+ * persistence and support-change semantics while deliberately separating the
+ * setting-result status channel from optional browser text-to-speech.
  */
 export function installRf09SupportSettingFeedback() {
   if (installed) return;
@@ -245,9 +253,9 @@ export function installRf09SupportSettingFeedback() {
     const visibleMessage = this.__rf09SupportStatusMessage ?? '';
     const feedbackId = `rf09-${context}-support-feedback`;
 
-    // Original labels are static Lit text, so normalise them and wire the
-    // advisory result relationship after every committed render without
-    // replacing the controls or their native event paths.
+    // Original labels are static Lit text. Normalise names, wire advisory
+    // relationships and install the bounded audio-setting interceptor after each
+    // committed render without replacing the native controls.
     void this.updateComplete.then(() => prepareSupportControls(this));
 
     return html`
