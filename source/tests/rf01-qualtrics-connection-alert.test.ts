@@ -12,15 +12,9 @@ function trackedStyle() {
   return {
     values,
     style: {
-      setProperty(property: string, value: string) {
-        values[property] = value;
-      },
-      getPropertyValue(property: string) {
-        return values[property] ?? '';
-      },
-      getPropertyPriority() {
-        return '';
-      },
+      setProperty(property: string, value: string) { values[property] = value; },
+      getPropertyValue(property: string) { return values[property] ?? ''; },
+      getPropertyPriority() { return ''; },
     },
   };
 }
@@ -31,6 +25,7 @@ function createRuntime() {
     'utf8',
   );
   let onReady: (() => void) | undefined;
+  let onUnload: (() => void) | undefined;
   let receiveMessage: ((event: MessageEvent) => void) | undefined;
   const timers: Array<{ callback: () => void; delay: number }> = [];
   const frameWindow = { postMessage: vi.fn() };
@@ -40,13 +35,10 @@ function createRuntime() {
   const bodyStyle = trackedStyle();
   const htmlStyle = trackedStyle();
   const statusAttributes: Record<string, string> = {};
+  const announcerAttributes: Record<string, string> = {};
   const originalParent = {
-    appendChild(node: any) {
-      node.parentNode = originalParent;
-    },
-    insertBefore(node: any) {
-      node.parentNode = originalParent;
-    },
+    appendChild(node: any) { node.parentNode = originalParent; },
+    insertBefore(node: any) { node.parentNode = originalParent; },
   };
   const liveQuestion: any = {
     style: liveStyle.style,
@@ -68,26 +60,41 @@ function createRuntime() {
     textContent: '',
     style: statusStyle.style,
     scrollIntoView: vi.fn(),
-    setAttribute(name: string, value: string) {
-      statusAttributes[name] = value;
-    },
+    setAttribute(name: string, value: string) { statusAttributes[name] = value; },
   };
   const body: any = {
     style: bodyStyle.style,
+    children: [] as any[],
     appendChild(node: any) {
       node.parentNode = body;
+      if (!body.children.includes(node)) body.children.push(node);
     },
+    removeChild(node: any) {
+      body.children = body.children.filter((entry: any) => entry !== node);
+      node.parentNode = null;
+    },
+  };
+  const announcer: any = {
+    textContent: '',
+    style: {},
+    parentNode: null,
+    setAttribute(name: string, value: string) { announcerAttributes[name] = value; },
+    remove: vi.fn(function removeAnnouncer() {
+      if (announcer.parentNode?.removeChild) announcer.parentNode.removeChild(announcer);
+    }),
   };
   const documentRef = {
     body,
     documentElement: { style: htmlStyle.style },
+    createElement(tagName: string) {
+      if (tagName !== 'div') throw new Error(`Unexpected test element ${tagName}`);
+      return announcer;
+    },
     getElementById(id: string) {
       if (id === 'accessible-questionnaire-frame') return iframe;
       if (id === 'accessible-questionnaire-collection-status') return status;
       if (id === 'accessible-questionnaire-live-question') return liveQuestion;
-      if (id === 'accessible-questionnaire-recorded-summary') {
-        return { getAttribute: () => '0' };
-      }
+      if (id === 'accessible-questionnaire-recorded-summary') return { getAttribute: () => '0' };
       return null;
     },
   };
@@ -97,10 +104,8 @@ function createRuntime() {
   const setJSEmbeddedData = vi.fn();
   const fakeQualtrics = {
     SurveyEngine: {
-      addOnReady(callback: () => void) {
-        onReady = callback;
-      },
-      addOnUnload: vi.fn(),
+      addOnReady(callback: () => void) { onReady = callback; },
+      addOnUnload(callback: () => void) { onUnload = callback; },
       setJSEmbeddedData,
     },
   };
@@ -118,11 +123,7 @@ function createRuntime() {
     removeEventListener: vi.fn(),
   };
 
-  new Function('Qualtrics', 'document', 'window', bridge)(
-    fakeQualtrics,
-    documentRef,
-    fakeWindow,
-  );
+  new Function('Qualtrics', 'document', 'window', bridge)(fakeQualtrics, documentRef, fakeWindow);
   onReady!.call({ hideNextButton, showNextButton, clickNextButton });
 
   return {
@@ -131,50 +132,46 @@ function createRuntime() {
     iframe,
     status,
     statusAttributes,
+    announcer,
+    announcerAttributes,
     hideNextButton,
     showNextButton,
-    clickNextButton,
     setJSEmbeddedData,
     receiveMessage: (event: MessageEvent) => receiveMessage!(event),
+    unload: () => onUnload!(),
   };
 }
 
-describe('RF-01 Qualtrics connection semantics', () => {
-  it('primes a live status before announcing Connecting and exposes a missing bridge as an alert without enabling the participant runner', () => {
+describe('RF-01 successor Qualtrics connection announcement', () => {
+  it('uses one pre-registered body-level polite channel for Connecting while retaining assertive failure', () => {
     const runtime = createRuntime();
-
     expect(runtime.status.textContent).toBe('');
     expect(runtime.statusAttributes.role).toBe('status');
-    expect(runtime.statusAttributes['aria-live']).toBe('polite');
+    expect(runtime.statusAttributes['aria-live']).toBe('off');
     expect(runtime.statusAttributes['aria-atomic']).toBe('true');
-    expect(runtime.statusAttributes['data-severity']).toBe('information');
+    expect(runtime.announcer.textContent).toBe('');
+    expect(runtime.announcerAttributes.role).toBe('status');
+    expect(runtime.announcerAttributes['aria-live']).toBe('polite');
+    expect(runtime.announcerAttributes['aria-atomic']).toBe('true');
     expect(runtime.hideNextButton).toHaveBeenCalledOnce();
-    expect(runtime.showNextButton).not.toHaveBeenCalled();
     expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
 
-    runtime.timers.find(({ delay }) => delay === 50)!.callback();
-
+    runtime.timers.find(({ delay }) => delay === 250)!.callback();
     expect(runtime.status.textContent).toContain('Connecting questionnaire package');
-    expect(runtime.statusAttributes.role).toBe('status');
-    expect(runtime.statusAttributes['aria-live']).toBe('polite');
-    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
-    expect(runtime.statusAttributes['data-severity']).toBe('information');
+    expect(runtime.announcer.textContent).toBe(runtime.status.textContent);
+    expect(runtime.statusAttributes['aria-live']).toBe('off');
 
     runtime.timers.find(({ delay }) => delay === 8000)!.callback();
-
     expect(runtime.status.textContent).toContain('questionnaire connection did not start');
-    expect(runtime.status.textContent).not.toContain('questionnaire is connected');
     expect(runtime.statusAttributes.role).toBe('alert');
     expect(runtime.statusAttributes['aria-live']).toBe('assertive');
-    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
     expect(runtime.statusAttributes['data-severity']).toBe('error');
     expect(runtime.iframe.removeAttribute).not.toHaveBeenCalledWith('aria-hidden');
     expect(runtime.showNextButton).toHaveBeenCalledOnce();
   });
 
-  it('keeps a verified normal connection on status semantics and prevents a delayed Connecting message from overwriting it', () => {
+  it('cancels the pending advisory if the verified child connects first', () => {
     const runtime = createRuntime();
-
     runtime.receiveMessage({
       source: runtime.frameWindow,
       origin: 'https://sasoup-yr.github.io',
@@ -186,19 +183,22 @@ describe('RF-01 Qualtrics connection semantics', () => {
     } as unknown as MessageEvent);
 
     expect(runtime.status.textContent).toContain('questionnaire is connected');
-    expect(runtime.statusAttributes.role).toBe('status');
     expect(runtime.statusAttributes['aria-live']).toBe('off');
-    expect(runtime.statusAttributes['aria-atomic']).toBe('true');
-    expect(runtime.statusAttributes['data-severity']).toBe('information');
+    expect(runtime.announcer.textContent).toBe('');
     expect(runtime.iframe.removeAttribute).toHaveBeenCalledWith('aria-hidden');
-    expect(runtime.showNextButton).not.toHaveBeenCalled();
     expect(runtime.setJSEmbeddedData).toHaveBeenCalledWith('AQP_BRIDGE_READY', '1');
 
-    runtime.timers.find(({ delay }) => delay === 50)!.callback();
-
+    runtime.timers.find(({ delay }) => delay === 250)!.callback();
     expect(runtime.status.textContent).toContain('questionnaire is connected');
     expect(runtime.status.textContent).not.toContain('Connecting questionnaire package');
-    expect(runtime.statusAttributes.role).toBe('status');
-    expect(runtime.statusAttributes['aria-live']).toBe('off');
+    expect(runtime.announcer.textContent).toBe('');
+  });
+
+  it('removes the scoped announcer on Qualtrics unload', () => {
+    const runtime = createRuntime();
+    expect(runtime.announcer.parentNode).not.toBeNull();
+    runtime.unload();
+    expect(runtime.announcer.remove).toHaveBeenCalledOnce();
+    expect(runtime.announcer.parentNode).toBeNull();
   });
 });

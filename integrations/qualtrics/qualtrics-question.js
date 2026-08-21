@@ -27,6 +27,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var advanceWatchdogTimerId = null;
   var connectionTimerId = null;
   var connectionAnnouncementTimerId = null;
+  var connectionAnnouncer = null;
   var parentReadyTimerIds = [];
   var relaxedLayoutStyles = [];
   var rawChunkLength = 900;
@@ -51,29 +52,80 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     status.textContent = message;
   }
 
-  function queueConnectingStatus() {
-    if (!status) return;
-    // WCAG Technique ARIA22 requires the status container to exist with its role
-    // before the status message occurs. Qualtrics-generated HTML historically ships
-    // initial fallback text in this element, so clear that text first and inject the
-    // runtime Connecting message on a later task after the live region is established.
-    if (typeof status.setAttribute === 'function') {
-      status.setAttribute('role', 'status');
-      status.setAttribute('data-quiet', 'false');
-      status.setAttribute('data-severity', 'information');
-      status.setAttribute('aria-live', 'polite');
-      status.setAttribute('aria-atomic', 'true');
-    }
-    status.textContent = '';
-    connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
-      connectionAnnouncementTimerId = null;
-      if (childConnected) return;
-      setStatus(
-        'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.',
-        false
-      );
-    }, 50);
+  function ensureConnectionAnnouncer() {
+  if (connectionAnnouncer) return connectionAnnouncer;
+  if (!document.body || typeof document.createElement !== 'function') return null;
+
+  // Scoped fallback architecture based on github/arianotify-polyfill:
+  // register one empty polite region in the stable body before its first
+  // message. Keep it local to this paste-in Qualtrics bridge rather than
+  // modifying host-page prototypes or loading a network dependency.
+  connectionAnnouncer = document.createElement('div');
+  connectionAnnouncer.setAttribute('role', 'status');
+  connectionAnnouncer.setAttribute('aria-live', 'polite');
+  connectionAnnouncer.setAttribute('aria-atomic', 'true');
+  connectionAnnouncer.setAttribute('data-aqp-connection-announcer', 'true');
+  connectionAnnouncer.textContent = '';
+  if (connectionAnnouncer.style) {
+    connectionAnnouncer.style.position = 'absolute';
+    connectionAnnouncer.style.width = '1px';
+    connectionAnnouncer.style.height = '1px';
+    connectionAnnouncer.style.margin = '-1px';
+    connectionAnnouncer.style.padding = '0';
+    connectionAnnouncer.style.border = '0';
+    connectionAnnouncer.style.overflow = 'hidden';
+    connectionAnnouncer.style.clip = 'rect(0 0 0 0)';
+    connectionAnnouncer.style.clipPath = 'inset(50%)';
+    connectionAnnouncer.style.whiteSpace = 'nowrap';
   }
+  document.body.appendChild(connectionAnnouncer);
+  return connectionAnnouncer;
+}
+
+function announceConnectionStatus(message) {
+  var announcer = ensureConnectionAnnouncer();
+  if (!announcer) return;
+  announcer.textContent = announcer.textContent === message
+    ? message + '\u00a0'
+    : message;
+}
+
+function removeConnectionAnnouncer() {
+  if (!connectionAnnouncer) return;
+  if (typeof connectionAnnouncer.remove === 'function') {
+    connectionAnnouncer.remove();
+  } else if (
+    connectionAnnouncer.parentNode &&
+    typeof connectionAnnouncer.parentNode.removeChild === 'function'
+  ) {
+    connectionAnnouncer.parentNode.removeChild(connectionAnnouncer);
+  }
+  connectionAnnouncer = null;
+}
+
+function queueConnectingStatus() {
+  if (!status) return;
+  // Keep the visible advisory navigable as a semantic status while the
+  // dedicated body-level polite region is the sole automatic AT channel.
+  // Blocking failure states still go through setStatus(alert/assertive).
+  if (typeof status.setAttribute === 'function') {
+    status.setAttribute('role', 'status');
+    status.setAttribute('data-quiet', 'false');
+    status.setAttribute('data-severity', 'information');
+    status.setAttribute('aria-live', 'off');
+    status.setAttribute('aria-atomic', 'true');
+  }
+  status.textContent = '';
+  ensureConnectionAnnouncer();
+  connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
+    connectionAnnouncementTimerId = null;
+    if (childConnected) return;
+    var message =
+      'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.';
+    status.textContent = message;
+    announceConnectionStatus(message);
+  }, 250);
+}
 
   function setImportantStyle(element, name, value) {
     if (!element || !element.style) return;
@@ -596,6 +648,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     question.showNextButton();
   }, 8000);
   Qualtrics.SurveyEngine.addOnUnload(function removeAccessibleQuestionnaireListener() {
+    removeConnectionAnnouncer();
     if (completionTimerId !== null) {
       window.clearTimeout(completionTimerId);
       completionTimerId = null;
