@@ -1,6 +1,6 @@
 # RF-06 speech-listening lifecycle repair evidence — 21 August 2026
 
-Status: **R2-A10, R3-A10 and R3-A13 closed by post-fix manual evidence; R4-A10 has one final standards- and platform-supported Escape-cancellation candidate awaiting manual Voice Access retest**
+Status: **closed. R2-A10, R3-A10 and R3-A13 passed post-fix manual testing; R4-A10 remains F after the final Voice Access candidate failed.**
 
 ## Identity
 
@@ -9,9 +9,9 @@ Status: **R2-A10, R3-A10 and R3-A13 closed by post-fix manual evidence; R4-A10 h
 - Proven R3-A13 production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
 - Canonically verified R3-A13 evidence head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
 - R3-A13 canonical run: `32478383479` — **success**.
-- Synchronized R4 Escape-candidate runtime and immutable preview source: `f6917d08527e0c8276db90ea46995c73da4fd74a`.
-- Immutable R4 preview path: `/rf06-r4-escape-preview/`.
-- A fresh canonical read-only run is required on this documentation-only successor before manual testing is credited.
+- Failed R4 Escape-candidate runtime: `f6917d08527e0c8276db90ea46995c73da4fd74a`.
+- Failed R4 preview path: `/rf06-r4-escape-preview/`.
+- Final retained source removes the failed Escape candidate and keeps only the mechanisms supported by successful manual evidence.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
 
 ## Frozen defect boundary
@@ -20,29 +20,29 @@ RF-06 targets only the application-level speech-listening lifecycle failures rec
 
 - R2-A10: Listening feedback/cancellation was not sufficiently prompt and recoverable;
 - R3-A10: Safari/VoiceOver could remain in Listening for minutes with no dedicated cancel action;
-- R4-A10: the direct built-in-recognition route exposed Listening but no usable cancel action;
+- R4-A10: the direct built-in-recognition route exposed Listening but no reliably voice-operable cancel action while Windows Voice Access was also listening;
 - R3-A13: no-speech did not terminate into a specific recoverable message.
 
-This family does **not** attempt to prove or repair upstream speech-recognition accuracy. Fixed-phrase recognition reliability remains a separate RF-07 evidence family.
+This family does **not** claim to repair upstream recognition accuracy or to make two concurrent speech recognisers interoperable. Fixed-phrase recognition reliability remains a separate RF-07 evidence family.
 
-## Retained lifecycle implementation
+## Retained implementation
 
-The RF-06 lifecycle module:
+The final RF-06 source:
 
 - keeps the visible disabled `Listening…` state;
-- exposes a separate **Stop voice input** control while recognition is active;
+- exposes a separate **Stop voice input** button while recognition is active;
 - leaves ordinary visible answer controls usable during Listening;
 - adds an AQP-owned 15-second watchdog so an indefinitely active recogniser cannot leave the interface permanently Listening;
 - states that no answer changed after manual Stop or no-speech termination;
 - separates the AQP Listening mutation from Safari's own microphone-capture announcement;
 - uses a stable body-level production announcer for no-speech errors;
-- removes the unproven Voice Access transcript-interception experiment.
+- removes both the unsuccessful transcript-interception experiment and the unsuccessful Voice Access Escape candidate.
 
 ## Closed post-fix observations
 
 ### R2-A10 — NVDA + Chrome — **P**
 
-The manual run announced `Listening for one answer.`, exposed an operable Stop control, returned to Start after stopping and stated that no answer was changed.
+The manual run announced `Listening for one answer.`, exposed an operable Stop button, returned to Start after stopping and stated that no answer was changed.
 
 ### R3-A10 — VoiceOver + Safari — **P**
 
@@ -56,53 +56,43 @@ The final production-announcer implementation followed the stronger shared patte
 
 > No speech was detected before the listening time limit. Voice input stopped. Try again, or use a visible answer button. No answer was changed.
 
-The visible panel showed the same recovery, Start returned, and no questionnaire answer changed. This closes the historical R3-A13 failure on the tested Safari/VoiceOver configuration.
+The visible panel showed the same recovery and Start returned. This closes the historical R3-A13 failure on the tested Safari/VoiceOver configuration.
 
-## R4-A10 research and candidate history
+## R4-A10 — Windows Voice Access + Chrome — **F retained**
 
-### Direct visible-button command — **F in the tested candidate**
+### Direct visible-button candidate
 
-The manual Voice Access route reproduced a concurrent-recogniser race. While AQP Web Speech recognition was listening, the same spoken `Click Stop voice input` or overlay command intended for Windows Voice Access was also available to the in-page recogniser. A best-effort recogniser-side transcript interception was tested and removed after it failed to provide reliable control.
+The first manual route reproduced a concurrent-recogniser race. While AQP Web Speech recognition was listening, the same spoken `Click Stop voice input` or overlay command intended for Windows Voice Access was also available to the in-page recogniser. A best-effort transcript-interception experiment did not provide reliable control and was removed.
 
-### External evidence review
+### Final Escape candidate
 
-The final R4 review used primary platform/API sources and open-source code search:
+A final materially different candidate added an Escape-key cancellation route, exposed `aria-keyshortcuts="Escape"`, detached recognition callbacks before cancellation and used `SpeechRecognition.abort()` when available. Automated tests proved the local keyboard mechanism and answer-state invariants, but automated evidence could not prove that Windows Voice Access would deliver the key while both recognisers were active.
 
-- Microsoft states that Voice Access in Listening mode listens to everything said and executes recognised commands.
-- Microsoft's Voice Access FAQ describes switching between voice-access solutions with distinct wake words **without having both listening at the same time**.
-- Microsoft documents the general `Press <key>` Voice Access command, including Escape-key operation.
-- The Web Speech API exposes control only over the page's recogniser. `SpeechRecognition.abort()` cancels listening without attempting to return a recognition result; there is no standard web API that suspends Windows Voice Access.
-- W3C keyboard-trap guidance supports providing an explicit keyboard mechanism to escape an active interaction state.
-- GitHub/open-source searches found many application-level Stop/Escape patterns but no mature web implementation or browser API that coordinates Windows Voice Access and in-page Web Speech Recognition as two simultaneous recognisers.
+The focused manual retest on 21 August 2026 failed:
 
-The direct-button failure is therefore not repaired by another transcript-parsing heuristic. The only materially different, platform-supported route still worth testing is a keyboard cancellation command that Voice Access itself can issue.
+1. Windows Voice Access displayed the recognised command `press escape` and the outcome `Pressed escape`.
+2. In one retained screenshot, AQP nevertheless remained visibly in `Listening…` with **Stop voice input** still present.
+3. In the next retained screenshot, AQP had consumed part of the spoken operating-system command and displayed: `No answer was selected. I heard “Press”. Try a short command such as “number four”, or use a visible answer button.`
+4. The page recogniser therefore competed with Voice Access for the same utterance; the Escape route was not shown to be a reliable Voice Access cancellation mechanism.
 
-## Final bounded R4 Escape candidate
+Evidence: user-supplied screenshots `屏幕截图 2026-08-21 133441.png` and `屏幕截图 2026-08-21 133450.png`, captured on the immutable `/rf06-r4-escape-preview/` runtime.
 
-The candidate adds a normal keyboard escape route rather than attempting to control the operating-system recogniser:
+### Final adjudication
 
-- while AQP is Listening, **Escape** cancels the page recogniser;
-- the visible Stop button exposes `aria-keyshortcuts="Escape"`;
-- the interface visibly states `Press Escape to stop without choosing or changing an answer.`;
-- cancellation uses `SpeechRecognition.abort()` when available, with `stop()` only as compatibility fallback;
-- result/error/end handlers are detached before cancellation, so the spoken Voice Access command cannot be committed as a questionnaire answer through this route;
-- the existing answer remains unchanged, Start returns, and the ordinary status says that voice input stopped and no answer changed;
-- the Escape listener exists only while the exact recogniser is active and is removed on every release path.
+**R4-A10 remains F.** The bounded finding is simultaneous Windows Voice Access plus in-page Web Speech recognition on the tested Chrome route. It is not a general failure of Voice Access with ordinary AQP controls.
 
-Focused automated tests cover manual Stop, Escape cancellation, `aria-keyshortcuts`, abort semantics, retained prior answer, returned Start, no-speech watchdog and page-level error announcement.
-
-The manual R4 retest must use Windows Voice Access + Chrome and say **`Press Escape`** after AQP enters Listening. If the command reliably ends Listening, returns Start and preserves the answer, R4-A10 may close on that tested configuration. If Voice Access and Web Speech still race so that the Escape key is not delivered reliably, **R4-A10 remains F and RF-06 stops here**. No further transcript, timing or operating-system-control workaround will be credited.
+Primary-source review found no standard browser API that can suspend Windows Voice Access or arbitrate between the operating-system recogniser and the page recogniser. Microsoft's own guidance describes switching between speech-access solutions rather than keeping both listening. No further transcript, timing, key-command or operating-system-control workaround will be added to RF-06.
 
 ## Automated evidence boundary
 
-The prior R3-A13 runtime passed 22/22 Vitest files, 215/215 tests, 12/12 rendered-browser tests, 9/9 cross-browser support tests, build/release and generated freshness. The Escape candidate source/tests and generated release have been synchronized; a fresh canonical run must pass before the preview is treated as the final automated candidate.
+The failed Escape runtime passed its automated mechanism checks, including the local Escape key event, but the contradictory real-AT result takes precedence. The final retained source removes that unproven mechanism. A fresh generated-release synchronization and canonical read-only run are required before PR closure.
 
-Automated evidence establishes the implemented mechanism and invariants. It cannot override a contradictory real Voice Access result.
+Automated evidence establishes code behaviour under the simulated browser boundary. It cannot override a real Windows Voice Access interoperability failure.
 
 ## Next repair family
 
-Once the final R4-A10 observation is adjudicated, the next code family in the frozen repair order is **RF-09 / A33 support-setting feedback**, targeting historical R3-A33 and R4-A33. It will be researched and developed in a separate branch/PR; RF-06 and RF-09 will not be mixed.
+The next family in the frozen repair order is **RF-09 / A33 support-setting feedback**, targeting historical R3-A33 and R4-A33. It is developed in a separate branch/PR and must provide one timely, accurate setting-change message without focus movement or questionnaire-answer change.
 
 ## Audit boundary
 
-Historical q8 is never rewritten. Post-fix evidence closes R2-A10, R3-A10 and R3-A13 separately. R4-A10 closes only if the final Escape route is actually operable through Windows Voice Access on the named Chrome configuration.
+Historical q8 is never rewritten. Post-fix evidence closes R2-A10, R3-A10 and R3-A13 separately and retains R4-A10 as F. The post-fix evidence trail reports the failed candidates rather than replacing them with an all-green reconstruction.
