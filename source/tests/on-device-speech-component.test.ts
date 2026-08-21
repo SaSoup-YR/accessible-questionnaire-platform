@@ -73,7 +73,7 @@ describe('RF-07 on-device speech component route', () => {
       .toEqual(['en-GB', 'en-US']);
     expect(instances).toHaveLength(1);
     expect(component.textContent).toContain('Proposed answer');
-    expect(component.textContent).toContain('value 50');
+    expect(component.textContent).toContain('50 for Mental Demand');
     expect(component.querySelector<HTMLInputElement>('input[value="50"]')?.checked).toBe(false);
   });
 
