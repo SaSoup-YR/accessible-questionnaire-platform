@@ -7,3 +7,5 @@ RF-06 targets only the application-level speech-listening lifecycle failures rec
 This family does not attempt to prove or repair upstream speech-recognition accuracy. Fixed-phrase recognition reliability remains a separate RF-07 evidence family.
 
 Post-fix manual adjudication must remain separate from the frozen q8 matrix. Firefox remains capability-unavailable for the built-in Web Speech recognition route; affected Chrome/Safari/Voice Access observations must be rerun on the retained candidate after canonical CI is green.
+
+Implementation note: the source patch is applied through a temporary branch-only workflow solely to avoid hand-editing the large generated component file. The workflow must restore the repository's canonical read-only verification workflow before committing the retained implementation; it is not part of the RF-06 product change.
