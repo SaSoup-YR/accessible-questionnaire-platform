@@ -6,8 +6,9 @@ Status: **R2-A10 and R3-A10 closed by post-fix manual evidence; R4-A10 retained 
 
 - Base main: `c9685f95d97cf45ab517911c91eba0cdc454e2b3`.
 - Branch: `agent/fix-rf06-speech-listening-lifecycle`.
-- Production-announcer runtime: `050fff9a811198d5c6348cb56e1feb50c889b898`.
-- Evidence-only head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
+- Production-announcer runtime and immutable preview source: `050fff9a811198d5c6348cb56e1feb50c889b898`.
+- Canonically verified evidence-only head: `656c112e85c4be449ee9b94becc8c7e2508460ec`.
+- Later commits after that head are documentation only and do not alter the tested runtime.
 - Final canonical read-only run: `32478383479` — **success**.
 - Immutable preview path: `/rf06-announcer-preview/`.
 - Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**.
