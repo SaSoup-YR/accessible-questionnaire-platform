@@ -1,26 +1,29 @@
-name: Temporary apply RF-06 speech lifecycle patch
+name: Verify source and generated release
 
 on:
+  workflow_dispatch:
   pull_request:
-    types: [synchronize]
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  AQP_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-  AQP_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+  AQP_WORKFLOW_EVENT: ${{ github.event_name }}
+  AQP_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  AQP_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
 
 jobs:
-  apply-rf06:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  verify:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source
     steps:
-      - name: Check out PR head
+      - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -29,194 +32,102 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Apply bounded RF-06 source patch
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('source/src/accessible-nasa-tlx.ts')
-          text = path.read_text()
-
-          def replace_once(old: str, new: str, label: str):
-              global text
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
-              text = text.replace(old, new, 1)
-
-          replace_once(
-              "const CALIBRATION_REPETITIONS = 3;\n",
-              "const CALIBRATION_REPETITIONS = 3;\nconst VOICE_LISTENING_WATCHDOG_MS = 15_000;\n",
-              'watchdog constant',
-          )
-
-          replace_once(
-              "  private speechRequestId = 0;\n",
-              "  private speechRequestId = 0;\n  private voiceWatchdogTimerId: number | null = null;\n",
-              'watchdog field',
-          )
-
-          old_render = '''          <button
-            class="secondary-button large-answer-button"
-            type="button"
-            data-voice-start
-            ?disabled=${!available || this.voiceState === 'listening'}
-            @click=${() => this.startVoiceInput(context, first, second)}
-          >
-            ${this.voiceState === 'listening' ? 'Listening…' : 'Start voice input'}
-          </button>
-          ${!available
-            ? html`<p role="status">
-                Built-in voice recognition is unavailable in this browser. System voice control can still activate
-                the visible buttons by name.
-              </p>`
-            : nothing}
-          ${this.voiceMessage
-            ? html`<p role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>`
-            : nothing}
-'''
-          new_render = '''          <div class="button-row compact">
-            <button
-              class="secondary-button large-answer-button"
-              type="button"
-              data-voice-start
-              ?disabled=${!available || this.voiceState === 'listening'}
-              @click=${() => this.startVoiceInput(context, first, second)}
-            >
-              Start voice input
-            </button>
-            ${this.voiceState === 'listening'
-              ? html`<button
-                  class="secondary-button large-answer-button"
-                  type="button"
-                  data-voice-stop
-                  @click=${this.stopVoiceInput}
-                >
-                  Stop voice input
-                </button>`
-              : nothing}
-          </div>
-          ${!available
-            ? html`<p role="status">
-                Built-in voice recognition is unavailable in this browser. System voice control can still activate
-                the visible buttons by name.
-              </p>`
-            : nothing}
-          <p class="voice-status" role="status" aria-live="polite" aria-atomic="true">${this.voiceMessage}</p>
-'''
-          replace_once(old_render, new_render, 'voice controls/live status')
-
-          replace_once(
-              "            not recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons\n            remain available.\n",
-              "            not recognised. Voice is optional, this prototype does not store audio, and the visible answer buttons\n            remain available. While listening, you can stop the attempt at any time.\n",
-              'voice support explanation',
-          )
-
-          old_onend = '''    recognition.onend = () => {
-      if (this.recognition !== recognition) return;
-      this.recognition = null;
-      if (this.voiceState === 'listening') {
-        this.showVoiceNotice('No answer was selected. Try again, or use a visible answer button.');
-      }
-    };
-    try {
-      recognition.start();
-    } catch {
-'''
-          new_onend = '''    recognition.onend = () => {
-      if (this.recognition !== recognition) return;
-      this.recognition = null;
-      this.clearVoiceWatchdog();
-      if (this.voiceState === 'listening') {
-        this.showVoiceNotice(
-          'No speech was detected. Voice input stopped. Try again, or use a visible answer button. No answer was changed.',
-        );
-      }
-    };
-    try {
-      recognition.start();
-      this.startVoiceWatchdog(recognition);
-    } catch {
-'''
-          replace_once(old_onend, new_onend, 'native end/watchdog start')
-
-          old_clear = '''  private clearVoiceAnswer = () => {
-    this.releaseRecognition();
-    this.voiceState = 'idle';
-    this.voiceMessage = '';
-    this.pendingVoiceAnswer = null;
-  };
-
-  private releaseRecognition(recognition = this.recognition) {
-    if (!recognition) return;
-'''
-          new_clear = '''  private startVoiceWatchdog(recognition: SpeechRecognitionLike) {
-    this.clearVoiceWatchdog();
-    this.voiceWatchdogTimerId = window.setTimeout(() => {
-      this.voiceWatchdogTimerId = null;
-      if (this.recognition !== recognition || this.voiceState !== 'listening') return;
-      this.releaseRecognition(recognition);
-      this.showVoiceNotice(
-        'No speech was detected before the listening time limit. Voice input stopped. Try again, or use a visible answer button. No answer was changed.',
-      );
-    }, VOICE_LISTENING_WATCHDOG_MS);
-  }
-
-  private clearVoiceWatchdog() {
-    if (this.voiceWatchdogTimerId === null) return;
-    window.clearTimeout(this.voiceWatchdogTimerId);
-    this.voiceWatchdogTimerId = null;
-  }
-
-  private stopVoiceInput = () => {
-    if (this.voiceState !== 'listening') return;
-    this.releaseRecognition();
-    this.pendingVoiceAnswer = null;
-    this.showVoiceNotice(
-      'Voice input stopped. No answer was changed. Try again, or use a visible answer button.',
-    );
-    void this.updateComplete.then(() =>
-      this.querySelector<HTMLButtonElement>('[data-voice-start]')?.focus(),
-    );
-  };
-
-  private clearVoiceAnswer = () => {
-    this.releaseRecognition();
-    this.voiceState = 'idle';
-    this.voiceMessage = '';
-    this.pendingVoiceAnswer = null;
-  };
-
-  private releaseRecognition(recognition = this.recognition) {
-    this.clearVoiceWatchdog();
-    if (!recognition) return;
-'''
-          replace_once(old_clear, new_clear, 'watchdog/stop lifecycle methods')
-
-          path.write_text(text)
-          PY
-
       - name: Install locked dependencies
-        working-directory: source
         run: npm ci
 
-      - name: Run focused RF-06 regression
-        working-directory: source
-        run: npm test -- --run tests/rf06-speech-lifecycle.test.ts
+      - name: Run automated tests
+        run: npm test -- --run
 
-      - name: Type-check and build patched source
-        working-directory: source
+      - name: Add quantified technical evaluation to the job summary
+        if: always()
+        run: npm run report:technical
+
+      - name: Publish quantified technical evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantified-technical-evaluation
+          path: |
+            docs/evidence/fidelity-source-of-truth.json
+            docs/evidence/technical-evaluation-report.json
+            docs/evidence/technical-evaluation-report.html
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build the production site for rendered-browser checks
         run: npm run build
 
-      - name: Restore canonical workflow and commit RF-06 source
+      - name: Install browser engines for rendered checks
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run real-browser accessibility regression
+        run: npm run test:browser
+
+      - name: Record the cross-browser capability matrix
+        if: always()
+        run: npm run test:browser-support
+
+      - name: Add the cross-browser matrix to the job summary
+        if: always()
+        run: npm run report:browser-support
+
+      - name: Add rendered accessibility evidence to the job summary
+        if: always()
+        run: npm run report:browser
+
+      - name: Publish rendered accessibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-accessibility-evidence
+          path: |
+            docs/evidence/axe-browser-report.json
+            docs/evidence/axe-browser-report.html
+            docs/evidence/cross-browser-support-report.json
+            docs/evidence/cross-browser-support-report.html
+            source/playwright-report
+            source/test-results
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build production, standalone and release outputs
+        run: npm run build:release
+
+      - name: Confirm the committed deployment files are current
+        run: >-
+          git diff --exit-code --
+          demo/accessible-nasa-tlx-v0.7.html
+          demo/accessible-questionnaire-platform-v0.8.html
+          ../index.html
+          ../study.html
+          ../assets
+          ../questionnaires
+
+  sync-pages:
+    name: Sync verified main to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Replace its file tree with the verified main revision
+        env:
+          VERIFIED_MAIN_SHA: ${{ github.sha }}
         run: |
-          git show "$AQP_BASE_SHA:.github/workflows/verify.yml" > .github/workflows/verify.yml
+          git fetch origin "$VERIFIED_MAIN_SHA"
+          git read-tree --reset -u "$VERIFIED_MAIN_SHA"
+          if git diff --cached --quiet; then
+            echo "GitHub Pages already matches verified main."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add source/src/accessible-nasa-tlx.ts source/tests/rf06-speech-lifecycle.test.ts .github/workflows/verify.yml
-          if git diff --cached --quiet; then
-            echo "No RF-06 patch changes found."
-            exit 1
-          fi
-          git commit -m "Fix RF-06 speech listening lifecycle"
-          git push origin "HEAD:$AQP_HEAD_BRANCH"
+          git commit -m "Deploy verified main ${VERIFIED_MAIN_SHA}"
+          git push origin HEAD:gh-pages
