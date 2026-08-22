@@ -1,6 +1,6 @@
 # AQP prototype freeze and residual-limitations plan — 22 August 2026
 
-Status: **freeze preparation; destructive repository cleanup is prohibited until the final retained repair set is integrated and an immutable release passes all gates.**
+Status: **RF-04 final adjudication complete; retained-repair integration and release freeze now in progress. Destructive repository cleanup remains prohibited until one integrated exact release passes all gates.**
 
 ## Evidence ledgers
 
@@ -12,16 +12,17 @@ Historical q8 remains the immutable pre-repair baseline:
 - 7 NA;
 - 0 NT.
 
-After targeted RF-09 closure, the post-fix unresolved ledger contains **7 historical F cells**:
+After targeted RF-04 closure, the post-fix unresolved ledger contains **6 historical F cells**:
 
 | Family | Cells | Engineering state |
 | --- | --- | --- |
 | RF-01 | R3-A26 | Frozen Safari + VoiceOver Qualtrics connecting-status residual |
-| RF-04 | R3-A14 | One final structural native-dialog attempt in progress |
 | RF-06 | R4-A10 | Frozen Voice Access / in-page Web Speech microphone-command conflict |
 | RF-07 | R3-A11, R3-A12, R4-A11, R4-A12 | Frozen browser/device recognition residual after remote, local-command and dictation-capability attempts |
 
-If the final RF-04 candidate passes, the targeted unresolved ledger becomes **6**. If it fails, it remains **7** and all product repair work stops.
+RF-04 R3-A14 is no longer residual. The native-dialog successor moved the real VoiceOver cursor into the named saved-session modal, exposed the fixed `3 of 10` recovery context and supported direct continuation to Item 4 with all answers preserved. Persistent record: `docs/evidence/RF04-NATIVE-DIALOG-POSTFIX-MANUAL-AUDIT-2026-08-22.md`.
+
+No additional application-level repair attempts are planned for the six residual cells. The next engineering activity is integration, release verification, evidence indexing and cleanup—not another attempt to reduce the failure count.
 
 ## Why residual failures are a valid research result
 
@@ -44,7 +45,7 @@ These sources support three dissertation arguments:
 
 Recommended Results wording:
 
-> The frozen pre-repair audit contained 31 failures across 132 pre-specified route/check cells. Targeted engineering and exact-route retesting closed selected failures while preserving the original matrix as the baseline. The remaining failures clustered in browser/assistive-technology boundary mechanisms: VoiceOver focus/status behavior, concurrent operating-system and in-page speech control, and recognition-service variability. These cells were retained as failures when materially different application-level interventions did not satisfy the same observable criterion.
+> The frozen pre-repair audit contained 31 failures across 132 pre-specified route/check cells. Targeted engineering and exact-route retesting closed 25 historical failures while preserving the original matrix as the baseline. Six residual failures remained. They clustered in browser/assistive-technology boundary mechanisms: VoiceOver exposure of an embedded connection status, concurrent operating-system and in-page speech control, and recognition-service variability. These cells were retained as failures when materially different application-level interventions did not satisfy the same observable criterion.
 
 Recommended Discussion wording:
 
@@ -52,19 +53,19 @@ Recommended Discussion wording:
 
 Recommended Limitations wording:
 
-> The audit was configuration-bounded and did not establish universal accessibility or disabled-user benefit. Seven targeted historical failures remained unresolved before the final RF-04 adjudication. Four concerned built-in speech recognition, one concerned simultaneous Voice Access and Web Speech operation, one concerned VoiceOver exposure of an embedded Qualtrics connection status, and one concerned VoiceOver focus after recovery. These findings apply to the named test routes and versions; they should not be generalised to every browser, device or assistive-technology user.
+> The audit was configuration-bounded and did not establish universal accessibility or disabled-user benefit. Six targeted historical failures remained unresolved after final remediation: four concerned built-in speech recognition, one concerned simultaneous Voice Access and Web Speech operation, and one concerned VoiceOver exposure of an embedded Qualtrics connection status. These findings apply to the named test routes and versions; they should not be generalised to every browser, device or assistive-technology user.
 
 ## Prototype freeze entry criteria
 
 A release may be frozen only after:
 
-1. final RF-04 adjudication is recorded;
-2. every retained successful repair is integrated into one clean release branch;
-3. failed experimental successors remain closed/unmerged;
-4. the complete canonical workflow passes on the exact release commit;
-5. main and GitHub Pages provenance is verified;
-6. an immutable version tag/release and build manifest are created;
-7. a final residual ledger, manual-audit evidence index and dissertation claim boundary are committed.
+1. final RF-04 adjudication is recorded — **complete**;
+2. every retained successful repair is integrated into one clean release branch — **in progress**;
+3. failed experimental successors remain closed/unmerged — **partially complete; verify before freeze**;
+4. the complete canonical workflow passes on the exact release commit — **pending**;
+5. main and GitHub Pages provenance is verified — **pending**;
+6. an immutable version tag/release and build manifest are created — **pending**;
+7. a final residual ledger, manual-audit evidence index and dissertation claim boundary are committed — **pending**.
 
 ## Repository cleanup policy
 
@@ -96,7 +97,7 @@ A release may be frozen only after:
 - third-party attribution;
 - records needed to reproduce a thesis claim.
 
-“Removing AI traces” must mean removing low-quality generated prose, temporary scaffolding, duplicated comments and irrelevant scratch artifacts from the final presentation. It must **not** mean rewriting history, concealing tool assistance, deleting contradictory evidence or misrepresenting authorship. Any institutional disclosure requirement takes priority.
+“Removing AI traces” means removing low-quality generated prose, temporary scaffolding, duplicated comments and irrelevant scratch artifacts from the final presentation. It does **not** mean rewriting history, concealing tool assistance, deleting contradictory evidence or misrepresenting authorship. Any institutional disclosure requirement takes priority.
 
 ## Freeze deliverables
 
@@ -110,4 +111,4 @@ The final repository should expose a small, human-readable top level:
 - `source/` — maintainable source and tests;
 - verified deployment files only.
 
-Cleanup will be performed through a reviewable pull request with an inventory of every deletion and its preservation decision. No bulk deletion will occur before the final release candidate is reproducible.
+Cleanup will be performed through a reviewable pull request with an inventory of every deletion and its preservation decision. No bulk deletion will occur before the final integrated release candidate is reproducible.
