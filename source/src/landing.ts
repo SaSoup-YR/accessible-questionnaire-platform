@@ -64,7 +64,12 @@ export function buildDemoHash(instrumentId: DemoInstrumentId) {
         recoveryEnabled: true,
         participantAdjustmentPolicy: 'participant-choice',
         voiceInputAvailable: true,
-        gazeInputAvailable: false,
+        // The weighted NASA-TLX route is the feature-complete technical demo.
+        // It retains the optional experimental gaze setup so the published
+        // accessibility test matrix can exercise the same bounded route that
+        // existed before the landing page was introduced. The shorter demos do
+        // not advertise gaze because it is not part of their core presentation.
+        gazeInputAvailable: instrumentId === 'nasa-tlx-weighted',
       },
       collection: { mode: 'local' },
     },
