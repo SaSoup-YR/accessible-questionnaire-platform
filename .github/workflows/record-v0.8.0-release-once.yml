@@ -1,0 +1,46 @@
+name: Record published AQP v0.8.0 release receipt once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/record-v0.8.0-release-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag and write release receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: v0.8.0
+          RELEASE_SHA: ef3f46614bc3b40d02de1665a2901d017a5e00ab
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$RELEASE_SHA"
+          mkdir -p docs/evidence
+          gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json name,tagName,url,isDraft,isPrerelease,publishedAt,targetCommitish \
+            --jq '. + {resolvedCommit: "'"$RELEASE_SHA"'", verification: "tag and published release resolved successfully"}' \
+            > docs/evidence/V0.8.0-RELEASE-PUBLICATION.json
+
+      - name: Remove this one-time workflow and commit the receipt
+        run: |
+          set -euo pipefail
+          rm .github/workflows/record-v0.8.0-release-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: record published v0.8.0 release receipt"
+          git push origin HEAD:main
