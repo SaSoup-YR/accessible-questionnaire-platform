@@ -1,0 +1,61 @@
+name: One-time RF-04 generated release synchronization
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize:
+    if: github.event.pull_request.head.ref == 'agent/retry-rf04-native-recovery-dialog'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the RF-04 successor branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/retry-rf04-native-recovery-dialog
+          fetch-depth: 5
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run all unit and component tests
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Build and synchronize release outputs
+        working-directory: source
+        run: npm run build:release
+
+      - name: Remove one-time workflow and check formatting
+        run: |
+          rm .github/workflows/rf04-one-time-generated-sync.yml
+          git diff --check
+
+      - name: Commit the exact tested generated candidate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A \
+            .github/workflows/rf04-one-time-generated-sync.yml \
+            source/demo/accessible-nasa-tlx-v0.7.html \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
+            questionnaires
+          if git diff --cached --quiet; then
+            echo "Generated release is already synchronized."
+            exit 0
+          fi
+          git commit -m "chore: sync RF-04 native-dialog release output"
+          git push origin HEAD:agent/retry-rf04-native-recovery-dialog
