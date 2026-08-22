@@ -1,7 +1,7 @@
 # AQP final evidence index
 
 Date: 22 August 2026  
-Software version: `0.8.0`  
+Software version and immutable release tag: `v0.8.0`  
 Integrated product revision: `e00a737de964e120ffec38c5030d4ad212cbff5d`
 
 This index maps the final dissertation/release claims to persistent repository records. It distinguishes the immutable pre-repair baseline, targeted post-fix evidence, integrated implementation evidence and residual limitations.
@@ -11,7 +11,7 @@ This index maps the final dissertation/release claims to persistent repository r
 - Historical audit files are not rewritten to make later repairs look as though they existed at baseline.
 - A repair branch or passing CI run is not, by itself, manual assistive-technology evidence.
 - Real NVDA, VoiceOver and Voice Access observations determine the corresponding manual route result.
-- Later documentation-only commits do not alter the identified integrated product revision; the release tag is the authoritative final repository snapshot.
+- Later documentation-only commits do not alter the identified integrated product revision; the immutable release tag is the authoritative final repository snapshot.
 
 ## Contribution and architecture
 
@@ -113,20 +113,24 @@ This index maps the final dissertation/release claims to persistent repository r
   - `docs/evidence/RF09-A33-FINAL-CUMULATIVE-CLOSURE-2026-08-22.md`;
 - result: R3-A33 and R4-A33 Fail to Pass through cumulative manual evidence plus final-runtime focus/answer invariants.
 
-## Final integrated candidate
+## Final integrated release
 
 | Evidence | Exact identity/result |
 | --- | --- |
+| Software version/tag | `v0.8.0` |
 | Integrated product revision | `e00a737de964e120ffec38c5030d4ad212cbff5d` |
 | Integration preflight | `docs/evidence/FINAL-INTEGRATION-PREFLIGHT-2026-08-22.md` |
-| Canonical read-only run | `32544006644` — success on documentation head `2c183b3a2dc2333feeace48dcd4638c344c14b17` |
+| Final curated pre-merge head | `69ce59443718e17729ce3dadda2d3bd810b88231` |
+| Canonical read-only run | `32544582158` — success |
 | Unit/component | 26/26 files; 230/230 tests |
 | Rendered-browser | 12/12 tests |
 | Cross-browser support | 18/18 tests across Chromium, Firefox and Playwright WebKit |
 | Builds | production, standalone, synchronized release and committed-output freshness passed |
 | Dependency audit | 0 reported vulnerabilities in the locked installation |
-| Quantified artifact | ID `9467917456`; archive SHA-256 `e5f1df4693c76d0ee3bc651803a1ec563ea9b5d5f26417d381a7d86b4260d5d1` |
-| Rendered artifact | ID `9467954426`; archive SHA-256 `b5ca8b8e5175bc06a8f511190ff89deed5847025deba5d9eabd4eb3e432881b6` |
+| Quantified artifact | ID `9468093060`; archive SHA-256 `8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8` |
+| Rendered artifact | ID `9468131274`; archive SHA-256 `4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69` |
+
+The immutable `v0.8.0` tag identifies the authoritative released repository snapshot after the equivalent `main` tree and GitHub Pages deployment have passed the publication checks. Commit-specific PR and main workflow records remain in GitHub Actions.
 
 ## Final residual and claim boundary
 
