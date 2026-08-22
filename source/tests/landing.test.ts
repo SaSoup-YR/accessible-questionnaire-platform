@@ -44,6 +44,7 @@ describe('AQP public landing and demonstration routing', () => {
       expect(config?.support.participantAdjustmentPolicy).toBe(
         'participant-choice',
       );
+      expect(config?.support.recoveryEnabled).toBe(false);
       expect(config?.support.voiceInputAvailable).toBe(true);
       expect(config?.support.gazeInputAvailable).toBe(
         id === 'nasa-tlx-weighted',
