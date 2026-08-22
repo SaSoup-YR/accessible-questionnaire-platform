@@ -1,0 +1,69 @@
+name: One-time final repository curation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  curate:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'agent/final-prototype-integration'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the final integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/final-prototype-integration
+          fetch-depth: 2
+
+      - name: Replace machine-specific document tooling and fix README map
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          script = Path('tools/build_evaluation_documents.py')
+          text = script.read_text(encoding='utf-8')
+          old = '''import os
+          import subprocess
+          import sys
+          from pathlib import Path
+          '''
+          new = '''import os
+          import subprocess
+          from pathlib import Path
+          '''
+          if old not in text:
+              raise SystemExit('Expected import block was not found.')
+          text = text.replace(old, new, 1)
+
+          old_geometry = '''sys.path.insert(0, "/root/.codex/skills/builtins/documents/scripts")
+          from table_geometry import apply_table_geometry, column_widths_from_weights, section_content_width_dxa
+          '''
+          new_geometry = '''from docx_table_geometry import (
+              apply_table_geometry,
+              column_widths_from_weights,
+              section_content_width_dxa,
+          )
+          '''
+          if old_geometry not in text:
+              raise SystemExit('Expected machine-specific geometry import was not found.')
+          script.write_text(text.replace(old_geometry, new_geometry, 1), encoding='utf-8')
+
+          readme = Path('README.md')
+          readme_text = readme.read_text(encoding='utf-8')
+          readme_text = readme_text.replace('a ssets/         Generated GitHub Pages bundles (do not hand-edit)', 'assets/          Generated GitHub Pages bundles (do not hand-edit)')
+          readme_text = readme_text.replace('\nThe space in `a ssets/` above is typographic only; the repository directory is `assets/`.\n', '\n')
+          readme.write_text(readme_text, encoding='utf-8')
+          PY
+
+      - name: Remove the one-time workflow and commit
+        run: |
+          rm .github/workflows/final-curation-once.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make document tooling portable and finish README cleanup"
+          git push origin HEAD:agent/final-prototype-integration
