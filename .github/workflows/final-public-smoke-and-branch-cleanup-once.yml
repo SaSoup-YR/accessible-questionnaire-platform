@@ -1,0 +1,159 @@
+name: Final public Pages smoke and repair-branch cleanup once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/final-public-smoke-and-branch-cleanup-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  closeout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Smoke-test deployed participant, researcher and referenced assets
+        env:
+          BASE_URL: https://sasoup-yr.github.io/accessible-questionnaire-platform
+          VERIFIED_MAIN: 613268795c87b52e9816e60172d90abacc97f1cb
+          GH_PAGES_COMMIT: d2afa9f674ee2a99b902cec4f4721274e37bbe54
+          RELEASE_TAG: v0.8.0
+          RELEASE_COMMIT: ef3f46614bc3b40d02de1665a2901d017a5e00ab
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/aqp-smoke docs/evidence
+
+          curl -fsSL --retry 12 --retry-delay 5 --retry-all-errors \
+            "${BASE_URL}/?smoke=${VERIFIED_MAIN}" \
+            -o /tmp/aqp-smoke/index.html
+          curl -fsSL --retry 12 --retry-delay 5 --retry-all-errors \
+            "${BASE_URL}/study.html?smoke=${VERIFIED_MAIN}" \
+            -o /tmp/aqp-smoke/study.html
+
+          grep -Fq '<title>Participant questionnaire · Accessible Questionnaire Platform Version 0.8</title>' /tmp/aqp-smoke/index.html
+          grep -Fq '<accessible-questionnaire></accessible-questionnaire>' /tmp/aqp-smoke/index.html
+          grep -Fq '<title>Study conductor · Accessible Questionnaire Platform Version 0.8</title>' /tmp/aqp-smoke/study.html
+          grep -Fq '<study-conductor-app></study-conductor-app>' /tmp/aqp-smoke/study.html
+
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          from datetime import datetime, timezone
+
+          root = pathlib.Path('/tmp/aqp-smoke')
+          base = os.environ['BASE_URL'].rstrip('/')
+          pages = {
+              'participant': root / 'index.html',
+              'researcher': root / 'study.html',
+          }
+          expected = {
+              'participant': 'Participant questionnaire · Accessible Questionnaire Platform Version 0.8',
+              'researcher': 'Study conductor · Accessible Questionnaire Platform Version 0.8',
+          }
+          page_records = {}
+          assets: dict[str, dict[str, object]] = {}
+          for name, path in pages.items():
+              raw = path.read_bytes()
+              text = raw.decode('utf-8')
+              title_match = re.search(r'<title>(.*?)</title>', text, re.S)
+              title = title_match.group(1).strip() if title_match else ''
+              if title != expected[name]:
+                  raise SystemExit(f'Unexpected {name} title: {title!r}')
+              page_records[name] = {
+                  'httpStatus': 200,
+                  'title': title,
+                  'sha256': hashlib.sha256(raw).hexdigest(),
+                  'bytes': len(raw),
+              }
+              for rel in re.findall(r'(?:src|href)="\.\/assets\/([^"?#]+)', text):
+                  if rel in assets:
+                      continue
+                  destination = root / rel
+                  subprocess.run([
+                      'curl', '-fsSL', '--retry', '12', '--retry-delay', '5',
+                      '--retry-all-errors', f'{base}/assets/{rel}', '-o', str(destination)
+                  ], check=True)
+                  body = destination.read_bytes()
+                  if not body:
+                      raise SystemExit(f'Empty deployed asset: {rel}')
+                  assets[rel] = {
+                      'httpStatus': 200,
+                      'sha256': hashlib.sha256(body).hexdigest(),
+                      'bytes': len(body),
+                  }
+
+          receipt = {
+              'schemaVersion': 1,
+              'checkedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+              'baseUrl': base + '/',
+              'verifiedMainCommit': os.environ['VERIFIED_MAIN'],
+              'ghPagesDeploymentCommit': os.environ['GH_PAGES_COMMIT'],
+              'releaseTag': os.environ['RELEASE_TAG'],
+              'releaseCommit': os.environ['RELEASE_COMMIT'],
+              'pages': page_records,
+              'referencedAssets': assets,
+              'result': 'pass',
+              'claimBoundary': 'HTTP/deployment smoke only; not a substitute for the recorded browser and assistive-technology evidence.',
+          }
+          pathlib.Path('docs/evidence/PUBLIC-PAGES-SMOKE-2026-08-22.json').write_text(
+              json.dumps(receipt, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Delete only the superseded release and repair branches
+        run: |
+          set -euo pipefail
+          branches=(
+            agent/final-prototype-integration
+            agent/retry-rf04-native-recovery-dialog
+            agent/fix-rf01-qualtrics-connection-alert
+            agent/fix-rf01-r3-a26-dedicated-announcer
+            agent/fix-rf05-320px-reflow
+            agent/fix-rf06-speech-listening-lifecycle
+            agent/fix-rf07-speech-recognition-reliability
+            agent/retry-rf07-on-device-speech
+            agent/fix-rf08-smiley-voice-access
+            agent/fix-rf09-support-setting-feedback
+            agent/supervisor-workflow-validation
+          )
+          printf '%s\n' "${branches[@]}" > /tmp/aqp-deleted-branches.txt
+          for branch in "${branches[@]}"; do
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git push origin --delete "$branch"
+            else
+              echo "Already absent: $branch"
+            fi
+          done
+
+      - name: Remove this one-time workflow and commit the closeout receipt
+        run: |
+          set -euo pipefail
+          rm .github/workflows/final-public-smoke-and-branch-cleanup-once.yml
+          {
+            echo '# Final release branch-cleanup receipt'
+            echo
+            echo 'Date: 22 August 2026'
+            echo
+            echo 'The following superseded release/repair branches were deleted only after PR #83 was merged, `v0.8.0` was published, the released commit was deployed and the public Pages smoke passed:'
+            echo
+            sed 's/^/- `/' /tmp/aqp-deleted-branches.txt | sed 's/$/`;/'
+            echo
+            echo 'The corresponding pull requests, commits, evidence files and immutable release tag remain available. No historical baseline or failed observation was deleted.'
+          } > docs/evidence/FINAL-REPAIR-BRANCH-CLEANUP-2026-08-22.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: record final public smoke and repair-branch cleanup"
+          git push origin HEAD:main
