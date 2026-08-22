@@ -79,6 +79,10 @@ Automation must establish that:
 
 Automation remains implementation evidence only. It cannot establish the VoiceOver cursor result.
 
+### Synchronized candidate status
+
+The first canonical run established that all source, unit/component, rendered-browser, cross-browser and build gates passed, while the final read-only deployment freshness check correctly detected that the newly built generated files had not yet been committed. A one-time branch-scoped workflow then reran **241/241** tests, rebuilt the release, committed the exact generated outputs and removed itself. The final human-authored documentation commit exists only to trigger the ordinary read-only canonical workflow on that synchronized tree; no product behavior is changed by this paragraph.
+
 ## Final manual stop rule
 
 After an immutable exact-SHA preview is published, run only R3 VoiceOver + Safari:
