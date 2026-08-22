@@ -1,14 +1,14 @@
 # RF-07 on-device command-model manual observation — 22 August 2026
 
-Status: **the command-quality on-device successor did not close the frozen two-word A11/A12 route; a higher-capability dictation-quality successor is justified.**
+Status: **the command-quality on-device successor did not close the frozen two-word A11/A12 route; a higher-capability dictation-quality successor is justified and has been synchronized for final verification.**
 
 Historical q8 remains immutable at **94 P / 31 F / 7 NA / 0 NT**. This is targeted post-fix evidence only.
 
-## Exact candidate and environment boundary
+## Exact command-quality candidate and environment boundary
 
-- PR: `#81` — `Retry RF-07 with on-device command recognition`.
-- Exact source/runtime SHA under test: `f4c60d3b70a9b86fa06bb3071ba6a2155be4963b`.
-- Frozen launcher: `/rf07-on-device-sus-preview/`.
+- PR: `#81`.
+- Exact command-quality source/runtime SHA under test: `f4c60d3b70a9b86fa06bb3071ba6a2155be4963b`.
+- Frozen launcher used: `/rf07-on-device-sus-preview/`.
 - Environment reported by the auditor: Windows desktop Chrome; Windows Voice Access was not used for this built-in-recognition check.
 - AQP exposed the route message: `Listening for one answer using on-device English recognition (en-GB).`
 
@@ -32,7 +32,7 @@ AQP did not infer a missing value from the incomplete `Number` transcript. The p
 
 That fail-safe behaviour is retained. Mapping the incomplete word `Number` to any response would be unsafe and is not proposed.
 
-## Frozen-cell adjudication
+## Frozen-cell adjudication for the command model
 
 The A11/A12 fixed test data requires the two-word phrase `number four`, with `not four` as the negation-safety phrase. Bare-number success does not silently replace that frozen action.
 
@@ -47,7 +47,7 @@ Therefore the command-quality candidate does **not** change any historical RF-07
 
 The current Web Speech API now distinguishes model capability levels. `command` is the lowest floor for short, limited-vocabulary commands; `dictation` is a higher semantic-capability floor. MDN and the current Web Speech specification explicitly demonstrate checking/installing a `dictation`-quality on-device pack before starting recognition.
 
-The next bounded successor therefore:
+The bounded successor therefore:
 
 1. requires `quality: "dictation"` rather than silently accepting the command/default pack that was manually observed truncating the frozen phrase;
 2. prefers the documented Chrome local-English `en-US` pack, with `en-GB` as a bounded local fallback;
@@ -55,7 +55,15 @@ The next bounded successor therefore:
 4. changes no parser, answer, score, storage, submission or confirmation semantics;
 5. still requires an exact live `number four` / `not four` retest before any F→P claim.
 
-If the dictation-quality successor also returns only `Number` or otherwise fails the frozen phrase, RF-07 must return to residual-F and stop; bare-number recognition may be documented as a supplementary route but must not be used to rewrite the frozen result.
+## Synchronized dictation-quality candidate
+
+The exact generated dictation-quality candidate was synchronized at source head:
+
+`8260051047bca164b43d535bbebf61f5e99f2d27`
+
+The synchronization run completed the full unit/component suite (**237/237**) and production/standalone release build before committing the generated outputs. A separate canonical read-only workflow on the human-authored evidence head remains the authoritative full browser/release gate; no live or F→P claim follows from synchronization alone.
+
+If the fully verified dictation-quality successor also returns only `Number` or otherwise fails the frozen phrase, RF-07 must return to residual-F and stop; bare-number recognition may be documented as a supplementary route but must not be used to rewrite the frozen result.
 
 ## Screenshot integrity
 
