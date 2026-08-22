@@ -1,0 +1,88 @@
+body.aqp-landing-page {
+  margin: 0;
+  background: #f3f6f9;
+  color: #172536;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+.aqp-landing {
+  width: min(72rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 5rem) 0;
+}
+
+.aqp-landing header,
+.aqp-landing section {
+  margin-bottom: 1.5rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid #c9d3de;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.aqp-landing h1,
+.aqp-landing h2 {
+  margin-top: 0;
+  line-height: 1.2;
+}
+
+.aqp-landing .release-line {
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.aqp-demo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: 1rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aqp-demo-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #9eafc0;
+  border-radius: 10px;
+}
+
+.aqp-demo-list p {
+  margin: 0;
+}
+
+.aqp-landing a.action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border: 2px solid #075a96;
+  border-radius: 8px;
+  background: #075a96;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.aqp-landing a.action-link.secondary {
+  background: #fff;
+  color: #075a96;
+}
+
+.aqp-landing a.action-link:hover {
+  text-decoration: underline;
+}
+
+.aqp-landing a.action-link:focus-visible {
+  outline: 4px solid #ffbf47;
+  outline-offset: 3px;
+}
+
+.aqp-landing .boundary-note {
+  border-left: 6px solid #5a6b7d;
+}

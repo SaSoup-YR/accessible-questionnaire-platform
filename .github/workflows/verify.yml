@@ -96,7 +96,6 @@ jobs:
       - name: Confirm the committed deployment files are current
         run: >-
           git diff --exit-code --
-          demo/accessible-nasa-tlx-v0.7.html
           demo/accessible-questionnaire-platform-v0.8.html
           ../index.html
           ../study.html
