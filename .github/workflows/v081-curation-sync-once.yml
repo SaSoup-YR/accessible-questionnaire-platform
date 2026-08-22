@@ -1,22 +1,20 @@
-name: One-time v0.8.1 curation, dependency and release synchronization
+name: Verify and package the v0.8.1 curation candidate
 
 on:
-  push:
-    branches:
-      - release/v0.8.1-curation
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  verify-and-synchronize:
+  verify-and-package:
+    if: github.event.pull_request.head.ref == 'release/v0.8.1-curation'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the curation branch
+      - name: Check out the exact pull-request head
         uses: actions/checkout@v4
         with:
-          ref: release/v0.8.1-curation
-          fetch-depth: 5
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -25,7 +23,7 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Synchronize package metadata and install the locked dependency graph
+      - name: Synchronize package metadata and install the locked graph
         working-directory: source
         run: |
           npm version 0.8.1 --no-git-tag-version --allow-same-version
@@ -79,7 +77,7 @@ jobs:
         working-directory: source
         run: npm run test:browser-support
 
-      - name: Build and synchronize the release
+      - name: Build and synchronize the release tree
         working-directory: source
         run: npm run build:release
 
@@ -94,31 +92,22 @@ jobs:
           test ! -e source/demo/accessible-nasa-tlx-v0.7.html
           test -e docs/PLANNED-STUDY-NOT-EXECUTED.md
           test -e docs/archive/README.md
-
-      - name: Remove this one-time workflow and check the candidate diff
-        run: |
-          rm .github/workflows/v081-curation-sync-once.yml
           git diff --check
 
-      - name: Commit exact tested metadata, reports and generated output
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A \
-            .github/workflows/v081-curation-sync-once.yml \
-            source/package.json \
-            source/package-lock.json \
-            docs/evidence/DEPENDENCY-OUTDATED-v0.8.1.json \
-            docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json \
-            docs/evidence/REPOSITORY-LINK-AUDIT-v0.8.1.json \
-            source/demo/accessible-questionnaire-platform-v0.8.html \
-            index.html \
-            study.html \
-            assets \
+      - name: Publish the exact tested curation outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: v081-curation-tested-output
+          path: |
+            source/package.json
+            source/package-lock.json
+            docs/evidence/DEPENDENCY-OUTDATED-v0.8.1.json
+            docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json
+            docs/evidence/REPOSITORY-LINK-AUDIT-v0.8.1.json
+            source/demo/accessible-questionnaire-platform-v0.8.html
+            index.html
+            study.html
+            assets
             questionnaires
-          if git diff --cached --quiet; then
-            echo "No generated or report changes remain to commit."
-            exit 0
-          fi
-          git commit -m "chore: synchronize the tested v0.8.1 curation release"
-          git push origin HEAD:release/v0.8.1-curation
+          if-no-files-found: error
+          retention-days: 14
