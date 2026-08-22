@@ -25,7 +25,7 @@ async function choose(page: Page, value: number) {
 }
 
 // This rendered regression follows the same saved-answer boundary that drives frozen A14/A15.
-test('RF-04 reload focuses Resume and Resume continues at the first unanswered SUS item', async ({ page }) => {
+test('RF-04 reload opens the saved session as a modal and Resume continues at the first unanswered SUS item', async ({ page }) => {
   const participantCode = 'E2E-RF04-01';
   await page.goto(configuredSusParticipant(participantCode));
   await expect(page.locator('#participant-code')).toHaveValue(participantCode);
@@ -44,8 +44,23 @@ test('RF-04 reload focuses Resume and Resume continues at the first unanswered S
   await expect(page.locator('.step-label')).toContainText('Rating 3 of 10');
 
   await page.reload();
-  await expect(page.locator('.saved-session')).toContainText('3 of 10');
+
+  const dialog = page.getByRole('dialog', { name: 'Saved questionnaire found' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('3 of 10');
   const resume = page.getByRole('button', { name: 'Resume saved questionnaire' });
+  await expect(resume).toBeFocused();
+
+  // Native modal behavior supplies a non-destructive Escape route. The saved
+  // session remains available and a visible trigger reopens the same choices.
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  const reopen = page.getByRole('button', {
+    name: 'Open saved-questionnaire choices',
+  });
+  await expect(reopen).toBeFocused();
+  await reopen.click();
+  await expect(dialog).toBeVisible();
   await expect(resume).toBeFocused();
 
   await resume.click();

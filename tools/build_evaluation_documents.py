@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 from docx import Document
@@ -16,8 +15,11 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-sys.path.insert(0, "/root/.codex/skills/builtins/documents/scripts")
-from table_geometry import apply_table_geometry, column_widths_from_weights, section_content_width_dxa
+from docx_table_geometry import (
+    apply_table_geometry,
+    column_widths_from_weights,
+    section_content_width_dxa,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
