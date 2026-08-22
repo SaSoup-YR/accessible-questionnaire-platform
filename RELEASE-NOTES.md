@@ -1,7 +1,7 @@
 # AQP 0.8.0 — final prototype release notes
 
 Date: 22 August 2026  
-Status: final MSc prototype freeze candidate
+Status: final MSc prototype release
 
 ## Release scope
 
@@ -56,9 +56,9 @@ Integrated product revision:
 
 `e00a737de964e120ffec38c5030d4ad212cbff5d`
 
-Ordinary read-only canonical workflow:
+Final curated pre-merge verification:
 
-`32544006644 — success` on documentation head `2c183b3a2dc2333feeace48dcd4638c344c14b17`
+`32544582158 — success` on head `69ce59443718e17729ce3dadda2d3bd810b88231`
 
 Recorded gates:
 
@@ -69,12 +69,12 @@ Recorded gates:
 - committed generated-release freshness;
 - 0 vulnerabilities reported by the locked installation audit.
 
-Retained 90-day workflow artifacts:
+Retained 90-day workflow artifacts from that run:
 
-- quantified technical evaluation: ID `9467917456`, archive SHA-256 `e5f1df4693c76d0ee3bc651803a1ec563ea9b5d5f26417d381a7d86b4260d5d1`;
-- rendered accessibility evidence: ID `9467954426`, archive SHA-256 `b5ca8b8e5175bc06a8f511190ff89deed5847025deba5d9eabd4eb3e432881b6`.
+- quantified technical evaluation: ID `9468093060`, archive SHA-256 `8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8`;
+- rendered accessibility evidence: ID `9468131274`, archive SHA-256 `4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69`.
 
-Playwright WebKit is not Safari + VoiceOver evidence. Automated speech support is not a live microphone-recognition result.
+The immutable `v0.8.0` tag is created only from the subsequently verified `main` commit. Playwright WebKit is not Safari + VoiceOver evidence. Automated speech support is not a live microphone-recognition result.
 
 ## Known limitations
 
