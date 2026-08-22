@@ -1,6 +1,6 @@
 # AQP v0.8.0 main publication provenance — 22 August 2026
 
-Status: **release published; final documentation-only main snapshot submitted to the ordinary verification and GitHub Pages synchronization workflow.**
+Status: **release published, deployed and smoke-checked; superseded repair branches closed and removed; this documentation-only commit is the final intended main-branch update.**
 
 ## Reviewed and released product identity
 
@@ -26,9 +26,35 @@ The merge-triggered ordinary workflow passed and synchronized GitHub Pages as:
 
 The deployed tree therefore matched the immutable released product tree byte-for-byte at the Git tree level.
 
-Later `main` commits created and then removed the one-time publication workflows and added this provenance record plus the machine-readable release receipt. They are documentation/publication metadata only: they do not change executable source, generated HTML/assets, questionnaire definitions, scoring, storage, recovery, the Qualtrics bridge, manual adjudications or the six residual failures.
+The later documentation-only publication snapshot `613268795c87b52e9816e60172d90abacc97f1cb` also passed the ordinary workflow and was synchronized to GitHub Pages as deployment commit `d2afa9f674ee2a99b902cec4f4721274e37bbe54`.
 
-The commit containing this final text is the last intended main-branch publication update. The normal `push` workflow must pass and synchronize that documentation-only tree to `gh-pages`; the release tag itself remains fixed at the already verified and deployed product commit.
+## Public deployment smoke
+
+A post-deployment HTTP smoke was executed at `2026-08-22T02:21:13.679408Z` and recorded in `PUBLIC-PAGES-SMOKE-2026-08-22.json`.
+
+Observed results:
+
+- participant entry: HTTP 200; title `Participant questionnaire · Accessible Questionnaire Platform Version 0.8`;
+- researcher entry: HTTP 200; title `Study conductor · Accessible Questionnaire Platform Version 0.8`;
+- every JavaScript and CSS asset referenced by those two pages returned HTTP 200 and a non-empty body;
+- body and asset SHA-256 digests were recorded for later integrity comparison.
+
+This is an HTTP/deployment smoke only. It does not replace the recorded rendered-browser or real assistive-technology evidence.
+
+## Repair-branch and pull-request closure
+
+After release publication and the passing public smoke:
+
+- PRs #74, #75, #76, #77, #78, #79 and #82 were closed as superseded by #83 rather than merged again;
+- earlier documentation PR #65 was also closed as superseded;
+- each PR received a comment explaining which implementation/evidence was retained and which residual failure, if any, remained;
+- eleven superseded release/repair branches were deleted, as listed in `FINAL-REPAIR-BRANCH-CLEANUP-2026-08-22.md`;
+- the corresponding pull requests, commits, evidence records and immutable release tag remain available;
+- no historical audit baseline or failed observation was deleted.
+
+Later `main` commits created and removed one-time publication/smoke workflows and added provenance receipts only. They do not change executable source, generated HTML/assets, questionnaire definitions, scoring, storage, recovery, the Qualtrics bridge, manual adjudications or the six residual failures.
+
+The commit containing this final text is the last intended main-branch publication update. The normal `push` workflow must pass and synchronize this documentation-only tree to `gh-pages`; after that, no further release closeout commit is required. The immutable release tag remains fixed at the already verified and deployed product commit.
 
 ## Evidence boundary retained at publication
 
