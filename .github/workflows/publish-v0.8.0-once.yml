@@ -1,0 +1,67 @@
+name: Publish immutable AQP v0.8.0 once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-v0.8.0-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify the already-tested release snapshot
+        env:
+          RELEASE_SHA: ef3f46614bc3b40d02de1665a2901d017a5e00ab
+          RELEASE_TREE: 2b2ba68df35514bfec007ba5e52646501e597af4
+          RELEASE_TAG: v0.8.0
+        run: |
+          set -euo pipefail
+          git cat-file -e "${RELEASE_SHA}^{commit}"
+          test "$(git rev-parse "${RELEASE_SHA}^{tree}")" = "$RELEASE_TREE"
+          git merge-base --is-ancestor "$RELEASE_SHA" HEAD
+
+          if git show-ref --tags --verify --quiet "refs/tags/${RELEASE_TAG}"; then
+            test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$RELEASE_SHA"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_TAG" "$RELEASE_SHA" \
+              -m "Accessible Questionnaire Platform v0.8.0"
+            git push origin "refs/tags/${RELEASE_TAG}"
+          fi
+
+      - name: Create the GitHub release from the immutable tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: v0.8.0
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists."
+          else
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Accessible Questionnaire Platform v0.8.0" \
+              --notes-file RELEASE-NOTES.md \
+              --verify-tag
+          fi
+
+      - name: Remove this one-time workflow from main
+        run: |
+          set -euo pipefail
+          rm .github/workflows/publish-v0.8.0-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: remove one-time v0.8.0 publication workflow"
+          git push origin HEAD:main
