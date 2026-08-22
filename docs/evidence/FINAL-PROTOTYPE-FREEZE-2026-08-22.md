@@ -1,18 +1,18 @@
 # Final AQP prototype freeze record — 22 August 2026
 
-Status: **engineering repair programme closed; integrated release candidate verified; merge, tag and deployed-build provenance remain the final release operations.**
+Status: **engineering repair programme and repository curation closed; the final `v0.8.0` publication uses a verified `main` snapshot and an immutable tag.**
 
 ## 1. Frozen product identity
 
-Software version: `0.8.0`  
+Software version and release tag: `v0.8.0`  
 Integrated product revision: `e00a737de964e120ffec38c5030d4ad212cbff5d`  
-Integrated candidate branch: `agent/final-prototype-integration`
+Final integration branch before release: `agent/final-prototype-integration`
 
 The integrated product was constructed from the retained cumulative RF-06/RF-09/RF-08/RF-07 head plus the exact retained RF-01, RF-05 and final RF-04 heads. Generated HTML and hashed assets were discarded at conflict boundaries and rebuilt from the integrated source; no minified bundle conflict was resolved by hand.
 
 One-time construction workflow `32543873697` completed successfully and removed itself from the committed tree.
 
-The ordinary read-only canonical workflow `32544006644` completed successfully on documentation head `2c183b3a2dc2333feeace48dcd4638c344c14b17`:
+The final curated pre-merge workflow `32544582158` completed successfully on head `69ce59443718e17729ce3dadda2d3bd810b88231`:
 
 - 26/26 unit/component files and 230/230 tests;
 - 12/12 rendered-browser tests;
@@ -21,7 +21,7 @@ The ordinary read-only canonical workflow `32544006644` completed successfully o
 - committed generated-release freshness;
 - 0 reported vulnerabilities from the locked installation audit.
 
-The later repository-curation commits do not alter the identified product source or generated release. A final ordinary workflow is still required on the exact merge candidate before release.
+Later edits in the release branch are documentation and publication metadata only. The release process requires the exact final PR head and the resulting `main` snapshot to pass the same ordinary workflow before the immutable tag is created.
 
 ## 2. Evidence ledger
 
@@ -92,15 +92,15 @@ The final public surface preserves:
 - licence, citation and third-party notices;
 - exact revisions, run IDs, artifact IDs and screenshot hashes supporting final claims.
 
-The cleanup removes or replaces only:
+The cleanup removed or replaced only:
 
 - machine-specific document-build imports;
-- temporary one-time workflows after they have completed;
+- temporary one-time workflows after they completed;
 - stale top-level prose that contradicted the final evidence state;
 - unreferenced generated assets through the normal release synchronization process;
-- low-value duplicate scaffolding or accidental local artifacts, where found.
+- low-value duplicate scaffolding or accidental local artifacts where identified.
 
-Commit history, baseline failures and contradictory evidence are not erased.
+Commit history, baseline failures and contradictory evidence were not erased.
 
 ## 6. Dissertation claim boundary
 
@@ -117,16 +117,16 @@ Not supported:
 - the prototype benefits disabled users;
 - the technical audit authorizes participant recruitment or data collection.
 
-## 7. Remaining release operations
+## 7. Publication and provenance protocol
 
-Before declaring the public release frozen:
+The public release is valid only when all of the following records agree:
 
-1. complete the repository-curation inventory;
-2. run the ordinary read-only workflow on the exact final PR head;
-3. squash-merge the reviewed integration PR;
-4. verify the main-branch workflow and GitHub Pages provenance;
-5. perform a clean deployed researcher/participant smoke test;
-6. create an immutable `v0.8.0` tag/release from the verified main commit;
-7. close superseded repair PRs with links to the integrated release rather than merging them separately.
+1. the final integration PR head passed the ordinary read-only workflow;
+2. the reviewed PR was squash-merged to `main` without an intervening head change;
+3. the `main` workflow passed and synchronized GitHub Pages;
+4. the deployed researcher and participant entry points loaded from that verified tree;
+5. the immutable `v0.8.0` tag points to the verified release snapshot;
+6. the GitHub release uses the committed `RELEASE-NOTES.md` and does not move the tag;
+7. superseded repair PRs are closed with links to the integrated release rather than merged separately.
 
-These operations may update provenance records but must not change the frozen evidence conclusions without new executed evidence.
+Publication records may add commit, workflow, deployment and tag identifiers. They must not change the frozen product behavior, six residual failures or dissertation claim boundary without new executed evidence.
