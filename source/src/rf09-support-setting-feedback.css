@@ -1,0 +1,12 @@
+.support-setting-feedback {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 0.35rem solid #004f87;
+  background: #eef7ff;
+  color: #1d2733;
+  font-weight: 700;
+}
+
+.support-setting-feedback[hidden] {
+  display: none;
+}

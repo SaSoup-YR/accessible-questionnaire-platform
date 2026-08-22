@@ -1,140 +1,175 @@
 {
-  "prototype": "Accessible Questionnaire Platform",
-  "version": "0.8.0",
-  "releaseStatus": "RF-04 targeted saved-session recovery repair candidate on top of the evidence-frozen q10 technical baseline. Five of six historical RF-04 A14/A15 failure cells have targeted post-fix closure evidence; R3-A14 remains Fail on VoiceOver + Safari. The ineffective Safari-only delayed refocus follow-up was removed. The retained participant runtime was resynchronized at 53ca17d0fcc3d502e6561997d3c3a48719475a2a and returns to the first manually tested RF-04 implementation.",
-  "releaseRepository": "SaSoup-YR/accessible-questionnaire-platform",
-  "evidenceRepository": "SaSoup-YR/accessible-hci-questionnaire-library",
-  "revisionPolicy": "Use the immutable Git commit or release tag named in this file. Do not move an existing tag after a functional or evidence change.",
-  "builtAt": "2026-08-17T14:09:00Z",
-  "qualtricsBridgeBuild": "0.8.10-q10",
-  "entryPoints": {
-    "participant": "index.html",
-    "studyConductor": "study.html"
+  "schemaVersion": 2,
+  "project": {
+    "name": "Accessible Questionnaire Platform",
+    "shortName": "AQP",
+    "softwareVersion": "0.8.0",
+    "releaseStatus": "final-prototype-release",
+    "releaseTag": "v0.8.0",
+    "recordDate": "2026-08-22",
+    "repository": "SaSoup-YR/accessible-questionnaire-platform",
+    "pagesBaseUrl": "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
   },
-  "supportedDefinitions": [
-    "nasa-tlx-weighted@1.0.0",
-    "nasa-tlx-raw@1.0.0",
-    "system-usability-scale@brooke-1996",
-    "researcher-supplied-or-reviewed-import@mean-or-sum-v1 (1-20 shared-scale items)"
-  ],
-  "storageMode": "local fallback or exact-origin UCL Qualtrics bridge; central collection becomes active only after approved survey setup and synthetic cross-device verification",
-  "claimBoundary": "Bounded shared runner for the documented integer single-choice profile, response structures and allowlisted scorers. The prototype does not establish permission, psychometric validity, equivalence, complete WCAG conformance, general accessibility improvement or disability-group benefit.",
-  "historicalBaseline": "Version 0.7 remains available at source/demo/accessible-nasa-tlx-v0.7.html and in Git history.",
-  "releaseCandidate": "v0.8.0-rc.4",
-  "previousReleaseCandidate": "v0.8.0-rc.3",
-  "evaluationStatus": "The broad q10 technical baseline remains the exact-main evidence frozen at executed source 7a74b2a863b775ce6bb9741756dfd022e9afe627: run 32039156231 passed; quantified artifact 9291578791 reported 8 cases, 31 items and 234 field comparisons with 0 mismatches, 12 adversarial inputs with 0 silently altered, and 8/8 export reconstruction with 0 mismatches; rendered artifact 9291614890 reported 27 states x 5 profiles = 135 scans with 0 axe violations and the retained manual contrast adjudication minimum 6.68:1. RF-04 was then evaluated as a targeted repair family without rewriting q8: five of six historical A14/A15 RF-04 failures closed on targeted post-fix manual retest, while R3-A14 remained Fail on VoiceOver + Safari. The final retained RF-04 participant runtime matches the first manually tested repair implementation and was resynchronized at 53ca17d0fcc3d502e6561997d3c3a48719475a2a. Standard verification run 32314041841 passed at evidence head b4b8c731096160d9ff45e3a78cfbcd0a481df53b with quantified artifact 9387436383 and rendered artifact 9387490253. These are bounded technical findings and do not establish disabled-user benefit, complete WCAG conformance or psychometric equivalence.",
-  "thirdPartyContentDecision": "UEQ-S item text and public built-in entry removed because explicit repository/deployment redistribution permission was not established; generic semantic-differential rendering and the retained centred scorer are tested with original synthetic content.",
-  "manualVerification": {
-    "fourBuiltInDefinitionsUclQualtricsInstallSubmitAndExport": "passed at v0.8.0-rc.2 baseline",
-    "researcherSuppliedDefinitionLocalJsonRoundTripAndQualtricsResult": "passed at v0.8.0-rc.2 baseline",
-    "normalOnlineSubmissionAndAutomaticHandoff": "passed at v0.8.0-rc.2 baseline",
-    "offlineWarningBackupReconnectAndRetry": "passed at v0.8.0-rc.2 baseline",
-    "reloadInterruptionAndSameDeviceRecovery": "passed at v0.8.0-rc.2 baseline",
-    "phoneAndTabletRecovery": "passed at v0.8.0-rc.2 baseline",
-    "freshQualtricsQsfImportReviewConversionAndParticipantRun": "passed",
-    "freshLimeSurveyLssImportReviewConversionAndParticipantRun": "passed at v0.8.0-rc.3",
-    "realWorldSixGroupLssSelectionAndSpatialPresenceConversion": "passed locally",
-    "realWorldSpatialPresenceLsgDirectConversion": "passed locally",
-    "importedLssDefinitionUclQualtricsRemoteSubmission": "passed",
-    "postFixEnglishVoiceMicrophone20260801": "passed bounded primary-tester smoke check",
-    "postDeploymentOfflineReconnectRetryAndRefreshRecovery20260801": "passed by the primary tester",
-    "postDeploymentRealWorldGermanLsgImportAndParticipantRun20260801": "passed by the primary tester; structure only, not German spoken-label recognition",
-    "publicPagesConductorParticipantAndRecoverySmoke20260801": "passed on synchronized public Pages candidate with synthetic data",
-    "q10A27R1R4TargetedRetest20260817": "passed: R1 NVDA+Firefox, R2 NVDA+Chrome, R3 VoiceOver+Safari and R4 Voice Access+Chrome all P under the frozen A27 rule",
-    "q10A27HostRows20260817": "passed: six synthetic q10 rows accepted, score 50.00, reconstructable raw record, consistent definition hash/submission identifiers",
-    "rf04PostFixRecovery20260820": "targeted closure 5/6 historical RF-04 failures: R1-A14 P, R1-A15 P, R3-A14 F, R3-A15 P, R4-A14 P, R4-A15 P. R2 was retained as regression only. Historical q8 remains unchanged."
-  },
-  "historicalQ8Verification": {
-    "evidenceBuild": "0.8.8-q8",
-    "evidenceRun": 31339674025,
-    "testFilesPassed": 20,
-    "testsPassed": 198,
-    "axeStructuralScansPassed": 12,
-    "quantifiedFidelityRoundTrip": "8 cases, 31 items, 234 field comparisons, 0 mismatches",
-    "negativeImportBattery": "12 adversarial inputs, 0 silently altered",
-    "exportReconstruction": "8/8 exports and 31/31 item responses, 0 mismatches",
-    "renderedChromiumAccessibilityRegression": "12 states x 5 profiles = 60 scans with 0 violations, incomplete checks, overflow failures, target-size failures or missing states",
-    "interpretation": "Historical q8 evidence only; do not read as verification of q9 or q10."
-  },
-  "historicalQ8PrCiEvidence": {
-    "run": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31339674025",
-    "functionalHead": "882bd5ce0007e89f40fd42762338abea4714a7ca",
-    "testedPullRequestMergeRevision": "c8eb9ddd9b1ca65614442756663c58efec48b630",
-    "renderedEvidenceArtifactId": 9045449132,
-    "technicalEvidenceArtifactId": 9045426794,
-    "scope": "Historical pull-request evidence only.",
-    "evidenceBuild": "0.8.8-q8"
-  },
-  "rf02Q9HistoricalStatus": {
-    "bridgeBuild": "0.8.9-q9",
-    "scope": "RF-02 / A27 truthful pre-confirmation submission state only",
-    "mergeResult": "RF-02 q9 was merged to main as 21e9f767d47dac80e9e666f4bc617a48d11ec04c.",
-    "postFixA27Evidence": "q9 removed the premature pre-confirmation success claim, but failed-advance recovery reset the participant iframe to the introduction; A27 remained Fail."
-  },
-  "a27Q10HistoricalCandidateStatus": {
-    "bridgeBuild": "0.8.10-q10",
-    "baseMain": "21e9f767d47dac80e9e666f4bc617a48d11ec04c",
-    "pullRequest": 70,
-    "q10PullRequestVerification": "Run 32038617952 passed at PR head 2c63e6e73951cc80b18111ef77f57c951d2d9365.",
-    "mergeResult": "Squash-merged to main as 7a74b2a863b775ce6bb9741756dfd022e9afe627.",
-    "knownScopeFollowUp": "The q10 repair is targeted to A27 failed-advance recovery; it does not convert A26/A28 or other manual findings into passes."
-  },
-  "finalEvidenceFreeze": {
-    "date": "2026-08-18",
-    "executedMainRevision": "7a74b2a863b775ce6bb9741756dfd022e9afe627",
-    "mainVerificationRun": 32039156231,
-    "mainVerificationConclusion": "success",
-    "quantifiedTechnicalArtifactId": 9291578791,
-    "renderedAccessibilityArtifactId": 9291614890,
-    "renderedAutomation": {
-      "states": 27,
-      "profiles": 5,
-      "scans": 135,
-      "axeViolations": 0,
-      "axeIncompleteScans": 13,
-      "incompleteNodeOccurrences": 20,
-      "horizontalOverflowFailures": 0,
-      "targetSizeFailures": 0,
-      "missingStateProfileRows": 0
+  "provenance": {
+    "integratedProductRevision": "e00a737de964e120ffec38c5030d4ad212cbff5d",
+    "finalCuratedVerificationHead": "69ce59443718e17729ce3dadda2d3bd810b88231",
+    "releaseCommitPolicy": "Resolve the immutable v0.8.0 tag for the authoritative final repository snapshot; never move the tag after publication.",
+    "canonicalPreMergeWorkflow": {
+      "id": 32544582158,
+      "name": "Verify source and generated release",
+      "conclusion": "success"
     },
-    "manualContrastAdjudication": {
-      "nodeOccurrences": 20,
-      "passes": 20,
-      "failures": 0,
-      "minimumContrastRatio": 6.68,
-      "record": "docs/evidence/axe-contrast-manual-adjudication.json"
+    "constructionWorkflow": {
+      "id": 32543873697,
+      "purpose": "one-time retained-repair integration and generated-release synchronization",
+      "conclusion": "success",
+      "retainedInFinalTree": false
     },
-    "a27Q10": {
-      "R1": "P",
-      "R2": "P",
-      "R3": "P",
-      "R4": "P",
-      "trajectory": "q8 F -> q9 F -> q10 P",
-      "scope": "A27 only; four named configurations"
-    },
-    "deployment": {
-      "ghPagesCommit": "b678d2423e5bfeeb4581723ff343ec334b0fc628",
-      "message": "Deploy verified main 7a74b2a863b775ce6bb9741756dfd022e9afe627"
-    },
-    "narrativeRecord": "docs/FINAL-EVIDENCE-FREEZE-2026-08-18.md"
+    "integratedRetainedHeads": {
+      "rf01": "b173707024bf4b3b6caa7ddfa99357571d571190",
+      "rf04": "fcaa0a7ba471c545f2c9ad84ffc4a6e607e073b6",
+      "rf05": "84b39af34b5914847156d0a13a6353bee5b1b003",
+      "rf06Rf09Rf08Rf07CumulativeBase": "1e0f5bcf360b3b27322c831247159fe9808cb041"
+    }
   },
-  "rf04FinalStatus": {
-    "date": "2026-08-20",
-    "scope": "RF-04 saved-session recovery A14/A15 targeted repair only",
-    "historicalQ8FailureCells": 6,
-    "targetedClosedCells": 5,
-    "remainingFailure": "R3-A14 VoiceOver + Safari recovery focus",
-    "firstManualTestedRepairHead": "652b612eb38b62a327586bb94dad58ed437ba07e",
-    "retainedRecoverySourceBlob": "b757ecd928c6ec6573bd43b08949394e14d4a636",
-    "runtimeSyncCommit": "53ca17d0fcc3d502e6561997d3c3a48719475a2a",
-    "rootIndexBlob": "5768b821f05fc2aae4b64dc2e7f4798cd1de7461",
-    "participantAsset": "assets/participant-Ms9X-S-W.js",
-    "verificationHead": "b4b8c731096160d9ff45e3a78cfbcd0a481df53b",
-    "verificationRun": 32314041841,
-    "verificationConclusion": "success",
-    "quantifiedTechnicalArtifactId": 9387436383,
-    "renderedAccessibilityArtifactId": 9387490253,
-    "manualEvidenceRecord": "docs/evidence/RF04-POSTFIX-MANUAL-AUDIT-2026-08-20.md",
-    "safariOnlyFollowUp": "A delayed Safari blur/refocus workaround passed automation but did not close R3-A14 in repeated manual VoiceOver + Safari testing; it was removed before final RF-04 closure."
+  "automatedVerification": {
+    "lockedInstall": {
+      "command": "npm ci",
+      "reportedVulnerabilities": 0
+    },
+    "unitAndComponent": {
+      "testFilesPassed": 26,
+      "testFilesTotal": 26,
+      "testsPassed": 230,
+      "testsTotal": 230
+    },
+    "renderedBrowser": {
+      "testsPassed": 12,
+      "testsTotal": 12,
+      "engine": "Chromium",
+      "scope": "configured UI states, accessibility regression and retained recovery routes"
+    },
+    "crossBrowserSupport": {
+      "testsPassed": 18,
+      "testsTotal": 18,
+      "engines": [
+        "Chromium",
+        "Firefox",
+        "Playwright WebKit"
+      ],
+      "scope": "browser mechanisms and support routes; not real assistive-technology evidence"
+    },
+    "builds": {
+      "production": "passed",
+      "standalone": "passed",
+      "releaseSynchronization": "passed",
+      "committedGeneratedReleaseFreshness": "passed"
+    },
+    "artifacts": {
+      "quantifiedTechnicalEvaluation": {
+        "artifactId": 9468093060,
+        "archiveSha256": "8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8",
+        "retentionDays": 90
+      },
+      "renderedAccessibilityEvidence": {
+        "artifactId": 9468131274,
+        "archiveSha256": "4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69",
+        "retentionDays": 90
+      }
+    }
+  },
+  "evidenceLedger": {
+    "historicalQ8Baseline": {
+      "immutable": true,
+      "routeCheckCells": 132,
+      "pass": 94,
+      "fail": 31,
+      "notApplicable": 7,
+      "notTested": 0,
+      "record": "docs/manual-audit/AQP-MANUAL-AT-AUDIT-v1.0.md"
+    },
+    "targetedPostFix": {
+      "historicalFailuresClosed": 25,
+      "historicalFailuresRemaining": 6,
+      "global132CellReauditClaimed": false
+    },
+    "residualCells": [
+      {
+        "family": "RF-01",
+        "cell": "R3-A26",
+        "status": "Fail retained",
+        "boundary": "VoiceOver + Safari did not automatically expose the initial embedded Qualtrics Connecting status."
+      },
+      {
+        "family": "RF-06",
+        "cell": "R4-A10",
+        "status": "Fail retained",
+        "boundary": "Windows Voice Access and in-page Web Speech competed for the same spoken stop command."
+      },
+      {
+        "family": "RF-07",
+        "cell": "R3-A11",
+        "status": "Fail retained",
+        "boundary": "Live browser recognition did not reliably return the frozen safe proposal phrase."
+      },
+      {
+        "family": "RF-07",
+        "cell": "R3-A12",
+        "status": "Fail retained",
+        "boundary": "Live browser recognition did not reliably preserve the frozen negation phrase."
+      },
+      {
+        "family": "RF-07",
+        "cell": "R4-A11",
+        "status": "Fail retained",
+        "boundary": "Live browser recognition did not reliably return the frozen safe proposal phrase."
+      },
+      {
+        "family": "RF-07",
+        "cell": "R4-A12",
+        "status": "Fail retained",
+        "boundary": "Live browser recognition did not reliably preserve the frozen negation phrase."
+      }
+    ]
+  },
+  "rf04FinalManualAdjudication": {
+    "environment": "R3 macOS Safari + VoiceOver",
+    "candidateRevision": "0444d6f8a3a77f7cb9409d79c01a75ff42d9471d",
+    "r3A14": "Fail to Pass",
+    "r3A15": "Pass retained",
+    "observation": "VoiceOver entered the named saved-questionnaire web dialog; the modal exposed 3 of 10 and recovery choices; Resume continued to the focused Item 4 heading with the first three answers retained.",
+    "record": "docs/evidence/RF04-NATIVE-DIALOG-POSTFIX-MANUAL-AUDIT-2026-08-22.md",
+    "screenshotSha256": [
+      "6c647eb672d1d667dbcc4ae6c000f4e3f2035621fd742bf3368a9a081e4a22ae",
+      "7e8998213f37832099f9a220c3da4d90fe78c224605c9f1f1652b9a64465833c"
+    ]
+  },
+  "releaseOutputs": {
+    "participantEntry": "index.html",
+    "researcherEntry": "study.html",
+    "standaloneParticipant": "source/demo/accessible-questionnaire-platform-v0.8.html",
+    "questionnaireDefinitions": [
+      "questionnaires/nasa-tlx-weighted.questionnaire.json",
+      "questionnaires/nasa-tlx-raw.questionnaire.json",
+      "questionnaires/system-usability-scale.questionnaire.json"
+    ],
+    "schema": "questionnaires/questionnaire-definition.schema.json"
+  },
+  "claimBoundary": {
+    "supported": [
+      "bounded questionnaire-definition reuse",
+      "deterministic source-to-output fidelity within the documented profile",
+      "fail-closed integrity and recovery behavior",
+      "configuration-specific automated and manual technical results"
+    ],
+    "notSupported": [
+      "universal accessibility",
+      "complete WCAG conformance",
+      "psychometric equivalence for transformed or imported instruments",
+      "usability improvement",
+      "reduced cognitive burden",
+      "benefit for disabled users",
+      "permission to recruit or collect participant data"
+    ]
   }
 }

@@ -26,6 +26,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   var completionTimerId = null;
   var advanceWatchdogTimerId = null;
   var connectionTimerId = null;
+  var connectionAnnouncementTimerId = null;
   var parentReadyTimerIds = [];
   var relaxedLayoutStyles = [];
   var rawChunkLength = 900;
@@ -39,12 +40,39 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
 
   function setStatus(message, quiet, severity) {
     if (!status) return;
-    status.textContent = message;
+    var isError = severity === 'error';
     if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', isError ? 'alert' : 'status');
       status.setAttribute('data-quiet', quiet ? 'true' : 'false');
-      status.setAttribute('data-severity', severity === 'error' ? 'error' : 'information');
-      status.setAttribute('aria-live', quiet ? 'off' : 'polite');
+      status.setAttribute('data-severity', isError ? 'error' : 'information');
+      status.setAttribute('aria-live', quiet ? 'off' : (isError ? 'assertive' : 'polite'));
+      status.setAttribute('aria-atomic', 'true');
     }
+    status.textContent = message;
+  }
+
+  function queueConnectingStatus() {
+    if (!status) return;
+    // WCAG Technique ARIA22 requires the status container to exist with its role
+    // before the status message occurs. Qualtrics-generated HTML historically ships
+    // initial fallback text in this element, so clear that text first and inject the
+    // runtime Connecting message on a later task after the live region is established.
+    if (typeof status.setAttribute === 'function') {
+      status.setAttribute('role', 'status');
+      status.setAttribute('data-quiet', 'false');
+      status.setAttribute('data-severity', 'information');
+      status.setAttribute('aria-live', 'polite');
+      status.setAttribute('aria-atomic', 'true');
+    }
+    status.textContent = '';
+    connectionAnnouncementTimerId = window.setTimeout(function announceConnectingStatus() {
+      connectionAnnouncementTimerId = null;
+      if (childConnected) return;
+      setStatus(
+        'Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.',
+        false
+      );
+    }, 50);
   }
 
   function setImportantStyle(element, name, value) {
@@ -384,7 +412,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         setStatus(
           'The generated questionnaire HTML, JavaScript and participant page do not use the same bridge version. ' +
           'Do not collect a response. Regenerate and replace the complete package.',
-          false
+          false,
+          'error'
         );
         releaseFullscreenForNativeNavigation();
         question.showNextButton();
@@ -399,13 +428,18 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
         setStatus(
           diagnosticDetail +
           ' Do not collect a response. Check the Survey Flow fields and question JavaScript.',
-          false
+          false,
+          'error'
         );
         releaseFullscreenForNativeNavigation();
         question.showNextButton();
         return;
       }
       childConnected = true;
+      if (connectionAnnouncementTimerId !== null) {
+        window.clearTimeout(connectionAnnouncementTimerId);
+        connectionAnnouncementTimerId = null;
+      }
       if (connectionTimerId !== null) {
         window.clearTimeout(connectionTimerId);
         connectionTimerId = null;
@@ -513,7 +547,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   if (!iframe || !iframe.contentWindow || !liveQuestion) {
     setStatus(
       'The accessible questionnaire package is incomplete. The study conductor must replace the complete generated HTML and JavaScript.',
-      false
+      false,
+      'error'
     );
     // Keep the native navigation available on a misconfigured test page instead of
     // trapping the researcher or participant. This path must fail the synthetic
@@ -528,7 +563,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setStatus(
       'The questionnaire HTML and JavaScript versions do not match. Expected package ' +
       bridgeBuild + '. Do not collect a response. Replace both generated blocks together.',
-      false
+      false,
+      'error'
     );
     releaseFullscreenForNativeNavigation();
     question.showNextButton();
@@ -539,7 +575,7 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
   lockOuterQualtricsViewport();
   question.hideNextButton();
   window.addEventListener('message', receiveResult);
-  setStatus('Connecting questionnaire package ' + bridgeBuild + ' to this Qualtrics response.', false);
+  queueConnectingStatus();
   if (typeof iframe.addEventListener === 'function') {
     iframe.addEventListener('load', sendParentReady);
   }
@@ -553,7 +589,8 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     setStatus(
       'The questionnaire connection did not start. Do not collect a real response. ' +
       'Regenerate and replace the complete HTML and JavaScript, then test again.',
-      false
+      false,
+      'error'
     );
     releaseFullscreenForNativeNavigation();
     question.showNextButton();
@@ -570,6 +607,10 @@ Qualtrics.SurveyEngine.addOnReady(function initialiseAccessibleQuestionnaireBrid
     if (connectionTimerId !== null) {
       window.clearTimeout(connectionTimerId);
       connectionTimerId = null;
+    }
+    if (connectionAnnouncementTimerId !== null) {
+      window.clearTimeout(connectionAnnouncementTimerId);
+      connectionAnnouncementTimerId = null;
     }
     parentReadyTimerIds.forEach(function clearParentReadyTimer(timerId) {
       window.clearTimeout(timerId);

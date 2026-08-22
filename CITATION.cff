@@ -1,8 +1,11 @@
 cff-version: 1.2.0
 message: >-
-  This repository is a pre-release research prototype. Cite the exact archived
-  release once one is published; do not cite an untagged branch as a release.
+  If you use this software, cite the archived v0.8.0 release and describe the
+  configuration-specific evidence boundary rather than claiming universal
+  accessibility or complete WCAG conformance.
 title: "Accessible Questionnaire Platform"
+version: "0.8.0"
+date-released: "2026-08-22"
 type: software
 authors:
   - family-names: "Wang"
@@ -10,7 +13,16 @@ authors:
 repository-code: "https://github.com/SaSoup-YR/accessible-questionnaire-platform"
 url: "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
 license: MIT
+keywords:
+  - accessibility
+  - questionnaires
+  - assistive technology
+  - web platform
+  - research prototype
 abstract: >-
-  A pre-release, bounded questionnaire-administration research prototype with explicit
-  definition, scoring, import, provenance and technical-accessibility evidence
-  boundaries.
+  A bounded loaded-definition questionnaire research prototype with shared
+  participant interaction, explicit scoring and provenance contracts,
+  fail-closed recovery, structured import and configuration-specific technical
+  and manual accessibility evidence. The release does not establish universal
+  accessibility, psychometric equivalence, usability improvement or disabled-user
+  benefit.
