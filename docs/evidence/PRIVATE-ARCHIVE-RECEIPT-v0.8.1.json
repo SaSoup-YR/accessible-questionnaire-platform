@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-22",
+  "publicSource": {
+    "repository": "SaSoup-YR/accessible-questionnaire-platform",
+    "revisionBeforeCuration": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91"
+  },
+  "privateArchive": {
+    "repository": "SaSoup-YR/accessible-hci-questionnaire-library",
+    "visibility": "private",
+    "archiveRevision": "4eeade835eeeed96885deab3248849efee9cc8ba"
+  },
+  "archivedMaterial": [
+    "duplicate generated Word deliverables from the public deliverables directory",
+    "planned participant-study and ethics materials that were not executed",
+    "the Version 0.7 standalone participant artifact and related legacy material"
+  ],
+  "publicReplacements": [
+    "docs/PLANNED-STUDY-NOT-EXECUTED.md",
+    "docs/archive/README.md",
+    "docs/REPOSITORY-CURATION-v0.8.1.md"
+  ],
+  "participantEvidenceBoundary": "The archived planning materials produced no participant data, consent records, recordings, or disabled-user benefit evidence.",
+  "integrityNote": "The public copies are removed only after the private archive commit is recorded. The immutable v0.8.0 tag and Git history are not rewritten."
+}
