@@ -37,18 +37,28 @@ jobs:
 
           resolve_conflicts() {
             local path
-            while IFS= read -r path; do
+            mapfile -d '' conflicts < <(git diff --name-only --diff-filter=U -z)
+            for path in "${conflicts[@]}"; do
               [ -n "$path" ] || continue
               case "$path" in
                 index.html|study.html|source/demo/*|assets/*|source/src/main.ts)
-                  git checkout --ours -- "$path" 2>/dev/null || git rm -f --ignore-unmatch "$path"
+                  # These are generated release files or the deliberately unified
+                  # entry module. Remove every conflicted variant; the exact final
+                  # versions are recreated after all source branches are present.
+                  git rm -f --ignore-unmatch -- "$path" >/dev/null 2>&1 || true
+                  rm -f -- "$path"
                   ;;
                 *)
-                  git checkout --theirs -- "$path" 2>/dev/null || git rm -f --ignore-unmatch "$path"
+                  # Non-generated conflicts belong to the repair being integrated.
+                  # Retain that branch's final reviewed state, including deletions.
+                  git checkout --theirs -- "$path" 2>/dev/null || {
+                    git rm -f --ignore-unmatch -- "$path" >/dev/null 2>&1 || true
+                    rm -f -- "$path"
+                  }
                   ;;
               esac
-              git add -A -- "$path"
-            done < <(git diff --name-only --diff-filter=U)
+            done
+            git add -A
 
             if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
               echo "Unresolved conflicts remain:" >&2
