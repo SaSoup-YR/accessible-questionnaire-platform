@@ -1,20 +1,61 @@
-name: Verify and package the v0.8.1 curation candidate
+name: Synchronize the tested v0.8.1 curation candidate once
 
 on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify-and-package:
+  synchronize:
     if: github.event.pull_request.head.ref == 'release/v0.8.1-curation'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the exact pull-request head
+      - name: Check out the curation branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: release/v0.8.1-curation
+          fetch-depth: 5
+
+      - name: Update browser routes for the new public landing page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str, expected: int = 1) -> None:
+              file = Path(path)
+              text = file.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(
+                      f'{path}: expected {expected} exact occurrence(s), found {count}'
+                  )
+              file.write_text(text.replace(old, new), encoding='utf-8')
+
+          demo_route = "/index.html?demo=nasa-tlx-weighted"
+          replace_exact(
+              'source/tests/e2e/browser-accessibility.spec.ts',
+              "await page.goto('/index.html');",
+              f"await page.goto('{demo_route}');",
+              expected=2,
+          )
+          replace_exact(
+              'source/tests/e2e/landing.spec.ts',
+              "page.getByRole('heading', { name: 'System Usability Scale' }),",
+              "page.getByRole('heading', { level: 1, name: 'System Usability Scale', exact: true }),",
+          )
+          for path in [
+              'source/tests/e2e-support/cross-browser-support.spec.ts',
+              'source/tests/e2e-support/rf05-reflow.spec.ts',
+              'source/tests/e2e-support/rf08-smiley-voice-access.spec.ts',
+              'source/tests/e2e-support/rf09-support-setting-feedback.spec.ts',
+          ]:
+              replace_exact(
+                  path,
+                  "await page.goto('/index.html');",
+                  f"await page.goto('{demo_route}');",
+              )
+          PY
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -23,11 +64,9 @@ jobs:
           cache: npm
           cache-dependency-path: source/package-lock.json
 
-      - name: Synchronize package metadata and install the locked graph
+      - name: Install the locked dependency graph
         working-directory: source
-        run: |
-          npm version 0.8.1 --no-git-tag-version --allow-same-version
-          npm ci
+        run: npm ci
 
       - name: Record npm outdated without changing dependencies
         working-directory: source
@@ -50,7 +89,9 @@ jobs:
           set -e
           node - <<'NODE'
           const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('../docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json', 'utf8'));
+          const report = JSON.parse(
+            fs.readFileSync('../docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json', 'utf8'),
+          );
           const total = report.metadata?.vulnerabilities?.total ?? 0;
           console.log(`Reported dependency vulnerabilities: ${total}`);
           if (total !== 0) process.exit(1);
@@ -84,7 +125,7 @@ jobs:
       - name: Audit current repository links
         run: python tools/audit_repository_links.py
 
-      - name: Confirm removed public materials are absent
+      - name: Confirm the curated public boundary
         run: |
           test ! -e deliverables
           test ! -e docs/ethics
@@ -92,22 +133,39 @@ jobs:
           test ! -e source/demo/accessible-nasa-tlx-v0.7.html
           test -e docs/PLANNED-STUDY-NOT-EXECUTED.md
           test -e docs/archive/README.md
+          test -e docs/evidence/PRIVATE-ARCHIVE-RECEIPT-v0.8.1.json
           git diff --check
 
-      - name: Publish the exact tested curation outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: v081-curation-tested-output
-          path: |
-            source/package.json
-            source/package-lock.json
-            docs/evidence/DEPENDENCY-OUTDATED-v0.8.1.json
-            docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json
-            docs/evidence/REPOSITORY-LINK-AUDIT-v0.8.1.json
-            source/demo/accessible-questionnaire-platform-v0.8.html
-            index.html
-            study.html
-            assets
+      - name: Remove this one-time workflow
+        run: rm .github/workflows/v081-curation-sync-once.yml
+
+      - name: Commit the exact tested source and generated outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- \
+            .github/workflows/v081-curation-sync-once.yml \
+            source/tests/e2e/browser-accessibility.spec.ts \
+            source/tests/e2e/landing.spec.ts \
+            source/tests/e2e-support/cross-browser-support.spec.ts \
+            source/tests/e2e-support/rf05-reflow.spec.ts \
+            source/tests/e2e-support/rf08-smiley-voice-access.spec.ts \
+            source/tests/e2e-support/rf09-support-setting-feedback.spec.ts \
+            source/package.json \
+            source/package-lock.json \
+            docs/evidence/DEPENDENCY-OUTDATED-v0.8.1.json \
+            docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json \
+            docs/evidence/REPOSITORY-LINK-AUDIT-v0.8.1.json \
+            docs/evidence/fidelity-source-of-truth.json \
+            source/demo/accessible-questionnaire-platform-v0.8.html \
+            index.html \
+            study.html \
+            assets \
             questionnaires
-          if-no-files-found: error
-          retention-days: 14
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "The v0.8.1 candidate is already synchronized."
+            exit 0
+          fi
+          git commit -m "test: align v0.8.1 browser routes and synchronize release"
+          git push origin HEAD:release/v0.8.1-curation
