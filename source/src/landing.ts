@@ -61,7 +61,11 @@ export function buildDemoHash(instrumentId: DemoInstrumentId) {
         answerMode: 'standard',
         largeText: false,
         audioGuidance: false,
-        recoveryEnabled: true,
+        // Public demos begin from the ordinary questionnaire state. Recovery is
+        // available in the options and can be deliberately enabled, which keeps
+        // the setting transition visible and avoids leaving browser-local data
+        // behind for someone who only wants to inspect a demonstration.
+        recoveryEnabled: false,
         participantAdjustmentPolicy: 'participant-choice',
         voiceInputAvailable: true,
         // The weighted NASA-TLX route is the feature-complete technical demo.
