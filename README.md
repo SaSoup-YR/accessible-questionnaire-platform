@@ -93,7 +93,7 @@ Generated root HTML and hashed assets are committed because GitHub Pages serves 
 
 ```text
 source/          TypeScript source, tests, Vite/Playwright configuration and standalone build
-a ssets/         Generated GitHub Pages bundles (do not hand-edit)
+assets/          Generated GitHub Pages bundles (do not hand-edit)
 questionnaires/  Distributable definitions and JSON Schema
 docs/            Architecture, protocols, integration guidance and evidence records
 deliverables/    Versioned dissertation/project documents
@@ -101,7 +101,6 @@ integrations/    Qualtrics bridge/package material
 tools/           Reproducible document-generation utilities
 ```
 
-The space in `a ssets/` above is typographic only; the repository directory is `assets/`.
 
 ## Citation, licensing and third-party material
 
