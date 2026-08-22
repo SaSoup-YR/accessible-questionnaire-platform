@@ -2,8 +2,8 @@
 
 AQP is a browser-based research prototype for configuring, running and recording bounded questionnaire definitions through one shared participant interface. It treats a questionnaire as loaded data—items, response values, scoring rules and provenance—rather than as a questionnaire hard-coded into the runner.
 
-**Release status:** final MSc prototype freeze candidate, 22 August 2026.  
-**Software version:** `0.8.0`.  
+**Release status:** final MSc prototype release, 22 August 2026.  
+**Software version and immutable tag:** `v0.8.0`.  
 **Integrated product revision:** `e00a737de964e120ffec38c5030d4ad212cbff5d`.  
 **Evidence boundary:** configuration-bounded technical and manual evaluation; not a claim of universal accessibility, complete WCAG conformance, psychometric equivalence, usability improvement or benefit for disabled users.
 
@@ -66,16 +66,16 @@ Targeted engineering and exact-route retesting subsequently closed **25 of the 3
 
 RF-04 saved-session recovery is closed for the historical A14/A15 failures. On the final VoiceOver + Safari route, the native saved-questionnaire dialog received the VoiceOver context, exposed the exact `3 of 10` state and continued directly to the focused Item 4 heading with the three committed answers preserved.
 
-The integrated candidate passed the ordinary read-only repository workflow on documentation head `2c183b3a2dc2333feeace48dcd4638c344c14b17`:
+The final curated release candidate passed ordinary read-only workflow `32544582158` on head `69ce59443718e17729ce3dadda2d3bd810b88231`:
 
 - 26/26 Vitest files and 230/230 tests;
 - 12/12 rendered-browser routes;
-- 18/18 Chromium, Firefox and WebKit support routes;
+- 18/18 Chromium, Firefox and Playwright WebKit support routes;
 - production, standalone and synchronized release builds;
 - committed generated-release freshness;
 - locked dependency audit with 0 reported vulnerabilities.
 
-Playwright WebKit is browser-engine evidence, not Safari + VoiceOver evidence. Manual announcement, focus and voice-control claims use the named real assistive-technology observations instead.
+The release is tagged only after the corresponding `main` workflow and GitHub Pages deployment are verified. Playwright WebKit is browser-engine evidence, not Safari + VoiceOver evidence. Manual announcement, focus and voice-control claims use the named real assistive-technology observations instead.
 
 ## Reproduce and inspect the evidence
 
@@ -100,7 +100,6 @@ deliverables/    Versioned dissertation/project documents
 integrations/    Qualtrics bridge/package material
 tools/           Reproducible document-generation utilities
 ```
-
 
 ## Citation, licensing and third-party material
 
