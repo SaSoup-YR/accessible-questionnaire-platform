@@ -4,16 +4,18 @@
     "name": "Accessible Questionnaire Platform",
     "shortName": "AQP",
     "softwareVersion": "0.8.0",
-    "releaseStatus": "final-prototype-freeze-candidate",
+    "releaseStatus": "final-prototype-release",
+    "releaseTag": "v0.8.0",
     "recordDate": "2026-08-22",
     "repository": "SaSoup-YR/accessible-questionnaire-platform",
     "pagesBaseUrl": "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
   },
   "provenance": {
     "integratedProductRevision": "e00a737de964e120ffec38c5030d4ad212cbff5d",
-    "verifiedDocumentationHead": "2c183b3a2dc2333feeace48dcd4638c344c14b17",
-    "canonicalWorkflow": {
-      "id": 32544006644,
+    "finalCuratedVerificationHead": "69ce59443718e17729ce3dadda2d3bd810b88231",
+    "releaseCommitPolicy": "Resolve the immutable v0.8.0 tag for the authoritative final repository snapshot; never move the tag after publication.",
+    "canonicalPreMergeWorkflow": {
+      "id": 32544582158,
       "name": "Verify source and generated release",
       "conclusion": "success"
     },
@@ -65,13 +67,13 @@
     },
     "artifacts": {
       "quantifiedTechnicalEvaluation": {
-        "artifactId": 9467917456,
-        "archiveSha256": "e5f1df4693c76d0ee3bc651803a1ec563ea9b5d5f26417d381a7d86b4260d5d1",
+        "artifactId": 9468093060,
+        "archiveSha256": "8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8",
         "retentionDays": 90
       },
       "renderedAccessibilityEvidence": {
-        "artifactId": 9467954426,
-        "archiveSha256": "b5ca8b8e5175bc06a8f511190ff89deed5847025deba5d9eabd4eb3e432881b6",
+        "artifactId": 9468131274,
+        "archiveSha256": "4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69",
         "retentionDays": 90
       }
     }
