@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-08-22T02:21:13.679408Z",
+  "baseUrl": "https://sasoup-yr.github.io/accessible-questionnaire-platform/",
+  "verifiedMainCommit": "613268795c87b52e9816e60172d90abacc97f1cb",
+  "ghPagesDeploymentCommit": "d2afa9f674ee2a99b902cec4f4721274e37bbe54",
+  "releaseTag": "v0.8.0",
+  "releaseCommit": "ef3f46614bc3b40d02de1665a2901d017a5e00ab",
+  "pages": {
+    "participant": {
+      "httpStatus": 200,
+      "title": "Participant questionnaire \u00b7 Accessible Questionnaire Platform Version 0.8",
+      "sha256": "0580d0cb081ba0cb7d42f23a44c4c57cd861fe248c35b163638073e9d9439ae0",
+      "bytes": 862
+    },
+    "researcher": {
+      "httpStatus": 200,
+      "title": "Study conductor \u00b7 Accessible Questionnaire Platform Version 0.8",
+      "sha256": "7c161d9e6c448b781ae80521b06531a7678fb9efd07bab0165f5e846fb18ef0a",
+      "bytes": 962
+    }
+  },
+  "referencedAssets": {
+    "participant-BneGEtGC.js": {
+      "httpStatus": 200,
+      "sha256": "fd4dc33b9860f1551fe762872e2bdc6ee0fc7d3ea1c91288126d911e1a1f8957",
+      "bytes": 135469
+    },
+    "shared-X-3JE5Gy.js": {
+      "httpStatus": 200,
+      "sha256": "d67e952698e6564ef4470e1f40a53df087c3f1727be9fedd5e5f7c59bfb0d9c3",
+      "bytes": 61230
+    },
+    "study-bhJzr3me.css": {
+      "httpStatus": 200,
+      "sha256": "4400e8082df3e88ccf0c99df7466f1d685f1358687ba343a83e963fc12b97bb1",
+      "bytes": 25574
+    },
+    "participant-Dv6yHSZD.css": {
+      "httpStatus": 200,
+      "sha256": "a0f9fe0c11480db054446debf1b6b02ac4c47650d73a3e0b361d6fb8050562b9",
+      "bytes": 2148
+    },
+    "study-B5svx6F6.js": {
+      "httpStatus": 200,
+      "sha256": "88c590ecdecf4a773124a9305e966010f22936664d2387a5c8aa6f0a57367350",
+      "bytes": 172427
+    }
+  },
+  "result": "pass",
+  "claimBoundary": "HTTP/deployment smoke only; not a substitute for the recorded browser and assistive-technology evidence."
+}
