@@ -1,0 +1,128 @@
+name: One-time final retained-repair integration
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'agent/final-prototype-integration'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/final-prototype-integration
+          fetch-depth: 0
+
+      - name: Configure integration author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch exact retained repair heads
+        run: |
+          git fetch origin \
+            b173707024bf4b3b6caa7ddfa99357571d571190 \
+            84b39af34b5914847156d0a13a6353bee5b1b003 \
+            fcaa0a7ba471c545f2c9ad84ffc4a6e607e073b6
+
+      - name: Squash-integrate RF-01, RF-05 and final RF-04
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolve_conflicts() {
+            local path
+            while IFS= read -r path; do
+              [ -n "$path" ] || continue
+              case "$path" in
+                index.html|study.html|source/demo/*|assets/*|source/src/main.ts)
+                  git checkout --ours -- "$path" 2>/dev/null || git rm -f --ignore-unmatch "$path"
+                  ;;
+                *)
+                  git checkout --theirs -- "$path" 2>/dev/null || git rm -f --ignore-unmatch "$path"
+                  ;;
+              esac
+              git add -A -- "$path"
+            done < <(git diff --name-only --diff-filter=U)
+
+            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+              echo "Unresolved conflicts remain:" >&2
+              git diff --name-only --diff-filter=U >&2
+              exit 1
+            fi
+          }
+
+          integrate() {
+            local sha="$1"
+            local label="$2"
+            if ! git merge --squash "$sha"; then
+              resolve_conflicts
+            fi
+            git add -A
+            if git diff --cached --quiet; then
+              echo "$label introduced no new tree change."
+            else
+              git commit -m "Integrate $label"
+            fi
+          }
+
+          integrate b173707024bf4b3b6caa7ddfa99357571d571190 "RF-01 retained Qualtrics status repair"
+          integrate 84b39af34b5914847156d0a13a6353bee5b1b003 "RF-05 320px reflow repair"
+          integrate fcaa0a7ba471c545f2c9ad84ffc4a6e607e073b6 "RF-04 native recovery dialog and final evidence"
+
+      - name: Install the unified participant entry policy
+        run: |
+          cat > source/src/main.ts <<'EOF'
+          import './styles.css';
+          import './rf05-reflow.css';
+          import './rf09-support-setting-feedback.css';
+          import './rf08-smiley-voice-access.css';
+          import './accessible-nasa-tlx';
+          import './rf06-speech-lifecycle';
+          import './rf09-support-setting-feedback';
+          import { installRf04SavedSessionRecovery } from './rf04-saved-session-recovery';
+          import { installRf04NativeRecoveryDialog } from './rf04-native-recovery-dialog';
+
+          installRf04SavedSessionRecovery();
+          installRf04NativeRecoveryDialog();
+          EOF
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: source/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: npm ci
+
+      - name: Run the complete unit and component suite
+        working-directory: source
+        run: npm test -- --run
+
+      - name: Build and synchronize the unified release
+        working-directory: source
+        run: npm run build:release
+
+      - name: Remove the one-time workflow and validate the tree
+        run: |
+          rm .github/workflows/final-integration-once.yml
+          git diff --check
+          test ! -e .github/workflows/final-integration-once.yml
+
+      - name: Commit and push the exact integrated candidate
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Integration branch is already synchronized."
+            exit 0
+          fi
+          git commit -m "Integrate retained accessibility repairs and synchronize release"
+          git push origin HEAD:agent/final-prototype-integration
