@@ -1,21 +1,14 @@
-# Standalone participant files
+# Standalone Participant File
 
-- `accessible-questionnaire-platform-v0.8.html` is the active self-contained
-  participant runner. It defaults to the registered NASA-TLX definition when it
-  is opened without a conductor configuration.
-- `accessible-nasa-tlx-v0.7.html` is the frozen historical baseline.
-  It is retained as implementation evidence and is not the active release.
+`accessible-questionnaire-platform-v0.8.html` is the active self-contained participant build. In the `v0.8.1` curation release, opening it without a study configuration presents the same platform landing page and three browser-local demonstrations as the hosted root entry.
 
-Version 0.5 and 0.6 copies were removed from the current tree because Git history
-already preserves them and presenting four runnable files created avoidable version
-ambiguity. The complete hosted workflow has two entry points built from one source tree:
+The historical `accessible-nasa-tlx-v0.7.html` artifact has been moved to the private project archive. Git history and the private checksum manifest preserve its exact identity without presenting it as a current public entry point.
+
+The complete hosted workflow has two current entry points built from one source tree:
 
 | Role | Readable source | Hosted output |
 | --- | --- | --- |
-| Study conductor | `../study.html` and `../src/study-conductor.ts` | repository-root `study.html` |
-| Participant | `../index.html`, the validated files in `../instruments/`, and `../src/accessible-nasa-tlx.ts` | repository-root `index.html` |
+| Researcher setup | `../study.html` and `../src/study-conductor.ts` | repository-root `study.html` |
+| Landing and participant runner | `../index.html`, `../src/landing.ts`, the validated files in `../instruments/`, and `../src/accessible-nasa-tlx.ts` | repository-root `index.html` |
 
-The conductor is intentionally not packaged into the standalone file. A page
-opened through `file://` cannot create a reliable public participant URL, use the
-Qualtrics parent bridge, or share same-origin browser result storage with the hosted
-conductor. Use the hosted `study.html` route for study configuration and collection.
+The researcher setup is not packaged into the standalone participant file. A page opened through `file://` cannot create a reliable public participant URL, use the Qualtrics parent bridge, or share same-origin result storage with the hosted researcher page. Use the hosted `study.html` route for study configuration and collection.
