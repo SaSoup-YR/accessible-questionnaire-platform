@@ -113,11 +113,15 @@ jobs:
         working-directory: source
         run: npm ci
 
+      - name: Build and synchronize the unified release before tests
+        working-directory: source
+        run: npm run build:release
+
       - name: Run the complete unit and component suite
         working-directory: source
         run: npm test -- --run
 
-      - name: Build and synchronize the unified release
+      - name: Rebuild release after test-generated evidence
         working-directory: source
         run: npm run build:release
 
