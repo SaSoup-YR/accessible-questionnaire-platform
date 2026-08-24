@@ -13,7 +13,7 @@ The curation follows these rules:
 5. do not rewrite authorship, commit history, failed observations, or exact release identifiers;
 6. list archived and removed paths so that the curation itself can be reviewed.
 
-This supports software findability and reuse while retaining version and provenance information. It also reduces the risk that planned study documents, old release gates, or failed experimental successors are read as current product behavior.
+This supports software findability and reuse while retaining version and provenance information. It also reduces the risk that planned study documents, old release gates, or failed experimental successors are read as current product behaviour.
 
 ## Public current surface
 
@@ -42,7 +42,7 @@ The private archive contains:
 - consent, recruitment, risk, task, and coding drafts for the study that was not executed;
 - any private or sealed material that should not appear in a public software repository.
 
-A short public record states that the proposed study was not executed and produced no participant evidence.
+The private archive was written before the corresponding public paths were removed. Its public receipt records the private repository and exact archive commit without exposing the private files. A short public record states that the proposed study was not executed and produced no participant evidence.
 
 ## Evidence that remains public
 
@@ -55,6 +55,26 @@ Final and residual evidence remains public. In particular, the repository keeps:
 - machine-readable source-of-truth and contrast adjudication files.
 
 Intermediate candidate plans can be archived, but a failed result is not deleted merely because it is inconvenient.
+
+## Remote branch curation
+
+Before any remote branch ref was deleted, `docs/archive/BRANCH-CLEANUP-INVENTORY-v0.8.1.json` recorded each branch name, final tip SHA, related pull request where available, and preserve/delete decision. Every selected tip was then verified as reachable from `archive/pre-v0.8.1-branch-tips` before its remote ref was removed.
+
+The completed pre-merge branch set is deliberately limited to:
+
+- `main`;
+- `gh-pages`;
+- `archive/evaluation-pre-fix-2026-08-16`;
+- `archive/pre-v0.8.1-branch-tips`;
+- `release/v0.8.1-curation`, retained only while PR #84 remains open.
+
+All recorded `codex/*`, obsolete deployment and trigger branches, superseded release-candidate branches, and closed/merged development branches were removed without rewriting their commits. Formal tags were not changed. After PR #84 is merged, its source branch can be deleted because its exact head, merge identity, inventory, and archived ancestry remain available.
+
+## Dependency and link review
+
+The committed lockfile remains the reproducible dependency source. `npm outdated` and `npm audit` were captured for Version 0.8.1. Newer packages were not adopted merely to make version numbers current; the release gate was limited to a demonstrated security issue, supported-browser compatibility problem, or separately evaluated toolchain migration.
+
+Current repository-document links were checked in the authoritative curation run. The result is a time-specific verification record, not a guarantee that an external site can never move later.
 
 ## Release rule
 
