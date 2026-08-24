@@ -57,7 +57,7 @@ The built-in weighted NASA-TLX and Raw TLX definitions cite NASA source material
 The release owner must retain the source attribution and confirm any applicable terms
 for the exact wording and graphics used in a public release.
 
-- NASA Technical Reports Server citation record: https://ntrs.nasa.gov/citations/20200002718
+- Official NASA Task Load Index page: https://www.nasa.gov/human-systems-integration-division/nasa-task-load-index-tlx/
 
 ### System Usability Scale
 
