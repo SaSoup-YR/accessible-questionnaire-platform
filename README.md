@@ -2,8 +2,8 @@
 
 Accessible Questionnaire Platform (AQP) is a browser-based research prototype for configuring and running compatible questionnaire definitions through one shared participant interface. Questionnaire wording, response values, scoring strategy, version information, and provenance are loaded as validated data rather than being fixed in one questionnaire-specific page.
 
-**Current stable software release:** [`v0.8.0`](https://github.com/SaSoup-YR/accessible-questionnaire-platform/releases/tag/v0.8.0)  
-**Next public-entry and repository-curation release:** `v0.8.1`  
+**Release represented by this tree:** `v0.8.1`  
+**Immutable Version 0.8 baseline:** [`v0.8.0`](https://github.com/SaSoup-YR/accessible-questionnaire-platform/releases/tag/v0.8.0)  
 **Evidence boundary:** configuration-specific technical and manual evaluation. The repository does not claim universal accessibility, complete WCAG conformance, psychometric equivalence, usability improvement, or benefit for disabled users.
 
 ## Open the prototype
@@ -58,7 +58,7 @@ npm run test:browser-support
 npm run build:release
 ```
 
-The committed lockfile is the reproducible dependency source. Dependency updates are reviewed separately and are not applied only to make version numbers newer.
+The committed lockfile is the reproducible dependency source. The Version 0.8.1 release gate also captured `npm outdated` and `npm audit`; newer registry versions were not adopted without a demonstrated security or supported-browser compatibility reason. See [`docs/DEPENDENCY-REVIEW-v0.8.1.md`](docs/DEPENDENCY-REVIEW-v0.8.1.md).
 
 ## Supported definitions and import boundary
 
@@ -87,7 +87,10 @@ Start with:
 - [`TESTING.md`](TESTING.md) for reproducible test procedures;
 - [`BUILD-INFO.json`](BUILD-INFO.json) for machine-readable release provenance;
 - [`RELEASE-NOTES.md`](RELEASE-NOTES.md) for the retained release scope and limitations;
-- [`CODE-OVERVIEW.md`](CODE-OVERVIEW.md) for a plain description of the main code modules.
+- [`CODE-OVERVIEW.md`](CODE-OVERVIEW.md) for a plain description of the main code modules;
+- [`OPEN-SCIENCE.md`](OPEN-SCIENCE.md) for the final archival-material plan.
+
+For Version 0.8.1, the one-time curation gate [run 32722484056](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/32722484056) ran the locked install, dependency comparison/security audit, 235 unit/component tests, 14 rendered-browser tests, 18 Chromium/Firefox/WebKit support tests, production and standalone builds, release synchronization, current-document link checking, and the public/private repository-boundary checks. It then removed its own temporary workflow and committed the tested generated outputs. `BUILD-INFO.json` records the exact synchronized tree head.
 
 ## Repository structure
 
@@ -97,10 +100,10 @@ assets/          generated GitHub Pages JavaScript and CSS
 questionnaires/  distributable questionnaire definitions and JSON Schema
 integrations/    reviewed Qualtrics package and guidance
 docs/            current architecture, methods, and evidence records
-tools/           reproducible document-generation utilities
+tools/           reproducible release and documentation utilities
 ```
 
-Generated root HTML, `assets/`, and distributable questionnaire files are refreshed with `npm run build:release`. They are not edited by hand.
+Generated root HTML, `assets/`, and distributable questionnaire files are refreshed with `npm run build:release`. They are not edited by hand. Superseded but useful public records are kept under `docs/archive/`; unexecuted participant-study planning material was moved to the private project archive. [`docs/PLANNED-STUDY-NOT-EXECUTED.md`](docs/PLANNED-STUDY-NOT-EXECUTED.md) records that those planning documents produced no participant evidence.
 
 ## Citation and licence
 
