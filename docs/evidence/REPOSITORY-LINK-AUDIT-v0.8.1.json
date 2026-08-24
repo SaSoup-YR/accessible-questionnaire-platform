@@ -1,0 +1,424 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.8.1",
+  "scope": "current public documentation; docs/archive is excluded",
+  "filesChecked": 27,
+  "linksChecked": 59,
+  "uniqueExternalLinks": 35,
+  "failures": 0,
+  "checks": [
+    {
+      "source": "README.md",
+      "target": "BUILD-INFO.json",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "BUILD-INFO.json"
+    },
+    {
+      "source": "README.md",
+      "target": "CITATION.cff",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "CITATION.cff"
+    },
+    {
+      "source": "README.md",
+      "target": "CODE-OVERVIEW.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "CODE-OVERVIEW.md"
+    },
+    {
+      "source": "README.md",
+      "target": "EVIDENCE-INDEX.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "EVIDENCE-INDEX.md"
+    },
+    {
+      "source": "README.md",
+      "target": "LICENSE",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "LICENSE"
+    },
+    {
+      "source": "README.md",
+      "target": "RELEASE-NOTES.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "RELEASE-NOTES.md"
+    },
+    {
+      "source": "README.md",
+      "target": "TESTING.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "TESTING.md"
+    },
+    {
+      "source": "README.md",
+      "target": "THIRD_PARTY_NOTICES.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "source": "README.md",
+      "target": "https://github.com/SaSoup-YR/accessible-questionnaire-platform.git",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "README.md",
+      "target": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/releases/tag/v0.8.0",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "README.md",
+      "target": "https://sasoup-yr.github.io/accessible-questionnaire-platform/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "README.md",
+      "target": "https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "README.md",
+      "target": "source/instruments/",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/instruments/ (directory)"
+    },
+    {
+      "source": "THIRD_PARTY_NOTICES.md",
+      "target": "docs/archive/legacy/UEQS-RELEASE-GATE.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "docs/archive/legacy/UEQS-RELEASE-GATE.md"
+    },
+    {
+      "source": "THIRD_PARTY_NOTICES.md",
+      "target": "https://www.nasa.gov/human-systems-integration-division/nasa-task-load-index-tlx/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "THIRD_PARTY_NOTICES.md",
+      "target": "https://www.ueq-online.org/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "THIRD_PARTY_NOTICES.md",
+      "target": "https://www.ueq-online.org/Legal.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/ACCESSIBILITY-EVIDENCE-BOUNDARY.md",
+      "target": "https://playwright.dev/docs/accessibility-testing",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/AQP-FINAL-CONTRIBUTION-v2.md",
+      "target": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/31377511113",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/CUSTOM-QUESTIONNAIRE-TEST.md",
+      "target": "https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.9-q9",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/INSTRUMENT-DEFINITION-GUIDE.md",
+      "target": "CUSTOM-QUESTIONNAIRE-TEST.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "docs/CUSTOM-QUESTIONNAIRE-TEST.md"
+    },
+    {
+      "source": "docs/INSTRUMENT-DEFINITION-GUIDE.md",
+      "target": "QUESTIONNAIRE-IMPORT.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "docs/QUESTIONNAIRE-IMPORT.md"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://sasoup-yr.github.io/accessible-questionnaire-platform/study.html?package=0.8.10-q10",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/recorded-responses/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/end-of-survey-element/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.ucl.ac.uk/advanced-research-computing/platforms-services/information-governance-advisory-service/research-information-governance-faqs",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUALTRICS-INTEGRATION.md",
+      "target": "https://www.ucl.ac.uk/isd/services/digital-accessibility-services/creating-accessible-content/forms-and-survey-tools",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "../source/tests/fixtures/limesurvey-current-rating.lss",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/tests/fixtures/limesurvey-current-rating.lss"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "../source/tests/fixtures/limesurvey-group-rating.lsg",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/tests/fixtures/limesurvey-group-rating.lsg"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "../source/tests/fixtures/limesurvey-question-rating.lsq",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/tests/fixtures/limesurvey-question-rating.lsq"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "../source/tests/fixtures/limesurvey-rating.lss",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/tests/fixtures/limesurvey-rating.lss"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "../source/tests/fixtures/qualtrics-rating.qsf",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "source/tests/fixtures/qualtrics-rating.qsf"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "https://www.limesurvey.org/manual/Display/Export_survey/en",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "https://www.limesurvey.org/manual/Export_question",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-IMPORT.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/survey-tools/import-and-export-surveys/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md",
+      "target": "https://hl7.org/fhir/questionnaire.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md",
+      "target": "https://hl7.org/fhir/questionnaireresponse.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md",
+      "target": "https://json-schema.org/specification",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/QUESTIONNAIRE-PLATFORM-ARCHITECTURE.md",
+      "target": "https://surveyjs.io/form-library/documentation/design-survey/create-a-simple-survey",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "QUALTRICS-INTEGRATION.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "docs/QUALTRICS-INTEGRATION.md"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/accountability-and-governance/guide-to-accountability-and-governance/data-protection-by-design-and-by-default/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/data-and-analysis-module/data/download-data/export-data-overview/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/question-options/add-javascript/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.qualtrics.com/support/survey-platform/survey-module/survey-flow/standard-elements/embedded-data/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.ucl.ac.uk/advanced-research-computing/platforms-services/information-governance-advisory-service/research-information-governance-faqs",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.ucl.ac.uk/isd/services/digital-accessibility-services/creating-accessible-content/forms-and-survey-tools",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.w3.org/TR/coga-usable/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.w3.org/WAI/WCAG2/supplemental/objectives/o8-personalization/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/REMOTE-COLLECTION-AND-PERMISSIONS.md",
+      "target": "https://www.w3.org/WAI/WCAG2/supplemental/patterns/o8p04-interface/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "docs/WCAG-2.2-COMPONENT-AUDIT.md",
+      "target": "https://www.w3.org/WAI/WCAG22/quickref/",
+      "kind": "external",
+      "status": "ok",
+      "detail": "HTTP 200"
+    },
+    {
+      "source": "integrations/qualtrics/README.md",
+      "target": "../../docs/QUALTRICS-INTEGRATION.md",
+      "kind": "internal",
+      "status": "ok",
+      "detail": "docs/QUALTRICS-INTEGRATION.md"
+    }
+  ]
+}

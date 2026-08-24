@@ -30,7 +30,7 @@ test('a demonstration link creates a configured participant route', async ({ pag
   await expect(page).toHaveURL(/#study=/);
   await expect(page).not.toHaveURL(/\?demo=/);
   await expect(
-    page.getByRole('heading', { name: 'System Usability Scale' }),
+    page.getByRole('heading', { level: 1, name: 'System Usability Scale', exact: true }),
   ).toBeVisible();
   await expect(page.locator('#participant-code')).toHaveValue('DEMO');
   await expect(page.getByText('Demonstration mode')).toHaveCount(0);

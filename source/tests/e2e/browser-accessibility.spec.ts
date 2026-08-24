@@ -755,7 +755,7 @@ test('Qualtrics bridge and recording recovery states are rendered explicitly', a
 });
 
 test('NASA-TLX pairwise state', async ({ page }) => {
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
   await page.getByRole('button', { name: 'Start the six ratings' }).click();
   for (let item = 1; item <= 6; item += 1) {
     await choose(page, 50);
@@ -768,7 +768,7 @@ test('NASA-TLX pairwise state', async ({ page }) => {
 });
 
 test('NASA-TLX optional smiley and experimental gaze UI states', async ({ page }) => {
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
   await page.getByText('Accessibility and audio options (optional)').click();
   await page.locator('.gaze-setup').first().getByText('Gaze-assisted answering with WebGazer (experimental)').click();
   await expect(page.locator('.gaze-setup').first()).toHaveAttribute('open', '');

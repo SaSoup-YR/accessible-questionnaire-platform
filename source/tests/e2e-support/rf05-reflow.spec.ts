@@ -50,7 +50,7 @@ async function chooseRating50(page: Page) {
 
 test('RF-05 ordinary participant states reflow at 320 CSS px', async ({ page, browserName }) => {
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
 
   // Reserve a conventional vertical-scrollbar gutter. The frozen R1 failure was
   // observed in Firefox Responsive Design Mode where a page-level scrollbar made

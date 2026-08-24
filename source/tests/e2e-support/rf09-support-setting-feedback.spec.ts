@@ -77,7 +77,7 @@ async function expectSupportNotification(
 }
 
 test('RF-09 support settings expose unique text labels and one non-focus-moving notification path', async ({ page, browserName }) => {
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
   await installNotificationRecorder(page);
   await page.getByRole('button', { name: 'Start the six ratings' }).click();
 

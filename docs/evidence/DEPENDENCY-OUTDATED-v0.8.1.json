@@ -1,0 +1,65 @@
+{
+  "@axe-core/playwright": {
+    "current": "4.12.1",
+    "wanted": "4.13.0",
+    "latest": "4.13.0",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/@axe-core/playwright"
+  },
+  "@types/jsdom": {
+    "current": "28.0.3",
+    "wanted": "28.0.3",
+    "latest": "30.0.0",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/@types/jsdom"
+  },
+  "@types/node": {
+    "current": "24.13.3",
+    "wanted": "24.13.3",
+    "latest": "26.2.0",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/@types/node"
+  },
+  "axe-core": {
+    "current": "4.12.1",
+    "wanted": "4.13.0",
+    "latest": "4.13.0",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/axe-core"
+  },
+  "jsdom": {
+    "current": "26.1.0",
+    "wanted": "26.1.0",
+    "latest": "30.0.1",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/jsdom"
+  },
+  "typescript": {
+    "current": "5.9.3",
+    "wanted": "5.9.3",
+    "latest": "7.0.2",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/typescript"
+  },
+  "vite": {
+    "current": "7.3.6",
+    "wanted": "7.3.6",
+    "latest": "8.2.2",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/vite"
+  },
+  "vite-node": {
+    "current": "3.2.4",
+    "wanted": "3.2.4",
+    "latest": "6.0.0",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/vite-node"
+  },
+  "vitest": {
+    "current": "3.2.7",
+    "wanted": "3.2.7",
+    "latest": "4.1.11",
+    "dependent": "source",
+    "location": "/home/runner/work/accessible-questionnaire-platform/accessible-questionnaire-platform/source/node_modules/vitest"
+  }
+}
