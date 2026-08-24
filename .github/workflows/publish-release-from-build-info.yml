@@ -1,0 +1,90 @@
+name: Publish declared release from BUILD-INFO
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-declared-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out complete main history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read the declared release and inspect existing refs
+        id: release
+        run: |
+          git fetch --tags origin
+          tag="$(node -p "require('./BUILD-INFO.json').project.releaseTag")"
+          version="$(node -p "require('./BUILD-INFO.json').project.softwareVersion")"
+          test -n "$tag"
+          test -n "$version"
+          test "$tag" = "v$version"
+          v080_before="$(git rev-parse 'refs/tags/v0.8.0^{commit}')"
+
+          state=absent
+          existing_commit=''
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            existing_commit="$(git rev-parse "refs/tags/$tag^{commit}")"
+            if [ "$existing_commit" = "$GITHUB_SHA" ]; then
+              state=current
+            else
+              state=other
+            fi
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "existing_commit=$existing_commit" >> "$GITHUB_OUTPUT"
+          echo "v080_before=$v080_before" >> "$GITHUB_OUTPUT"
+          echo "Declared release: $tag; state: $state; current main: $GITHUB_SHA"
+
+      - name: Create the immutable declared tag at this main commit
+        if: steps.release.outputs.state == 'absent'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+          V080_BEFORE: ${{ steps.release.outputs.v080_before }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_BEFORE"
+          git tag -a "$TAG" "$GITHUB_SHA" -m "Accessible Questionnaire Platform $TAG"
+          git push origin "refs/tags/$TAG"
+          test "$(git rev-parse "$TAG^{commit}")" = "$GITHUB_SHA"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_BEFORE"
+
+      - name: Refuse to move an existing declared tag
+        if: steps.release.outputs.state == 'other'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          EXISTING: ${{ steps.release.outputs.existing_commit }}
+        run: |
+          echo "$TAG already exists at $EXISTING; this workflow will not move it to $GITHUB_SHA."
+
+      - name: Publish the GitHub release when the tag is current
+        if: steps.release.outputs.state == 'absent' || steps.release.outputs.state == 'current'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub release $TAG already exists; leaving it unchanged."
+          else
+            gh release create "$TAG" \
+              --verify-tag \
+              --title "Accessible Questionnaire Platform $TAG" \
+              --notes-file RELEASE-NOTES.md
+          fi
