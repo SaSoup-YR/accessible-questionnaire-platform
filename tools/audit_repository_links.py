@@ -88,14 +88,17 @@ def internal_check(source: Path, target: str) -> Check:
         resolved.relative_to(ROOT)
     except ValueError:
         return Check(str(source.relative_to(ROOT)), target, "internal", "failed", "path leaves repository")
-    if resolved.is_dir():
-        resolved = resolved / "README.md"
+    if resolved.exists():
+        detail = str(resolved.relative_to(ROOT))
+        if resolved.is_dir():
+            detail += "/ (directory)"
+        return Check(str(source.relative_to(ROOT)), target, "internal", "ok", detail)
     return Check(
         str(source.relative_to(ROOT)),
         target,
         "internal",
-        "ok" if resolved.exists() else "failed",
-        str(resolved.relative_to(ROOT)) if resolved.exists() else "target does not exist",
+        "failed",
+        "target does not exist",
     )
 
 
