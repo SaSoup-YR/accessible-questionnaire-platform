@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "release": "v0.8.1",
   "repository": "SaSoup-YR/accessible-questionnaire-platform",
-  "recordedAt": "2026-08-24T11:48:13.462124+00:00",
-  "snapshotCurationHead": "7c0cd65b33c61b63b58dc912ea1ecc8c422d423f",
+  "recordedAt": "2026-08-24T11:48:43.295206+00:00",
+  "snapshotCurationHead": "e720bee5ae1c71d959b1fe6fe2bcf226f89cfe7c",
   "policy": {
     "preserveBranches": [
       "main",
@@ -19,379 +19,12 @@
     "archiveBranch": "archive/pre-v0.8.1-branch-tips"
   },
   "summaryBeforeCleanup": {
-    "remoteBranches": 61,
-    "plannedDeletions": 56,
+    "remoteBranches": 36,
+    "plannedDeletions": 31,
     "preservedBranches": 5,
     "tags": 5
   },
   "branches": [
-    {
-      "branch": "agent/fix-rf03-stable-failure-recovery",
-      "finalShaBeforeCleanup": "fced5056bf2188ada9402993cc49395c028a0ece",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 73,
-          "state": "closed",
-          "merged": true,
-          "headSha": "fced5056bf2188ada9402993cc49395c028a0ece",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/73"
-        }
-      ]
-    },
-    {
-      "branch": "agent/fix-rf04-saved-session-recovery",
-      "finalShaBeforeCleanup": "9596e0b647d3bc3553db813de704b015068e55e7",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 72,
-          "state": "closed",
-          "merged": true,
-          "headSha": "9596e0b647d3bc3553db813de704b015068e55e7",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/72"
-        }
-      ]
-    },
-    {
-      "branch": "agent/fix-smiley-voice-qualtrics",
-      "finalShaBeforeCleanup": "a7a260fe99f0ab7d1a42975e397c5272f64cd354",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 25,
-          "state": "closed",
-          "merged": true,
-          "headSha": "a7a260fe99f0ab7d1a42975e397c5272f64cd354",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/25"
-        }
-      ]
-    },
-    {
-      "branch": "agent/harden-submission-accessibility-tests",
-      "finalShaBeforeCleanup": "905f25fb3d69ed99cabddd18c0d1af5cdb9daa13",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 23,
-          "state": "closed",
-          "merged": true,
-          "headSha": "905f25fb3d69ed99cabddd18c0d1af5cdb9daa13",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/23"
-        }
-      ]
-    },
-    {
-      "branch": "agent/import-qsf-lss",
-      "finalShaBeforeCleanup": "0671564a02f70d48f4cbf8f94a81799fd9091ef2",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 53,
-          "state": "closed",
-          "merged": true,
-          "headSha": "0671564a02f70d48f4cbf8f94a81799fd9091ef2",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/53"
-        }
-      ]
-    },
-    {
-      "branch": "agent/instrument-platform-v08",
-      "finalShaBeforeCleanup": "65bea364bffd0067b901113b17f303394077da55",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 37,
-          "state": "closed",
-          "merged": true,
-          "headSha": "65bea364bffd0067b901113b17f303394077da55",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/37"
-        }
-      ]
-    },
-    {
-      "branch": "agent/keep-page-open-during-review",
-      "finalShaBeforeCleanup": "08ca474f0fdbbf69c004cd3a3c385d2f6a2a54ee",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 19,
-          "state": "closed",
-          "merged": true,
-          "headSha": "08ca474f0fdbbf69c004cd3a3c385d2f6a2a54ee",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/19"
-        }
-      ]
-    },
-    {
-      "branch": "agent/persistent-qualtrics-result-page",
-      "finalShaBeforeCleanup": "a72d047430d5333bc9603c2b1f106c6fb2fa6067",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 15,
-          "state": "closed",
-          "merged": true,
-          "headSha": "a72d047430d5333bc9603c2b1f106c6fb2fa6067",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/15"
-        }
-      ]
-    },
-    {
-      "branch": "agent/plain-text-end-message",
-      "finalShaBeforeCleanup": "94ebeea86b0c410fd567c4b603bfee8ba56a0cde",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 17,
-          "state": "closed",
-          "merged": true,
-          "headSha": "94ebeea86b0c410fd567c4b603bfee8ba56a0cde",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/17"
-        }
-      ]
-    },
-    {
-      "branch": "agent/prevent-stale-qualtrics-generator",
-      "finalShaBeforeCleanup": "124f4a0b705a42e4a942f80fc4ad151c2ebdbcf8",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 42,
-          "state": "closed",
-          "merged": true,
-          "headSha": "124f4a0b705a42e4a942f80fc4ad151c2ebdbcf8",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/42"
-        }
-      ]
-    },
-    {
-      "branch": "agent/publish-v05-conductor-audio-20260720",
-      "finalShaBeforeCleanup": "ec60229facb65333a10c2953d2b4f2debf9a75cd",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 2,
-          "state": "closed",
-          "merged": true,
-          "headSha": "ec60229facb65333a10c2953d2b4f2debf9a75cd",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/2"
-        }
-      ]
-    },
-    {
-      "branch": "agent/publish-v05-study-workflow",
-      "finalShaBeforeCleanup": "a32886fe789fdbc65bfdb5fe30ad427f262a6f6f",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 1,
-          "state": "closed",
-          "merged": true,
-          "headSha": "a32886fe789fdbc65bfdb5fe30ad427f262a6f6f",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/1"
-        }
-      ]
-    },
-    {
-      "branch": "agent/q4-submission-feedback-20260729",
-      "finalShaBeforeCleanup": "b7fa00be3c84157f67acf90dd5d9ae4bd0b0a21c",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 46,
-          "state": "closed",
-          "merged": true,
-          "headSha": "b7fa00be3c84157f67acf90dd5d9ae4bd0b0a21c",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/46"
-        }
-      ]
-    },
-    {
-      "branch": "agent/qualtrics-fullwidth-preflight-v081",
-      "finalShaBeforeCleanup": "7a8441c3cc9ace1f1ab4c5ca70593884e7efa31f",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 39,
-          "state": "closed",
-          "merged": true,
-          "headSha": "7a8441c3cc9ace1f1ab4c5ca70593884e7efa31f",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/39"
-        }
-      ]
-    },
-    {
-      "branch": "agent/qualtrics-pdf-response-summary",
-      "finalShaBeforeCleanup": "b40301faf010b91635092be95ac0102b6fffdf0a",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 21,
-          "state": "closed",
-          "merged": true,
-          "headSha": "b40301faf010b91635092be95ac0102b6fffdf0a",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/21"
-        }
-      ]
-    },
-    {
-      "branch": "agent/qualtrics-q2-single-page-collection",
-      "finalShaBeforeCleanup": "3492704aa64f711911e30a5a273e2b1c4d3621ef",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 40,
-          "state": "closed",
-          "merged": true,
-          "headSha": "3492704aa64f711911e30a5a273e2b1c4d3621ef",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/40"
-        }
-      ]
-    },
-    {
-      "branch": "agent/questionnaire-platform-boundary",
-      "finalShaBeforeCleanup": "a983af16ad4c8eab9103f76a13bcbdee8a6c27a4",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 36,
-          "state": "closed",
-          "merged": false,
-          "headSha": "a983af16ad4c8eab9103f76a13bcbdee8a6c27a4",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/36"
-        }
-      ]
-    },
-    {
-      "branch": "agent/rf01-safari-vo-diagnostic",
-      "finalShaBeforeCleanup": "34a1503cb1af3cb959e11e919eb479063194ff19",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": []
-    },
-    {
-      "branch": "agent/support-real-qsf-lss",
-      "finalShaBeforeCleanup": "dda5ed89fa3f763425708ec18c226ff89beb42b8",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 55,
-          "state": "closed",
-          "merged": true,
-          "headSha": "dda5ed89fa3f763425708ec18c226ff89beb42b8",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/55"
-        }
-      ]
-    },
-    {
-      "branch": "agent/sus-ueqs-scale-semantics",
-      "finalShaBeforeCleanup": "28f110b37e43c1b6e0ec6ed555e3209f5ed1cacc",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 43,
-          "state": "closed",
-          "merged": true,
-          "headSha": "28f110b37e43c1b6e0ec6ed555e3209f5ed1cacc",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/43"
-        }
-      ]
-    },
-    {
-      "branch": "agent/sync-gh-pages-20260727",
-      "finalShaBeforeCleanup": "fcd8eafe09b7baebc372a1e7776ec083ee3e404d",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 24,
-          "state": "closed",
-          "merged": true,
-          "headSha": "fcd8eafe09b7baebc372a1e7776ec083ee3e404d",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/24"
-        }
-      ]
-    },
-    {
-      "branch": "agent/sync-gh-pages-smiley-qualtrics",
-      "finalShaBeforeCleanup": "0072e66217140c44df183e0615fda2e9eaa80de8",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 26,
-          "state": "closed",
-          "merged": true,
-          "headSha": "0072e66217140c44df183e0615fda2e9eaa80de8",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/26"
-        }
-      ]
-    },
-    {
-      "branch": "agent/truthful-offline-handoff",
-      "finalShaBeforeCleanup": "dbd46cc11aef1bc0ad0117d960b90a1e21e70bbb",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 45,
-          "state": "closed",
-          "merged": true,
-          "headSha": "dbd46cc11aef1bc0ad0117d960b90a1e21e70bbb",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/45"
-        }
-      ]
-    },
-    {
-      "branch": "agent/update-renamed-repository-links",
-      "finalShaBeforeCleanup": "905bb39b9140f4f5528bdafc6636cece6e3eccfc",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 67,
-          "state": "closed",
-          "merged": true,
-          "headSha": "905bb39b9140f4f5528bdafc6636cece6e3eccfc",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/67"
-        }
-      ]
-    },
-    {
-      "branch": "agent/version-0-6-final-architecture-20260723",
-      "finalShaBeforeCleanup": "41eb8c4b1aeae7b225f8b7c4186f59d98b549bc6",
-      "decision": "delete-after-archive",
-      "reason": "obsolete AI-agent development branch; commit history is anchored before ref deletion",
-      "relatedPullRequests": [
-        {
-          "number": 9,
-          "state": "closed",
-          "merged": true,
-          "headSha": "41eb8c4b1aeae7b225f8b7c4186f59d98b549bc6",
-          "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/9"
-        }
-      ]
-    },
     {
       "branch": "archive/evaluation-pre-fix-2026-08-16",
       "finalShaBeforeCleanup": "2a26ff18a62e6215d67cd2e145b82587086b269e",
@@ -401,7 +34,7 @@
     },
     {
       "branch": "archive/pre-v0.8.1-branch-tips",
-      "finalShaBeforeCleanup": "07a3334561341bd6bd010e1caf5135883b9171f8",
+      "finalShaBeforeCleanup": "af1611e5fd046e7cd8fb321615b7540f18449557",
       "decision": "preserve",
       "reason": "necessary archive branch",
       "relatedPullRequests": []
@@ -841,7 +474,7 @@
     },
     {
       "branch": "release/v0.8.1-curation",
-      "finalShaBeforeCleanup": "7c0cd65b33c61b63b58dc912ea1ecc8c422d423f",
+      "finalShaBeforeCleanup": "e720bee5ae1c71d959b1fe6fe2bcf226f89cfe7c",
       "decision": "preserve",
       "reason": "active v0.8.1 pull-request branch",
       "relatedPullRequests": [
@@ -849,7 +482,7 @@
           "number": 84,
           "state": "open",
           "merged": false,
-          "headSha": "7c0cd65b33c61b63b58dc912ea1ecc8c422d423f",
+          "headSha": "e720bee5ae1c71d959b1fe6fe2bcf226f89cfe7c",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/84"
         }
       ]
