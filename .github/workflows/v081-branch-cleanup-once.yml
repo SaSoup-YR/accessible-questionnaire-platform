@@ -1,0 +1,329 @@
+name: Archive and prune superseded branch refs once
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.ref == 'release/v0.8.1-curation'
+    runs-on: ubuntu-latest
+    env:
+      ARCHIVE_BRANCH: archive/pre-v0.8.1-branch-tips
+      V080_COMMIT: ef3f46614bc3b40d02de1665a2901d017a5e00ab
+      INVENTORY: docs/archive/BRANCH-CLEANUP-INVENTORY-v0.8.1.json
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the curation branch with complete history
+        uses: actions/checkout@v4
+        with:
+          ref: release/v0.8.1-curation
+          fetch-depth: 0
+
+      - name: Fetch every branch and tag
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --tags origin
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+
+      - name: Record branch tips, tags and related pull requests before deletion
+        run: |
+          python - <<'PY'
+          import datetime
+          import json
+          import os
+          import subprocess
+          import urllib.request
+          from collections import defaultdict
+          from pathlib import Path
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          archive_branch = os.environ['ARCHIVE_BRANCH']
+          inventory_path = Path(os.environ['INVENTORY'])
+          current_branch = 'release/v0.8.1-curation'
+          v080_commit = os.environ['V080_COMMIT']
+
+          request = urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/pulls?state=all&per_page=100',
+              headers={
+                  'Authorization': f'Bearer {token}',
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'AQP-v0.8.1-branch-curation',
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              pulls = json.load(response)
+
+          pull_map = defaultdict(list)
+          for pull in pulls:
+              pull_map[pull['head']['ref']].append({
+                  'number': pull['number'],
+                  'state': pull['state'],
+                  'merged': pull.get('merged_at') is not None,
+                  'headSha': pull['head']['sha'],
+                  'url': pull['html_url'],
+              })
+
+          raw_heads = subprocess.check_output(
+              ['git', 'for-each-ref', '--format=%(refname:short)%00%(objectname)', 'refs/remotes/origin/'],
+              text=True,
+          )
+          heads = []
+          for line in raw_heads.splitlines():
+              if not line.strip():
+                  continue
+              ref, sha = line.split('\0', 1)
+              if ref == 'origin/HEAD':
+                  continue
+              branch = ref.removeprefix('origin/')
+              heads.append((branch, sha))
+
+          raw_tags = subprocess.check_output(
+              ['git', 'for-each-ref', '--format=%(refname:short)%00%(objectname)%00%(objecttype)', 'refs/tags/'],
+              text=True,
+          )
+          tags = []
+          for line in raw_tags.splitlines():
+              if not line.strip():
+                  continue
+              name, object_sha, object_type = line.split('\0', 2)
+              try:
+                  commit_sha = subprocess.check_output(
+                      ['git', 'rev-parse', f'refs/tags/{name}^{{commit}}'], text=True
+                  ).strip()
+              except subprocess.CalledProcessError:
+                  commit_sha = None
+              tags.append({
+                  'name': name,
+                  'objectSha': object_sha,
+                  'objectType': object_type,
+                  'commitSha': commit_sha,
+                  'decision': 'preserve',
+              })
+
+          def reason(branch: str) -> str:
+              if branch.startswith('codex/'):
+                  return 'obsolete AI-named development/deployment branch; commit history is anchored before ref deletion'
+              if branch.startswith('agent/'):
+                  return 'obsolete AI-agent development branch; commit history is anchored before ref deletion'
+              if branch.startswith('deploy/'):
+                  return 'obsolete deployment branch superseded by verified main/gh-pages history'
+              if branch.startswith('trigger/'):
+                  return 'obsolete one-time trigger branch'
+              if branch.startswith('release/v0.8.0-rc.'):
+                  return 'release-candidate branch superseded by immutable v0.8.0; formal tags are not changed'
+              if branch.startswith('release/v0.8.1-'):
+                  return 'duplicate or superseded v0.8.1 preparation branch; current PR branch is retained'
+              return 'closed or merged development branch superseded by the Version 0.8 release history'
+
+          entries = []
+          deletion_count = 0
+          for branch, sha in sorted(heads):
+              related = sorted(pull_map.get(branch, []), key=lambda item: item['number'])
+              has_open_pr = any(item['state'] == 'open' for item in related)
+              preserve = (
+                  branch in {'main', 'gh-pages', current_branch, archive_branch}
+                  or branch.startswith('archive/')
+                  or has_open_pr
+              )
+              if preserve:
+                  if branch in {'main', 'gh-pages'}:
+                      why = 'protected current branch'
+                  elif branch == current_branch:
+                      why = 'active v0.8.1 pull-request branch'
+                  elif branch.startswith('archive/'):
+                      why = 'necessary archive branch'
+                  elif has_open_pr:
+                      why = 'safety hold: branch still has an open pull request'
+                  else:
+                      why = 'preserved by cleanup policy'
+                  decision = 'preserve'
+              else:
+                  why = reason(branch)
+                  decision = 'delete-after-archive'
+                  deletion_count += 1
+              entries.append({
+                  'branch': branch,
+                  'finalShaBeforeCleanup': sha,
+                  'decision': decision,
+                  'reason': why,
+                  'relatedPullRequests': related,
+              })
+
+          inventory = {
+              'schemaVersion': 1,
+              'release': 'v0.8.1',
+              'repository': repo,
+              'recordedAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'snapshotCurationHead': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              'policy': {
+                  'preserveBranches': ['main', 'gh-pages', current_branch, 'archive/*', 'any branch with an open PR'],
+                  'deleteOnlyAfterArchive': True,
+                  'rewriteReleasedHistory': False,
+                  'mutateTags': False,
+                  'v0.8.0ExpectedCommit': v080_commit,
+                  'archiveBranch': archive_branch,
+              },
+              'summaryBeforeCleanup': {
+                  'remoteBranches': len(entries),
+                  'plannedDeletions': deletion_count,
+                  'preservedBranches': len(entries) - deletion_count,
+                  'tags': len(tags),
+              },
+              'branches': entries,
+              'tags': tags,
+              'cleanupStatus': 'inventory-pushed-before-deletion',
+          }
+          inventory_path.parent.mkdir(parents=True, exist_ok=True)
+          inventory_path.write_text(json.dumps(inventory, indent=2) + '\n', encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Push the pre-deletion inventory first
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$INVENTORY"
+          git commit -m "docs: record branch tips before v0.8.1 cleanup"
+          git push origin HEAD:release/v0.8.1-curation
+
+      - name: Anchor every deletable branch tip in one durable archive branch
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          current_head="$(git rev-parse HEAD)"
+          if git show-ref --verify --quiet "refs/remotes/origin/$ARCHIVE_BRANCH"; then
+            previous_archive="$(git rev-parse "refs/remotes/origin/$ARCHIVE_BRANCH")"
+            archive_tip="$(printf '%s\n' 'Anchor current v0.8.1 cleanup inventory in the branch-tip archive.' | git commit-tree "$tree" -p "$previous_archive" -p "$current_head")"
+          else
+            archive_tip="$current_head"
+          fi
+
+          while IFS=$'\t' read -r branch sha; do
+            [ -n "$branch" ] || continue
+            archive_tip="$(printf 'Provenance anchor only: %s at %s. This does not merge its file tree into the release.\n' "$branch" "$sha" | git commit-tree "$tree" -p "$archive_tip" -p "$sha")"
+          done < <(python - <<'PY'
+          import json, os
+          with open(os.environ['INVENTORY'], encoding='utf-8') as handle:
+              data = json.load(handle)
+          for entry in data['branches']:
+              if entry['decision'] == 'delete-after-archive':
+                  print(f"{entry['branch']}\t{entry['finalShaBeforeCleanup']}")
+          PY
+          )
+
+          git update-ref "refs/heads/$ARCHIVE_BRANCH" "$archive_tip"
+          git push origin "refs/heads/$ARCHIVE_BRANCH:refs/heads/$ARCHIVE_BRANCH"
+          printf '%s\n' "$archive_tip" > /tmp/archive-tip.txt
+
+          while IFS= read -r sha; do
+            [ -n "$sha" ] || continue
+            git merge-base --is-ancestor "$sha" "$archive_tip"
+          done < <(python - <<'PY'
+          import json, os
+          with open(os.environ['INVENTORY'], encoding='utf-8') as handle:
+              data = json.load(handle)
+          for entry in data['branches']:
+              if entry['decision'] == 'delete-after-archive':
+                  print(entry['finalShaBeforeCleanup'])
+          PY
+          )
+
+      - name: Delete only superseded branch refs
+        run: |
+          while IFS= read -r branch; do
+            [ -n "$branch" ] || continue
+            case "$branch" in
+              main|gh-pages|release/v0.8.1-curation|archive/*)
+                echo "Refusing to delete protected branch: $branch" >&2
+                exit 1
+                ;;
+            esac
+            git push origin --delete "$branch"
+          done < <(python - <<'PY'
+          import json, os
+          with open(os.environ['INVENTORY'], encoding='utf-8') as handle:
+              data = json.load(handle)
+          for entry in data['branches']:
+              if entry['decision'] == 'delete-after-archive':
+                  print(entry['branch'])
+          PY
+          )
+
+      - name: Verify branch deletion, archive reachability and immutable tags
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+          git show-ref --verify --quiet refs/remotes/origin/main
+          git show-ref --verify --quiet refs/remotes/origin/gh-pages
+          git show-ref --verify --quiet refs/remotes/origin/release/v0.8.1-curation
+          git show-ref --verify --quiet "refs/remotes/origin/$ARCHIVE_BRANCH"
+
+          archive_tip="$(git rev-parse "refs/remotes/origin/$ARCHIVE_BRANCH")"
+          while IFS=$'\t' read -r branch sha; do
+            [ -n "$branch" ] || continue
+            if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+              echo "Superseded branch still exists: $branch" >&2
+              exit 1
+            fi
+            git merge-base --is-ancestor "$sha" "$archive_tip"
+          done < <(python - <<'PY'
+          import json, os
+          with open(os.environ['INVENTORY'], encoding='utf-8') as handle:
+              data = json.load(handle)
+          for entry in data['branches']:
+              if entry['decision'] == 'delete-after-archive':
+                  print(f"{entry['branch']}\t{entry['finalShaBeforeCleanup']}")
+          PY
+          )
+
+      - name: Finalize the cleanup inventory and remove this workflow
+        run: |
+          python - <<'PY'
+          import datetime
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          path = Path(os.environ['INVENTORY'])
+          data = json.loads(path.read_text(encoding='utf-8'))
+          archive_tip = subprocess.check_output(
+              ['git', 'rev-parse', f"refs/remotes/origin/{os.environ['ARCHIVE_BRANCH']}"], text=True
+          ).strip()
+          remaining = subprocess.check_output(
+              ['git', 'for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/'], text=True
+          ).splitlines()
+          remaining = sorted(ref.removeprefix('origin/') for ref in remaining if ref != 'origin/HEAD')
+          deleted = 0
+          for entry in data['branches']:
+              if entry['decision'] == 'delete-after-archive':
+                  entry['cleanupResult'] = 'deleted-ref; tip retained as archive ancestor'
+                  deleted += 1
+              else:
+                  entry['cleanupResult'] = 'preserved'
+          data['cleanupStatus'] = 'completed'
+          data['cleanupCompletedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+          data['archiveBranch'] = os.environ['ARCHIVE_BRANCH']
+          data['archiveTipAfterAnchoring'] = archive_tip
+          data['summaryAfterCleanup'] = {
+              'deletedBranches': deleted,
+              'remainingRemoteBranches': len(remaining),
+              'remainingBranchNames': remaining,
+              'v0.8.0CommitAfterCleanup': subprocess.check_output(
+                  ['git', 'rev-parse', 'refs/tags/v0.8.0^{commit}'], text=True
+              ).strip(),
+              'tagsMutated': False,
+          }
+          path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+          PY
+          rm .github/workflows/v081-branch-cleanup-once.yml
+          git add -A -- "$INVENTORY" .github/workflows/v081-branch-cleanup-once.yml
+          git diff --cached --check
+          git commit -m "chore: complete v0.8.1 branch-ref cleanup"
+          git push origin HEAD:release/v0.8.1-curation
