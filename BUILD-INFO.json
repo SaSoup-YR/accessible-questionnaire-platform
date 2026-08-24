@@ -1,53 +1,55 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "project": {
     "name": "Accessible Questionnaire Platform",
     "shortName": "AQP",
-    "softwareVersion": "0.8.0",
-    "releaseStatus": "final-prototype-release",
-    "releaseTag": "v0.8.0",
-    "recordDate": "2026-08-22",
+    "softwareVersion": "0.8.1",
+    "releaseStatus": "public-entry-and-repository-curation-release",
+    "releaseTag": "v0.8.1",
+    "recordDate": "2026-08-24",
     "repository": "SaSoup-YR/accessible-questionnaire-platform",
     "pagesBaseUrl": "https://sasoup-yr.github.io/accessible-questionnaire-platform/"
   },
+  "versionPolicy": {
+    "v0.8.0Tag": "v0.8.0",
+    "v0.8.0ResolvedCommit": "ef3f46614bc3b40d02de1665a2901d017a5e00ab",
+    "v0.8.0Immutable": true,
+    "v0.8.1Purpose": "Add the public platform landing page, curate the repository, record current dependency/link provenance, and preserve the Version 0.8 questionnaire/result protocol boundary without moving v0.8.0."
+  },
   "provenance": {
-    "integratedProductRevision": "e00a737de964e120ffec38c5030d4ad212cbff5d",
-    "finalCuratedVerificationHead": "69ce59443718e17729ce3dadda2d3bd810b88231",
-    "releaseCommitPolicy": "Resolve the immutable v0.8.0 tag for the authoritative final repository snapshot; never move the tag after publication.",
-    "canonicalPreMergeWorkflow": {
-      "id": 32544582158,
-      "name": "Verify source and generated release",
-      "conclusion": "success"
-    },
-    "constructionWorkflow": {
-      "id": 32543873697,
-      "purpose": "one-time retained-repair integration and generated-release synchronization",
+    "testedAndSynchronizedReleaseTreeHead": "cb34910bd127d2c1a7201c64f81fefaeef7758b6",
+    "authoritativeCurationGate": {
+      "workflowRunId": 32722484056,
+      "name": "Synchronize the tested v0.8.1 curation candidate once",
       "conclusion": "success",
-      "retainedInFinalTree": false
+      "note": "This one-time workflow ran the locked install, dependency comparison and audit, all automated test layers, release build/synchronization, current-document link audit, and public/private-boundary checks. It then removed itself and committed the exact generated outputs and reports."
     },
-    "integratedRetainedHeads": {
-      "rf01": "b173707024bf4b3b6caa7ddfa99357571d571190",
-      "rf04": "fcaa0a7ba471c545f2c9ad84ffc4a6e607e073b6",
-      "rf05": "84b39af34b5914847156d0a13a6353bee5b1b003",
-      "rf06Rf09Rf08Rf07CumulativeBase": "1e0f5bcf360b3b27322c831247159fe9808cb041"
-    }
+    "privateArchiveReceipt": "docs/evidence/PRIVATE-ARCHIVE-RECEIPT-v0.8.1.json",
+    "repositoryCurationRecord": "docs/REPOSITORY-CURATION-v0.8.1.md"
   },
   "automatedVerification": {
     "lockedInstall": {
       "command": "npm ci",
-      "reportedVulnerabilities": 0
+      "reportedVulnerabilities": 0,
+      "securityRecord": "docs/evidence/DEPENDENCY-AUDIT-v0.8.1.json"
+    },
+    "dependencyComparison": {
+      "command": "npm outdated --json",
+      "record": "docs/evidence/DEPENDENCY-OUTDATED-v0.8.1.json",
+      "decisionRecord": "docs/DEPENDENCY-REVIEW-v0.8.1.md",
+      "policy": "Do not upgrade only because a newer registry version exists; change dependencies for demonstrated security or supported-browser compatibility needs, or in a separately scoped and re-evaluated toolchain migration."
     },
     "unitAndComponent": {
-      "testFilesPassed": 26,
-      "testFilesTotal": 26,
-      "testsPassed": 230,
-      "testsTotal": 230
+      "testFilesPassed": 27,
+      "testFilesTotal": 27,
+      "testsPassed": 235,
+      "testsTotal": 235
     },
     "renderedBrowser": {
-      "testsPassed": 12,
-      "testsTotal": 12,
+      "testsPassed": 14,
+      "testsTotal": 14,
       "engine": "Chromium",
-      "scope": "configured UI states, accessibility regression and retained recovery routes"
+      "scope": "public landing/demo routing, configured participant states, accessibility regression, and retained recovery/failure routes"
     },
     "crossBrowserSupport": {
       "testsPassed": 18,
@@ -61,22 +63,33 @@
     },
     "builds": {
       "production": "passed",
-      "standalone": "passed",
+      "standaloneParticipant": "passed",
       "releaseSynchronization": "passed",
       "committedGeneratedReleaseFreshness": "passed"
     },
-    "artifacts": {
-      "quantifiedTechnicalEvaluation": {
-        "artifactId": 9468093060,
-        "archiveSha256": "8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8",
-        "retentionDays": 90
-      },
-      "renderedAccessibilityEvidence": {
-        "artifactId": 9468131274,
-        "archiveSha256": "4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69",
-        "retentionDays": 90
-      }
+    "documentationLinks": {
+      "filesChecked": 27,
+      "linksChecked": 59,
+      "uniqueExternalLinks": 35,
+      "failures": 0,
+      "record": "docs/evidence/REPOSITORY-LINK-AUDIT-v0.8.1.json"
     }
+  },
+  "publicPrivateBoundary": {
+    "publicCurrent": [
+      "source code and tests",
+      "generated platform and participant entry files",
+      "questionnaire definitions and schema",
+      "Qualtrics integration material",
+      "current evidence index and final/residual technical evidence",
+      "PLANNED-STUDY-NOT-EXECUTED.md"
+    ],
+    "movedToPrivateProjectArchive": [
+      "duplicate generated Word deliverables",
+      "unexecuted participant-study and ethics planning documents",
+      "Version 0.7 standalone participant artifact"
+    ],
+    "participantEvidenceProducedByPlanningDocuments": false
   },
   "evidenceLedger": {
     "historicalQ8Baseline": {
@@ -132,20 +145,8 @@
       }
     ]
   },
-  "rf04FinalManualAdjudication": {
-    "environment": "R3 macOS Safari + VoiceOver",
-    "candidateRevision": "0444d6f8a3a77f7cb9409d79c01a75ff42d9471d",
-    "r3A14": "Fail to Pass",
-    "r3A15": "Pass retained",
-    "observation": "VoiceOver entered the named saved-questionnaire web dialog; the modal exposed 3 of 10 and recovery choices; Resume continued to the focused Item 4 heading with the first three answers retained.",
-    "record": "docs/evidence/RF04-NATIVE-DIALOG-POSTFIX-MANUAL-AUDIT-2026-08-22.md",
-    "screenshotSha256": [
-      "6c647eb672d1d667dbcc4ae6c000f4e3f2035621fd742bf3368a9a081e4a22ae",
-      "7e8998213f37832099f9a220c3da4d90fe78c224605c9f1f1652b9a64465833c"
-    ]
-  },
   "releaseOutputs": {
-    "participantEntry": "index.html",
+    "platformEntry": "index.html",
     "researcherEntry": "study.html",
     "standaloneParticipant": "source/demo/accessible-questionnaire-platform-v0.8.html",
     "questionnaireDefinitions": [
@@ -160,7 +161,8 @@
       "bounded questionnaire-definition reuse",
       "deterministic source-to-output fidelity within the documented profile",
       "fail-closed integrity and recovery behavior",
-      "configuration-specific automated and manual technical results"
+      "configuration-specific automated and manual technical results",
+      "a public platform landing page that routes to configured local demonstrations"
     ],
     "notSupported": [
       "universal accessibility",
