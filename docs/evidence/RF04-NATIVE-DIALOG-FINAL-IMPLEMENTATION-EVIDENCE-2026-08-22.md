@@ -1,4 +1,4 @@
-# RF-04 / R3-A14 native recovery-dialog successor — 22 August 2026
+# RF-04 / R3-A14 final native recovery-dialog implementation evidence — 22 August 2026
 
 Status: **targeted manual closure achieved on the exact VoiceOver + Safari route; R3-A14 F → P.**
 

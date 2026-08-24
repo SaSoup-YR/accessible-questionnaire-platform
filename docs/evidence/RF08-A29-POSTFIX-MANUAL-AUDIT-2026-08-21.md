@@ -88,4 +88,4 @@ R1/R2/R3 were not manually rerun in this evidence record. Their earlier semantic
 
 - Microsoft Support, *Use voice to interact with items on the screen*: direct `Click <item name>`, partial-name matching, deliberate numbered disambiguation for multiple matches, and `Show numbers` overlays.
 - W3C WCAG Label in Name / native labelled-control guidance as cited in the RF-08 repair-candidate record.
-- `docs/evidence/RF08-A29-REPAIR-CANDIDATE-2026-08-21.md` for root cause, implementation scope and automated verification.
+- `docs/archive/evidence/RF08-A29-REPAIR-CANDIDATE-2026-08-21.md` for root cause, implementation scope and automated verification.

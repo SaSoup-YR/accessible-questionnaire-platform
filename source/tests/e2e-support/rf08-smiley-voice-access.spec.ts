@@ -9,7 +9,7 @@ const expected = [
 ] as const;
 
 test('RF-08 smiley choices keep native names and expose real on-screen radio targets', async ({ page, browserName }) => {
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
 
   // Follow the real participant path: the answer-format control lives inside
   // the outer optional accessibility disclosure. Match the exact visible

@@ -1,0 +1,194 @@
+name: Finalize AQP v0.8.1 after verified main
+
+on:
+  workflow_run:
+    workflows:
+      - Verify source and generated release
+    types:
+      - completed
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: finalize-aqp-v0.8.1
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_BRANCH: release/v0.8.1-curation
+      RELEASE_TAG: v0.8.1
+      RELEASE_VERSION: 0.8.1
+      V080_COMMIT: ef3f46614bc3b40d02de1665a2901d017a5e00ab
+      VERIFIED_MAIN_SHA: ${{ github.event.workflow_run.head_sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the exact verified main revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Refuse stale main or moved release history
+        id: state
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --tags origin
+          test "$(git rev-parse HEAD)" = "$VERIFIED_MAIN_SHA"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+
+          if [ "$(git rev-parse origin/main)" != "$VERIFIED_MAIN_SHA" ]; then
+            echo "A newer main revision exists; this verified run is stale and will not publish a tag."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "stale=false" >> "$GITHUB_OUTPUT"
+
+          tag_exists=false
+          tag_commit=''
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            tag_exists=true
+            tag_commit="$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+            git merge-base --is-ancestor "$tag_commit" "$VERIFIED_MAIN_SHA"
+            git show "$RELEASE_TAG:BUILD-INFO.json" > /tmp/tag-build-info.json
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path('/tmp/tag-build-info.json').read_text(encoding='utf-8'))
+          if data['project']['releaseTag'] != os.environ['RELEASE_TAG']:
+              raise SystemExit('Existing tag contains a different declared release tag.')
+          if data['project']['softwareVersion'] != os.environ['RELEASE_VERSION']:
+              raise SystemExit('Existing tag contains a different declared software version.')
+          PY
+          else
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path('BUILD-INFO.json').read_text(encoding='utf-8'))
+          if data['project']['releaseTag'] != os.environ['RELEASE_TAG']:
+              raise SystemExit('Verified main does not declare the expected release tag.')
+          if data['project']['softwareVersion'] != os.environ['RELEASE_VERSION']:
+              raise SystemExit('Verified main does not declare the expected software version.')
+          PY
+          fi
+
+          branch_exists=false
+          branch_sha=''
+          if git show-ref --verify --quiet "refs/remotes/origin/$RELEASE_BRANCH"; then
+            branch_exists=true
+            branch_sha="$(git rev-parse "refs/remotes/origin/$RELEASE_BRANCH")"
+          fi
+
+          echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
+          echo "tag_commit=$tag_commit" >> "$GITHUB_OUTPUT"
+          echo "branch_exists=$branch_exists" >> "$GITHUB_OUTPUT"
+          echo "branch_sha=$branch_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Delete only the merged exact release branch
+        if: steps.state.outputs.stale == 'false' && steps.state.outputs.branch_exists == 'true'
+        env:
+          BRANCH_SHA: ${{ steps.state.outputs.branch_sha }}
+        run: |
+          git merge-base --is-ancestor "$BRANCH_SHA" "$VERIFIED_MAIN_SHA"
+          git push origin --delete "$RELEASE_BRANCH"
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          if git show-ref --verify --quiet "refs/remotes/origin/$RELEASE_BRANCH"; then
+            echo "Release branch still exists after deletion." >&2
+            exit 1
+          fi
+          echo "Deleted $RELEASE_BRANCH at exact merged SHA $BRANCH_SHA."
+
+      - name: Create the immutable v0.8.1 tag at the verified main SHA
+        if: steps.state.outputs.stale == 'false' && steps.state.outputs.tag_exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          test "$(git rev-parse origin/main)" = "$VERIFIED_MAIN_SHA"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+          git tag -a "$RELEASE_TAG" "$VERIFIED_MAIN_SHA" -m "Accessible Questionnaire Platform $RELEASE_TAG"
+          git push origin "refs/tags/$RELEASE_TAG"
+          git fetch --tags origin
+          test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$VERIFIED_MAIN_SHA"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+
+      - name: Verify the existing v0.8.1 tag was not moved
+        if: steps.state.outputs.stale == 'false' && steps.state.outputs.tag_exists == 'true'
+        env:
+          TAG_COMMIT: ${{ steps.state.outputs.tag_commit }}
+        run: |
+          test -n "$TAG_COMMIT"
+          test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$TAG_COMMIT"
+          git merge-base --is-ancestor "$TAG_COMMIT" "$VERIFIED_MAIN_SHA"
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+          echo "$RELEASE_TAG already exists at $TAG_COMMIT; it will not be moved."
+
+      - name: Publish the GitHub release from the tagged release notes
+        if: steps.state.outputs.stale == 'false'
+        run: |
+          git fetch --tags origin
+          tag_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          git show "$RELEASE_TAG:RELEASE-NOTES.md" > /tmp/release-notes.md
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "GitHub release $RELEASE_TAG already exists; leaving it unchanged."
+          else
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --title "Accessible Questionnaire Platform $RELEASE_TAG" \
+              --notes-file /tmp/release-notes.md
+          fi
+          echo "Published release $RELEASE_TAG at $tag_commit."
+
+      - name: Verify the final remote branch and tag boundary
+        if: steps.state.outputs.stale == 'false'
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --tags origin
+          test "$(git rev-parse 'refs/tags/v0.8.0^{commit}')" = "$V080_COMMIT"
+          release_commit="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          git merge-base --is-ancestor "$release_commit" "$(git rev-parse origin/main)"
+
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              'main',
+              'gh-pages',
+              'archive/evaluation-pre-fix-2026-08-16',
+              'archive/pre-v0.8.1-branch-tips',
+          }
+          output = subprocess.check_output(
+              ['git', 'for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/'],
+              text=True,
+          )
+          branches = {
+              ref.removeprefix('origin/')
+              for ref in output.splitlines()
+              if ref and ref not in {'origin', 'origin/HEAD'}
+          }
+          if branches != expected:
+              raise SystemExit(
+                  f'Unexpected final remote branch set: expected={sorted(expected)}, actual={sorted(branches)}'
+              )
+          print('Final remote branches:')
+          for branch in sorted(branches):
+              print(branch)
+          PY
+
+          {
+            echo "## AQP v0.8.1 release finalization"
+            echo
+            echo "- verified main: \`$VERIFIED_MAIN_SHA\`"
+            echo "- immutable v0.8.0: \`$V080_COMMIT\`"
+            echo "- v0.8.1: \`$release_commit\`"
+            echo "- source branch present at start: \`${{ steps.state.outputs.branch_exists }}\`"
+            echo "- source branch SHA: \`${{ steps.state.outputs.branch_sha || 'already absent' }}\`"
+            echo "- final remote branches: main, gh-pages, and two required archive branches"
+          } >> "$GITHUB_STEP_SUMMARY"

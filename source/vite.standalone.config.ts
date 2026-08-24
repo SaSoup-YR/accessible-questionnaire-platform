@@ -12,7 +12,7 @@ export default defineConfig({
     outDir: 'dist-standalone',
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(import.meta.dirname, 'index.html'),
+      input: resolve(import.meta.dirname, 'standalone.html'),
       output: {
         inlineDynamicImports: true,
       },

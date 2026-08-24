@@ -57,8 +57,7 @@ The built-in weighted NASA-TLX and Raw TLX definitions cite NASA source material
 The release owner must retain the source attribution and confirm any applicable terms
 for the exact wording and graphics used in a public release.
 
-- Source recorded by the definition:
-  https://ntrs.nasa.gov/api/citations/20200002718/downloads/20200002718.pdf
+- Official NASA Task Load Index page: https://www.nasa.gov/human-systems-integration-division/nasa-task-load-index-tlx/
 
 ### System Usability Scale
 
@@ -87,7 +86,7 @@ release is rebuilt, re-evaluated and re-reviewed.
 
 - Materials: https://www.ueq-online.org/
 - Legal notice: https://www.ueq-online.org/Legal.html
-- Project release decision: [`docs/UEQS-RELEASE-GATE.md`](docs/UEQS-RELEASE-GATE.md)
+- Project release decision: [`docs/archive/legacy/UEQS-RELEASE-GATE.md`](docs/archive/legacy/UEQS-RELEASE-GATE.md)
 
 ## Repository licence scope
 

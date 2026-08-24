@@ -7,7 +7,7 @@ test('records native browser support without injecting feature mocks', async ({
   browser,
   browserName,
 }) => {
-  await page.goto('/index.html');
+  await page.goto('/index.html?demo=nasa-tlx-weighted');
   await expect(page.locator('h1')).toContainText('NASA Task Load Index');
 
   const nativeFeatures = await page.evaluate(() => ({

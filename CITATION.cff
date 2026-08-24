@@ -1,11 +1,11 @@
 cff-version: 1.2.0
 message: >-
-  If you use this software, cite the archived v0.8.0 release and describe the
+  If you use this software, cite the archived v0.8.1 release and describe the
   configuration-specific evidence boundary rather than claiming universal
   accessibility or complete WCAG conformance.
 title: "Accessible Questionnaire Platform"
-version: "0.8.0"
-date-released: "2026-08-22"
+version: "0.8.1"
+date-released: "2026-08-24"
 type: software
 authors:
   - family-names: "Wang"
@@ -23,6 +23,8 @@ abstract: >-
   A bounded loaded-definition questionnaire research prototype with shared
   participant interaction, explicit scoring and provenance contracts,
   fail-closed recovery, structured import and configuration-specific technical
-  and manual accessibility evidence. The release does not establish universal
-  accessibility, psychometric equivalence, usability improvement or disabled-user
-  benefit.
+  and manual accessibility evidence. Version 0.8.1 adds the public platform entry
+  and repository curation without changing the Version 0.8 questionnaire/result
+  protocol or moving the immutable v0.8.0 tag. The release does not establish
+  universal accessibility, psychometric equivalence, usability improvement or
+  disabled-user benefit.
