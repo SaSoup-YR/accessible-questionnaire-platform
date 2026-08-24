@@ -1,95 +1,95 @@
-# AQP 0.8.0 — final prototype release notes
+# AQP 0.8.1 — public entry and repository curation
 
-Date: 22 August 2026  
-Status: final MSc prototype release
+Date: 24 August 2026  
+Status: public-entry and repository-curation release
 
-## Release scope
+## Release purpose
 
-AQP 0.8.0 is the final integrated technical prototype for the dissertation route. It combines the loaded questionnaire-definition platform, participant runner, result provenance, bounded import workflow, Qualtrics bridge and the retained accessibility/recovery repairs into one generated release.
+AQP 0.8.1 adds a public platform landing page and completes repository curation without moving or replacing the immutable `v0.8.0` release. It does not introduce a new questionnaire/result protocol version and does not broaden the research claim beyond the configuration-specific technical and manual evidence already recorded.
 
-This release supports configuration-specific technical claims. It does not establish universal accessibility, complete WCAG conformance, psychometric equivalence, usability improvement or benefit for disabled users.
+The release does not establish universal accessibility, complete WCAG conformance, psychometric equivalence, usability improvement, reduced cognitive burden, or benefit for disabled users.
 
-## Included questionnaire definitions
+## Public interface
+
+The root page now presents AQP as a questionnaire platform rather than opening one questionnaire without context. It provides browser-local demonstrations for:
 
 - weighted NASA Task Load Index;
 - raw NASA Task Load Index;
-- System Usability Scale;
-- versioned questionnaire-definition JSON Schema.
+- System Usability Scale.
 
-The researcher workflow also accepts a bounded, review-first subset of Qualtrics QSF and LimeSurvey LSS, LSG and LSQ definition exports. Unsupported or ambiguous source content is blocked or named for confirmation rather than silently changed.
+Generated study links continue to open the same participant runner with a validated questionnaire definition, locked study settings and pseudonymous participant code. The researcher setup remains available at `study.html`.
 
-## Retained platform capabilities
+## Repository curation
 
-- questionnaire content and scoring loaded from a validated definition rather than compiled into the participant runner;
-- canonical SHA-256 definition fingerprint in the configuration and result record;
-- full definition snapshot retained with results for reconstruction;
-- pseudonymous participant-code binding and invalid-link blocking;
-- transactional review editing: Cancel preserves the committed answer, route, score and stored progress; Save commits once;
-- browser-local interruption recovery and completed-result backups;
-- truthful Qualtrics staging, waiting, failure and host-owned completion states;
-- fail-closed storage/staging recovery with Retry, Change, JSON and CSV routes;
-- 320 CSS-pixel participant reflow safeguards;
-- visible native smiley radio targets for speech-control number overlays;
-- explicit setting-change feedback without moving focus or changing an answer;
-- native modal saved-session recovery with direct continuation to the first unanswered task;
-- visible Stop, watchdog and native-answer fallback for optional in-page voice input;
-- strict voice proposal parsing, negation veto and explicit confirmation before answer commitment;
-- optional experimental gaze route with separate confirmation and ordinary controls retained.
+Version 0.8.1:
 
-## Final targeted repair outcome
+- replaces the earlier README with a concise purpose, use, verification, limitation, citation and licence structure;
+- adds a plain code overview and an accurate AI-assisted-development provenance record;
+- adds staged open-science and deposit-manifest records without claiming that a DOI already exists;
+- moves duplicate Word deliverables, the Version 0.7 standalone artifact, and unexecuted study/ethics planning files to the private project archive before removing their public copies;
+- retains one short public `PLANNED-STUDY-NOT-EXECUTED.md` statement confirming that planning documents produced no participant evidence;
+- moves superseded release gates, migration notes, evidence freezes, evaluation matrices and intermediate repair plans into `docs/archive/`;
+- keeps current final evidence and residual failures in the public evidence surface;
+- records every removed remote branch name, exact final tip SHA, related pull request where available and preserve/delete decision;
+- verifies each deleted branch tip as reachable from `archive/pre-v0.8.1-branch-tips` before deleting the remote ref;
+- keeps `main`, `gh-pages`, necessary archive branches and all formal tags.
 
-The immutable pre-repair q8 audit remains **94 Pass / 31 Fail / 7 Not applicable / 0 Not tested** across 132 route/check cells.
+The active `release/v0.8.1-curation` branch is retained only until PR #84 is merged. A protected workflow deletes a merged same-repository head branch only when its live SHA still matches the exact merged PR head.
 
-Separate targeted post-fix evidence closed **25 of the 31 historical failures**. Six residual cells remain:
+## Dependency and link provenance
 
-| Family | Residual cells | Release decision |
+The committed `source/package-lock.json` remains the reproducible dependency source. The authoritative curation gate captured:
+
+- `npm outdated --json`;
+- `npm audit --json`;
+- the reason each available update was deferred;
+- a current-document repository-link audit.
+
+Nine development/tooling packages had newer registry versions. None was upgraded merely to make the version numbers current. The locked graph reported zero known vulnerabilities, and the full tested browser/build matrix passed. Major TypeScript, Vite, Vitest, jsdom and Node type migrations, plus the paired axe update, remain separately scoped compatibility work rather than release-tidying changes.
+
+A zero-vulnerability registry report is time-specific and does not prove that no undisclosed vulnerability exists. An external-link audit is also time-specific and cannot guarantee that a third-party site will never move.
+
+## Automated verification
+
+The authoritative Version 0.8.1 curation gate was GitHub Actions run `32722484056`, which completed successfully and committed the tested synchronized outputs at `cb34910bd127d2c1a7201c64f81fefaeef7758b6`.
+
+Recorded results:
+
+- 27/27 unit/component test files;
+- 235/235 unit/component tests;
+- 14/14 rendered Chromium browser tests;
+- 18/18 Chromium, Firefox and Playwright WebKit support-route tests;
+- production build passed;
+- self-contained participant build passed;
+- generated release synchronization and freshness passed;
+- 27 current documents, 59 links and 35 unique external links checked with zero recorded failures;
+- locked dependency audit reported zero known vulnerabilities.
+
+`BUILD-INFO.json` records this tested-and-synchronized release-output provenance. Later documentation-only curation commits do not silently relabel themselves as a new product test run. The exact final pull-request head is also required to pass the standard repository workflow before merge.
+
+## Manual evidence boundary
+
+The immutable pre-repair manual audit remains **94 Pass / 31 Fail / 7 Not applicable / 0 Not tested** across 132 route/check cells. Targeted exact-route retesting closed 25 historical failures. Six configuration-specific failures remain:
+
+| Family | Residual cells | Retained boundary |
 | --- | --- | --- |
-| RF-01 | R3-A26 | Retain visible Connecting state, verified safe gating and blocking alert. Do not force focus, duplicate speech or relabel the silent VoiceOver + Safari route as Pass. |
-| RF-06 | R4-A10 | Retain visible Stop, watchdog and native controls. Do not add an unreliable workaround for simultaneous Windows Voice Access and in-page Web Speech command capture. |
-| RF-07 | R3-A11, R3-A12, R4-A11, R4-A12 | Retain strict parsing and explicit confirmation. Do not guess a missing number/negation or weaken the frozen phrase criterion. |
+| RF-01 | R3-A26 | VoiceOver with Safari did not automatically expose the initial embedded Qualtrics `Connecting` status. Visible gating and blocking error behaviour remain; the silent route is not relabelled Pass. |
+| RF-06 | R4-A10 | Windows Voice Access and in-page Web Speech competed for the spoken stop command. Visible Stop, watchdog and native controls remain. |
+| RF-07 | R3-A11, R3-A12, R4-A11, R4-A12 | Live browser speech recognition did not reliably return the frozen number/negation phrases. Strict parsing, negation veto, explicit confirmation and native controls remain; AQP does not guess. |
 
-The final RF-04 residual was closed. On the exact Safari + VoiceOver candidate, VoiceOver entered the named saved-questionnaire web dialog; the modal exposed the exact `3 of 10` state and recovery choices; Resume continued to the focused Item 4 heading with all three answers retained.
+A green automated test is not substituted for a failed real assistive-technology observation. Playwright WebKit is not Safari plus VoiceOver evidence, and a browser capability test is not a disabled-participant benefit study.
 
-## Verification
+## Materials and open science
 
-Integrated product revision:
+Public materials include the software, lockfile, tests, questionnaire definitions and schema, Qualtrics integration, current technical/manual evidence, release provenance, licence, citation and third-party notices.
 
-`e00a737de964e120ffec38c5030d4ad212cbff5d`
+The exact final literature search, screening, study-family, author/full-text verification and analysis-code package is not yet frozen or deposited. No DOI is claimed in this release. `OPEN-SCIENCE.md` and `docs/open-science/DEPOSIT-MANIFEST-DRAFT.md` define the staged Zenodo deposit and anonymous-assessment boundary.
 
-Final curated pre-merge verification:
+No participant data, signed consent forms, participant recordings or real Qualtrics participant responses were produced for the released dissertation evidence.
 
-`32544582158 — success` on head `69ce59443718e17729ce3dadda2d3bd810b88231`
+## Deployment
 
-Recorded gates:
-
-- 26/26 unit/component test files and 230/230 tests;
-- 12/12 rendered-browser routes;
-- 18/18 Chromium, Firefox and Playwright WebKit support routes;
-- production, standalone and synchronized release builds;
-- committed generated-release freshness;
-- 0 vulnerabilities reported by the locked installation audit.
-
-Retained 90-day workflow artifacts from that run:
-
-- quantified technical evaluation: ID `9468093060`, archive SHA-256 `8f93f4d0a04d7291fc6a4f50780d4e71bd3d9b33048c754e3132edae0c339da8`;
-- rendered accessibility evidence: ID `9468131274`, archive SHA-256 `4387554a24da3f2c50e0e3bc90f8f0b28c5e68742067fcbf0138829406b5bc69`.
-
-The immutable `v0.8.0` tag is created only from the subsequently verified `main` commit. Playwright WebKit is not Safari + VoiceOver evidence. Automated speech support is not a live microphone-recognition result.
-
-## Known limitations
-
-- Browser speech recognition remains dependent on browser, operating system, microphone, language model and service availability.
-- Simultaneous OS voice control and page-level speech recognition may compete for commands.
-- The initial embedded Qualtrics Connecting status was not automatically exposed by VoiceOver + Safari in the frozen R3 route; blocking error exposure and safe Start gating remain.
-- The bounded import profile does not support every questionnaire or source-platform feature.
-- Imported or transformed instruments require independent permission and psychometric review.
-- Experimental gaze requires a secure context, camera permission and calibration and is not part of the core accessibility claim.
-- Browser-local recovery and export do not replace an approved research data-management system.
-- The technical audit did not include a disabled-participant benefit study.
-
-## Deployment notes
-
-The root `index.html`, `study.html`, `assets/` and `questionnaires/` directories are generated release outputs. Refresh them only with:
+The root `index.html`, `study.html`, `assets/` and `questionnaires/` files are generated outputs. Refresh them only with:
 
 ```bash
 cd source
@@ -97,12 +97,12 @@ npm ci
 npm run build:release
 ```
 
-Do not hand-edit the generated bundles. A Qualtrics deployment must use the exact reviewed bridge/package, a copied synthetic survey for fault testing and a fresh host-row smoke test before research use.
+Do not hand-edit generated bundles. Researchers remain responsible for ethics approval, questionnaire permission, deployment configuration, participant support, data governance and evaluation in the technologies they intend to use.
 
-## Evidence and citation
+## Version and history policy
 
-- `EVIDENCE-INDEX.md` maps claims to exact repository records;
-- `BUILD-INFO.json` contains the machine-readable release summary;
-- `TESTING.md` contains reproducible procedures;
-- `docs/evidence/FINAL-PROTOTYPE-FREEZE-2026-08-22.md` records the final claim boundary;
-- `CITATION.cff`, `LICENSE` and `THIRD_PARTY_NOTICES.md` govern citation and redistribution information.
+- `v0.8.0` remains immutable and is not moved;
+- `v0.8.1` is created from the verified merged Version 0.8.1 tree;
+- formal release-candidate tags remain available;
+- branch ref deletion does not rewrite commit authorship, co-author metadata, closed pull requests or archived evidence;
+- the historical Version 0.8.0 release notes remain available at `docs/archive/releases/RELEASE-NOTES-v0.8.0.md` and in the `v0.8.0` tagged tree.
