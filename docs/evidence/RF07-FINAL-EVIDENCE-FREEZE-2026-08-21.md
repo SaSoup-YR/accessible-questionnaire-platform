@@ -82,4 +82,4 @@ Accordingly, RF-07 closes as an engineering investigation with a documented resi
 - W3C Web Speech API / current browser documentation for final results, ranked alternatives and contextual phrase biasing.
 - Browser/platform documentation showing recognition remains implementation/service dependent.
 - `JamesBrill/react-speech-recognition` as a mature open-source comparison: browser-dependence is explicit and fuzzy matching is optional rather than a safe substitute for exact answer semantics.
-- The earlier RF-07 repair-plan record for the complete standards/open-source comparison and stop rules.
+- Archived planning record `docs/archive/evidence/RF07-A11-A12-REPAIR-PLAN-2026-08-21.md` for the complete standards/open-source comparison and stop rules.

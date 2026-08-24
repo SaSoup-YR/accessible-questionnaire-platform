@@ -66,32 +66,32 @@ This index maps final dissertation and release claims to persistent repository r
 ### RF-04: Saved-Session Focus and Direct Resume
 
 - first retained direct-resume repair: PR #72;
-- final native-dialog candidate: `0444d6f8a3a77f7cb9409d79c01a75ff42d9471d`;
+- final native-dialog implementation candidate: `0444d6f8a3a77f7cb9409d79c01a75ff42d9471d`;
 - final evidence head integrated into the release: `fcaa0a7ba471c545f2c9ad84ffc4a6e607e073b6`;
 - records:
   - `docs/evidence/RF04-POSTFIX-MANUAL-AUDIT-2026-08-20.md`;
   - `docs/evidence/RF04-FINAL-EVIDENCE-FREEZE-2026-08-20.md`;
-  - `docs/evidence/RF04-NATIVE-DIALOG-SUCCESSOR-PLAN-2026-08-22.md`;
+  - `docs/evidence/RF04-NATIVE-DIALOG-FINAL-IMPLEMENTATION-EVIDENCE-2026-08-22.md`;
   - `docs/evidence/RF04-NATIVE-DIALOG-POSTFIX-MANUAL-AUDIT-2026-08-22.md`;
 - final result: R3-A14 Fail to Pass, R3-A15 Pass retained, and all six historical RF-04 A14/A15 failures have targeted closure evidence.
 
 ### RF-05: 320 CSS-Pixel Reflow
 
 - retained head: `84b39af34b5914847156d0a13a6353bee5b1b003`;
-- record: `docs/evidence/RF05-AUTOMATED-REPAIR-CANDIDATE-2026-08-20.md`;
+- record: `docs/evidence/RF05-A22-FINAL-POSTFIX-EVIDENCE-2026-08-21.md`;
 - result: R1-A22 and R4-A22 Fail to Pass on the frozen narrow-view procedure, with separate normal full-screen 200% checks retained.
 
 ### RF-06: Voice Listening Lifecycle and Recovery
 
 - retained cumulative source incorporated through `1e0f5bcf360b3b27322c831247159fe9808cb041`;
-- record: `docs/evidence/RF06-REPAIR-PLAN-2026-08-21.md`;
+- record: `docs/evidence/RF06-FINAL-POSTFIX-EVIDENCE-2026-08-21.md`;
 - residual: R4-A10 Fail retained because simultaneous Windows Voice Access and page-level Web Speech did not reliably deliver the stop command.
 
 ### RF-07: Speech Proposal and Negation Safety
 
 - retained head: `1e0f5bcf360b3b27322c831247159fe9808cb041`;
 - records:
-  - `docs/evidence/RF07-A11-A12-REPAIR-PLAN-2026-08-21.md`;
+  - `docs/archive/evidence/RF07-A11-A12-REPAIR-PLAN-2026-08-21.md`;
   - `docs/evidence/RF07-FINAL-EVIDENCE-FREEZE-2026-08-21.md`;
 - retained implementation: strict exact parsing, cross-alternative negation veto, bounded contextual hints, visible transcript/proposal, and explicit confirmation;
 - residual: R3-A11, R3-A12, R4-A11, and R4-A12 remain Fail because the live recognizer did not reliably return the frozen two-word phrases.
@@ -100,7 +100,7 @@ This index maps final dissertation and release claims to persistent repository r
 
 - retained cumulative source incorporated through `1e0f5bcf360b3b27322c831247159fe9808cb041`;
 - records:
-  - `docs/evidence/RF08-A29-REPAIR-CANDIDATE-2026-08-21.md`;
+  - `docs/archive/evidence/RF08-A29-REPAIR-CANDIDATE-2026-08-21.md`;
   - `docs/evidence/RF08-A29-POSTFIX-MANUAL-AUDIT-2026-08-21.md`;
 - result: native smiley radios retain names and values while exposing real on-screen geometry for label and number-overlay operation; the precise-scale fallback remains.
 
