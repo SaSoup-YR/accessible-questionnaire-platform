@@ -30,14 +30,18 @@
       "finalShaBeforeCleanup": "2a26ff18a62e6215d67cd2e145b82587086b269e",
       "decision": "preserve",
       "reason": "necessary archive branch",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "preserved",
+      "postCleanupSha": "2a26ff18a62e6215d67cd2e145b82587086b269e"
     },
     {
       "branch": "archive/pre-v0.8.1-branch-tips",
       "finalShaBeforeCleanup": "af1611e5fd046e7cd8fb321615b7540f18449557",
       "decision": "preserve",
       "reason": "necessary archive branch",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "preserved",
+      "postCleanupSha": "9790a5dea75efec6280aba351c0e32470dbed2f3"
     },
     {
       "branch": "chore/sync-pages-source-20260721",
@@ -52,7 +56,8 @@
           "headSha": "509784b64aa296e874ccf08e96207254ba675a44",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/8"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/auto-native-offline-modal-q7",
@@ -67,7 +72,8 @@
           "headSha": "ad58f78285276896374d4db05cd57da692c79173",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/49"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/contrast-speech-recovery-20260727",
@@ -82,7 +88,8 @@
           "headSha": "ade0908779bb886969ef9a5c919c3fb692cb54e0",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/29"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/deploy-v0.7",
@@ -97,7 +104,8 @@
           "headSha": "63e1ba747dd4175ef331c9876f4cc8e8338e2b1c",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/13"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/immediate-offline-alert-q6",
@@ -112,7 +120,8 @@
           "headSha": "e507be209bda63840a15b3b394ccef25b265d8a9",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/48"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/sync-pages-contrast-speech-recovery-20260727",
@@ -127,7 +136,8 @@
           "headSha": "810c379f9d5a12891155ccf2c6ba64bf956972d0",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/30"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/sync-pages-voice-audio",
@@ -142,7 +152,8 @@
           "headSha": "59e9d5bf95fe81cbd9f50e5b8b7b3f54280d36a3",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/28"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/v0.7-qualtrics-collection",
@@ -157,7 +168,8 @@
           "headSha": "be58cd7cd76a3742f770bae796cbe03518bc45c0",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/11"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "codex/voice-audio-qualtrics-recovery",
@@ -172,7 +184,8 @@
           "headSha": "c0743354551695bf9f021c1b8d3f3e006b125a75",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/27"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "deploy/v0.5-voice-focus-visible-20260721",
@@ -187,7 +200,8 @@
           "headSha": "3ad07833f3e486c6174e89961a6f53041202dd07",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/7"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "deploy/v0.5-voice-state-error-focus-20260721",
@@ -202,7 +216,8 @@
           "headSha": "7aadda13540847e80dbc2e68a256f2e4b378762a",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/5"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "deploy/version-0-6-20260723",
@@ -217,7 +232,8 @@
           "headSha": "4609aeaa9f08f26c4f699f5e8c53ee5a2fe514d2",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/10"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "feat/researcher-wizard",
@@ -239,7 +255,8 @@
           "headSha": "9a54f5dcfef94aa2f3d3b3f8c9d134737f8ff7f9",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/68"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/a27-preserve-recovery-state-q10",
@@ -254,7 +271,8 @@
           "headSha": "2c63e6e73951cc80b18111ef77f57c951d2d9365",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/70"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/integrated-recovery-audio",
@@ -269,7 +287,8 @@
           "headSha": "92c4055308865226e71005beb9f168dd2411f6a4",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/31"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/limesurvey-lss-lsg-supervisor-files",
@@ -284,7 +303,8 @@
           "headSha": "8bb1cd4281890361f7de6ed3f2349ec37dc03eaa",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/56"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/rc4-voice-safety-verification",
@@ -299,7 +319,8 @@
           "headSha": "badfebe76589580f9af472bd5fa9e3bdf1a7757b",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/63"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/rendering-session-evidence-rc4",
@@ -314,7 +335,8 @@
           "headSha": "129f135b37d519ad23bd596c88cea12217a004a5",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/62"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/restore-voice-number-fallback-rc4",
@@ -329,7 +351,8 @@
           "headSha": "fd291d41fead45d1948530e459a9d48ad326a5ef",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/60"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/rf02-truthful-qualtrics-state",
@@ -344,7 +367,8 @@
           "headSha": "4d2a05242df5255900f2ab5b3f344cbcae6056c1",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/69"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/saved-session-announcement-v2",
@@ -359,7 +383,8 @@
           "headSha": "64580a4a8adade7c6f5c25a0cf0780c26409a002",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/34"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/single-english-voice-input-rc4",
@@ -374,7 +399,8 @@
           "headSha": "6a5187a54b2a18c546a0a4307c6a0a6982bec084",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/61"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/v0.5-voice-focus-visible-20260721",
@@ -389,7 +415,8 @@
           "headSha": "383f46f99028168934d690bac414edacc9dc0ec8",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/6"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "fix/v0.5-voice-state-error-focus-20260721",
@@ -404,14 +431,17 @@
           "headSha": "fd8ac42b38cf634e6abbaef036990efa3a6ebd39",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/4"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "gh-pages",
       "finalShaBeforeCleanup": "b4f1953b182c5843fb3c4f210d266fb939269a8b",
       "decision": "preserve",
       "reason": "protected current branch",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "preserved",
+      "postCleanupSha": "b4f1953b182c5843fb3c4f210d266fb939269a8b"
     },
     {
       "branch": "main",
@@ -433,14 +463,17 @@
           "headSha": "6e055e2a01231479ac9014d3eb35ae0fd6c77c83",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/22"
         }
-      ]
+      ],
+      "postCleanupStatus": "preserved",
+      "postCleanupSha": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91"
     },
     {
       "branch": "origin",
       "finalShaBeforeCleanup": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91",
       "decision": "delete-after-archive",
       "reason": "closed or merged development branch superseded by the Version 0.8 release history",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "rc4-multilingual-imported-voice",
@@ -455,7 +488,8 @@
           "headSha": "f2c675038a3af05ad66b98c626ebd007f14861bc",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/59"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "release/v0.8.0-rc.4",
@@ -470,7 +504,8 @@
           "headSha": "e53d63b309e25b1eae0cc80e2d7c49cfc1a37dba",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/64"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "release/v0.8.1-curation",
@@ -485,21 +520,25 @@
           "headSha": "e720bee5ae1c71d959b1fe6fe2bcf226f89cfe7c",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/84"
         }
-      ]
+      ],
+      "postCleanupStatus": "preserved",
+      "postCleanupSha": "7b5d0917521aea72a0761e3331713438e8c1e8da"
     },
     {
       "branch": "release/v0.8.1-public-curation",
       "finalShaBeforeCleanup": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91",
       "decision": "delete-after-archive",
       "reason": "duplicate or superseded v0.8.1 preparation branch; current PR branch is retained",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "release/v0.8.1-public-entry-and-curation",
       "finalShaBeforeCleanup": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91",
       "decision": "delete-after-archive",
       "reason": "duplicate or superseded v0.8.1 preparation branch; current PR branch is retained",
-      "relatedPullRequests": []
+      "relatedPullRequests": [],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "trigger/recovery-integration",
@@ -514,7 +553,8 @@
           "headSha": "a6a67a311a2fb9c42e0c2e1dc980cb740dd42dc8",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/32"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     },
     {
       "branch": "trigger/recovery-integration-2",
@@ -529,7 +569,8 @@
           "headSha": "81029bb16044385abc69826529ae2fc2e39f1453",
           "url": "https://github.com/SaSoup-YR/accessible-questionnaire-platform/pull/33"
         }
-      ]
+      ],
+      "postCleanupStatus": "deleted-after-archive"
     }
   ],
   "tags": [
@@ -569,5 +610,47 @@
       "decision": "preserve"
     }
   ],
-  "cleanupStatus": "inventory-pushed-before-deletion"
+  "cleanupStatus": "complete-before-merge-except-active-pr-branch",
+  "finalization": {
+    "completedAt": "2026-08-24T11:58:21.978654+00:00",
+    "inputHead": "7b5d0917521aea72a0761e3331713438e8c1e8da",
+    "archiveBranch": "archive/pre-v0.8.1-branch-tips",
+    "archiveTipAfterFinalAnchoring": "9790a5dea75efec6280aba351c0e32470dbed2f3",
+    "allDeletedTipsReachableFromArchive": true,
+    "v0.8.0ResolvedCommitBeforeAndAfter": "ef3f46614bc3b40d02de1665a2901d017a5e00ab",
+    "remainingBranchesBeforeMerge": [
+      {
+        "branch": "archive/evaluation-pre-fix-2026-08-16",
+        "sha": "2a26ff18a62e6215d67cd2e145b82587086b269e"
+      },
+      {
+        "branch": "archive/pre-v0.8.1-branch-tips",
+        "sha": "9790a5dea75efec6280aba351c0e32470dbed2f3"
+      },
+      {
+        "branch": "gh-pages",
+        "sha": "b4f1953b182c5843fb3c4f210d266fb939269a8b"
+      },
+      {
+        "branch": "main",
+        "sha": "fbbdad5e78c22c26c5c5b020d24b1b876b352b91"
+      },
+      {
+        "branch": "release/v0.8.1-curation",
+        "sha": "7b5d0917521aea72a0761e3331713438e8c1e8da"
+      }
+    ],
+    "activePullRequestBranchDisposition": "retain until PR #84 is merged, then delete the ref without rewriting commits"
+  },
+  "summaryAfterPreMergeCleanup": {
+    "remoteBranches": 5,
+    "archiveBranches": 2,
+    "nonArchiveCurrentBranches": [
+      "gh-pages",
+      "main",
+      "release/v0.8.1-curation"
+    ],
+    "additionalRefsDeletedInFinalPass": 6,
+    "formalTagsMutated": false
+  }
 }
