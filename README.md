@@ -62,7 +62,7 @@ The committed lockfile is the reproducible dependency source. Dependency updates
 
 ## Supported definitions and import boundary
 
-The distributable definitions are in [`questionnaires/`](questionnaires/):
+The committed source definitions are in [`source/instruments/`](source/instruments/). A release build copies the distributable files to the root `questionnaires/` directory:
 
 - `nasa-tlx-weighted.questionnaire.json`;
 - `nasa-tlx-raw.questionnaire.json`;
