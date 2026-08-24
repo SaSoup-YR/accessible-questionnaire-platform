@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const distHtmlPath = resolve(root, 'dist-standalone/index.html');
+const distHtmlPath = resolve(root, 'dist-standalone/standalone.html');
 const outputPath = resolve(root, 'demo/accessible-questionnaire-platform-v0.8.html');
 
 let html = readFileSync(distHtmlPath, 'utf8');
