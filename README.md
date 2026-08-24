@@ -88,7 +88,9 @@ Start with:
 - [`BUILD-INFO.json`](BUILD-INFO.json) for machine-readable release provenance;
 - [`RELEASE-NOTES.md`](RELEASE-NOTES.md) for the retained release scope and limitations;
 - [`CODE-OVERVIEW.md`](CODE-OVERVIEW.md) for a plain description of the main code modules;
-- [`OPEN-SCIENCE.md`](OPEN-SCIENCE.md) for the final archival-material plan.
+- [`docs/AI-ASSISTED-DEVELOPMENT-NOTES.md`](docs/AI-ASSISTED-DEVELOPMENT-NOTES.md) for truthful software-development provenance and the thesis-disclosure boundary;
+- [`docs/PLANNED-STUDY-NOT-EXECUTED.md`](docs/PLANNED-STUDY-NOT-EXECUTED.md) for the explicit statement that planning documents produced no participant evidence;
+- [`OPEN-SCIENCE.md`](OPEN-SCIENCE.md) and the [deposit manifest draft](docs/open-science/DEPOSIT-MANIFEST-DRAFT.md) for the final archival-material plan.
 
 For Version 0.8.1, the one-time curation gate [run 32722484056](https://github.com/SaSoup-YR/accessible-questionnaire-platform/actions/runs/32722484056) ran the locked install, dependency comparison/security audit, 235 unit/component tests, 14 rendered-browser tests, 18 Chromium/Firefox/WebKit support tests, production and standalone builds, release synchronization, current-document link checking, and the public/private repository-boundary checks. It then removed its own temporary workflow and committed the tested generated outputs. `BUILD-INFO.json` records the exact synchronized tree head.
 
@@ -99,11 +101,11 @@ source/          TypeScript source, tests, and build configuration
 assets/          generated GitHub Pages JavaScript and CSS
 questionnaires/  distributable questionnaire definitions and JSON Schema
 integrations/    reviewed Qualtrics package and guidance
-docs/            current architecture, methods, and evidence records
+docs/            current architecture, methods, evidence, archive, and deposit-planning records
 tools/           reproducible release and documentation utilities
 ```
 
-Generated root HTML, `assets/`, and distributable questionnaire files are refreshed with `npm run build:release`. They are not edited by hand. Superseded but useful public records are kept under `docs/archive/`; unexecuted participant-study planning material was moved to the private project archive. [`docs/PLANNED-STUDY-NOT-EXECUTED.md`](docs/PLANNED-STUDY-NOT-EXECUTED.md) records that those planning documents produced no participant evidence.
+Generated root HTML, `assets/`, and distributable questionnaire files are refreshed with `npm run build:release`. They are not edited by hand. Superseded but useful public records are kept under `docs/archive/`; unexecuted participant-study planning material was moved to the private project archive.
 
 ## Citation and licence
 
